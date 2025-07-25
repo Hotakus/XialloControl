@@ -429,6 +429,117 @@
           box-shadow: var(--active-shadow);
           transition: none;
       }
+
+      /* 设置容器 */
+      .settings-container {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          padding: 10px;
+          height: 100%;
+          overflow-y: auto;
+      }
+
+      /* 设置组样式 */
+      .setting-group {
+          background: #f8f9fa;
+          border-radius: var(--border-radius);
+          padding: 15px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .setting-group h3 {
+          margin-top: 0;
+          margin-bottom: 15px;
+          color: #2f3542;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+
+      /* 设置项样式 */
+      .setting-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+      }
+
+      .setting-item:last-child {
+          margin-bottom: 0;
+      }
+
+      /* 滑块容器 */
+      .slider-container {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 200px;
+      }
+
+      .slider-container input[type="range"] {
+          flex: 1;
+      }
+
+      .slider-container span {
+          width: 40px;
+          text-align: right;
+          font-size: 14px;
+          color: #555;
+      }
+
+      /* 开关样式 */
+      .switch {
+          position: relative;
+          display: inline-block;
+          width: 50px;
+          height: 24px;
+      }
+
+      .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+      }
+
+      .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          transition: .4s;
+          border-radius: 24px;
+      }
+
+      .slider:before {
+          position: absolute;
+          content: "";
+          height: 18px;
+          width: 18px;
+          left: 3px;
+          bottom: 3px;
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+      }
+
+      input:checked + .slider {
+          background-color: #4c8bf5;
+      }
+
+      input:checked + .slider:before {
+          transform: translateX(26px);
+      }
+
+      /* 下拉菜单调整 */
+      #settingTab select {
+          width: 200px;
+          padding: 8px 12px;
+      }
   </style>
 </head>
 <body>
@@ -474,8 +585,9 @@
 
       <div class="card">
         <div class="tabs" role="tablist">
-          <div class="tab active" role="tab" aria-selected="true" data-tab="buttonMapTab">按键设置</div>
+          <div class="tab active" role="tab" aria-selected="true" data-tab="buttonMapTab">按键映射</div>
           <div class="tab" role="tab" aria-selected="false" data-tab="stickMapTab">摇杆映射</div>
+          <div class="tab" role="tab" aria-selected="false" data-tab="settingTab">设置</div>
         </div>
 
         <div id="buttonMapTab" class="tab-content active" role="tabpanel">
@@ -489,6 +601,62 @@
             <!-- 摇杆映射列表保持不变 -->
           </div>
         </div>
+
+        <div id="settingTab" class="tab-content" role="tabpanel">
+          <div class="settings-container">
+            <!-- 摇杆设置组 -->
+            <div class="setting-group">
+              <h3>🎮 摇杆设置</h3>
+
+              <div class="setting-item">
+                <label for="deadzone">死区范围:</label>
+                <div class="slider-container">
+                  <input type="range" id="deadzone" min="0" max="30" value="10">
+                  <span id="deadzone-value">10%</span>
+                </div>
+              </div>
+
+<!--              <div class="setting-item">-->
+<!--                <label for="response-curve">响应曲线:</label>-->
+<!--                <select id="response-curve">-->
+<!--                  <option value="linear">线性</option>-->
+<!--                  <option value="quadratic">平缓</option>-->
+<!--                  <option value="cubic">灵敏</option>-->
+<!--                </select>-->
+<!--              </div>-->
+            </div>
+
+            <!-- 软件设置组 -->
+            <div class="setting-group">
+              <h3>⚙️ 软件设置</h3>
+
+              <div class="setting-item">
+                <label for="auto-start">开机自启动:</label>
+                <label class="switch">
+                  <input type="checkbox" id="auto-start" checked>
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="setting-item">
+                <label for="minimize-to-tray">最小化到托盘:</label>
+                <label class="switch">
+                  <input type="checkbox" id="minimize-to-tray" checked>
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="setting-item">
+                <label for="theme">界面主题:</label>
+                <select id="theme">
+                  <option value="light">浅色模式</option>
+                  <option value="dark">深色模式</option>
+                  <option value="system">跟随系统</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -497,7 +665,7 @@
     <div class="indicator-container">
       <span class="indicator-label">连接状态</span>
       <div id="status-indicator" class="indicator"></div>
-      <button id="indicator-test-btn" class="indicator-test-btn">测试</button>
+      <!--      <button id="indicator-test-btn" class="indicator-test-btn">测试</button>-->
     </div>
 
     <div>
@@ -572,7 +740,7 @@
                 const option = document.createElement('option');
                 option.value = index;
                 // option.textContent = `${device.name} (VID: ${device.vendor_id.toString(16)}, PID: ${device.product_id.toString(16)})`;
-                option.textContent = `${index}: ${device.name}`
+                option.textContent = `${index}: ${device}`
                 deviceSelect.appendChild(option);
             });
 
@@ -618,8 +786,14 @@
         document.getElementById('minimize-button').addEventListener('click', () =>
             appWindow.minimize());
 
-        document.getElementById('close-button').addEventListener('click', () =>
-            appWindow.hide());
+        minimize_to_tray = true
+        document.getElementById('close-button').addEventListener('click', () => {
+            if (document.getElementById('minimize-to-tray').checked) {
+                appWindow.hide()
+            } else {
+                appWindow.close()
+            }
+        });
 
         // 设备选择逻辑
         document.getElementById('device').addEventListener('change', function () {
@@ -638,6 +812,40 @@
 
         document.getElementById('import-preset').addEventListener('click', function () {
             console.log('导入方案');
+        });
+
+        // 摇杆死区滑块交互
+        document.getElementById('deadzone').addEventListener('input', function () {
+            document.getElementById('deadzone-value').textContent = this.value + '%';
+        });
+
+// 设置选项卡激活时初始化值
+        document.querySelector('.tabs').addEventListener('click', function (e) {
+            const tab = e.target.closest('.tab');
+            if (tab && tab.dataset.tab === 'settingTab') {
+                // 初始化死区显示值
+                const deadzoneSlider = document.getElementById('deadzone');
+                document.getElementById('deadzone-value').textContent = deadzoneSlider.value + '%';
+            }
+        });
+
+// 开机自启动和最小化到托盘保存逻辑
+        document.getElementById('auto-start').addEventListener('change', function () {
+            console.log('开机自启动:', this.checked);
+            // 这里添加实际保存设置的代码
+        });
+
+
+        document.getElementById('minimize-to-tray').addEventListener('change', function () {
+            console.log('最小化到托盘:', this.checked);
+            minimize_to_tray = this.checked
+            // 这里添加实际保存设置的代码
+        });
+
+// 主题切换
+        document.getElementById('theme').addEventListener('change', function () {
+            console.log('主题切换为:', this.value);
+            // 这里添加主题切换的实际代码
         });
 
         // 在浏览器环境中模拟Tauri API
