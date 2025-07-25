@@ -3,7 +3,15 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::iter::Iterator;
 use std::path::Path;
-use tauri::Manager;
+use std::time::Duration;
+use once_cell::sync::OnceCell;
+use tauri::{App, AppHandle, Emitter, Window};
+use tokio::sync::Mutex;
+use crate::controller;
+
+
+pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.json";
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SupportedDevice {
@@ -74,7 +82,7 @@ pub fn list_supported_connected_devices(
                 }
         });
 
-        if let Some(supported) = matched {
+        if let Some(_supported) = matched {
             // device.path() 是唯一字符串路径，用于打开设备
             let device_info = SupportedConnectedDevice {
                 name: device
@@ -88,4 +96,38 @@ pub fn list_supported_connected_devices(
         }
     }
     supported_devices
+}
+
+fn _query_devices() -> Vec<String> {
+    let config = controller::load_or_create_config(&SUPPORTED_DEVICES_FILE);
+    let devices = controller::list_supported_connected_devices(&config);
+
+    let mut devices_name: Vec<String> = Vec::new();
+    for device in &devices {
+        devices_name.push(device.name.clone());
+    }
+
+    devices_name
+}
+
+#[tauri::command]
+pub async fn query_devices(app: tauri::AppHandle) -> Vec<String> {
+    let devices_name = _query_devices();
+    app.emit("update_devices",devices_name.clone()).unwrap();
+    log::debug!("query_devices");
+    devices_name
+}
+
+
+pub fn listen(app_handle: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        log::info!("🛠️  Controller listening...");
+
+        let mut devices_name;
+        loop {
+            devices_name = _query_devices();
+            app_handle.emit("update_devices",devices_name.clone()).unwrap();
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+    });
 }

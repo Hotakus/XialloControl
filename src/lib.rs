@@ -1,5 +1,9 @@
-use tauri::Manager;
-use tauri::Window;
+use std::sync::OnceLock;
+use tauri::{AppHandle, Window};
+
+mod controller;
+mod tray;
+
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -14,10 +18,18 @@ fn close_current_window(window: Window) -> Result<(), String> {
 
 #[tauri::command]
 fn minimize_current_window(window: Window) -> Result<(), String> {
-    window.minimize().map_err(|e| format!("最小化窗口失败: {}", e))
+    window
+        .minimize()
+        .map_err(|e| format!("最小化窗口失败: {}", e))
 }
 
-mod controller;
+
+static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
+
+pub fn get_app_handle() -> &'static AppHandle {
+    APP_HANDLE.get().expect("AppHandle not initialized")
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -25,8 +37,16 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             close_current_window,
-            minimize_current_window
+            minimize_current_window,
+
+            controller::query_devices
         ])
+        .setup(|app| {
+            let app_handle = app.handle();
+            let _ = tray::initialize(app_handle.clone());
+            let _ = controller::listen(app_handle.clone());
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
