@@ -32,16 +32,16 @@ rpath = false
 
 
 [profile.release]
-opt-level = 3
+opt-level = "s"
 debug = false
 split-debuginfo = '...'  # Platform-specific.
-strip = "none"
+strip = true
 debug-assertions = false
 overflow-checks = false
 lto = false
 panic = 'unwind'
 incremental = false
-codegen-units = 16
+codegen-units = 1
 rpath = false
 
 
@@ -66,3 +66,5 @@ simple_logger = "4"
 winit = "0.28"
 tauri-plugin-shell = "2"
 once_cell = "1"
+tauri-plugin-autostart = "2.5.0"
+toml = "0.8"
