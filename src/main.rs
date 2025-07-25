@@ -7,6 +7,6 @@ mod controller;
 mod tray;
 
 fn main() {
-    simple_logger::init_with_level(log::Level::Info).unwrap();
+    simple_logger::init_with_level(log::Level::Debug).unwrap();
     xenocontrol_lib::run();
 }

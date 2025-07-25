@@ -502,14 +502,14 @@
 
     <div>
       <span>© 2025 XenoControl</span>
-      <a href="https://github.com/hotakus" target="_blank" rel="noopener noreferrer" title="GitHub 仓库">GitHub</a>
+      <a id="github-link" href="https://github.com/hotakus" target="_blank" rel="noopener noreferrer" title="GitHub 仓库">GitHub</a>
     </div>
   </div>
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const appWindow = window.__TAURI__.window.getCurrentWindow();
-        const invoker = window.__TAURI__.core;
+        const invoker = window.__TAURI__.core.invoke;
 
         // 重新扫描按钮
         const scanButton = document.getElementById('scan-button');
@@ -669,6 +669,18 @@
             const isOn = indicator.classList.contains('on');
             toggleIndicator(!isOn);
         });
+
+        const githubLink = document.getElementById('github-link');
+        if (githubLink) {
+            githubLink.addEventListener('click', async (e) => {
+                // 如果在Tauri环境中
+                if (window.__TAURI__) {
+                    e.preventDefault(); // 阻止默认打开方式
+                    invoker("open_url", {url: githubLink.href});
+                }
+                // 否则，默认行为（在新标签页打开）会正常进行
+            });
+        }
     });
 </script>
 </body>

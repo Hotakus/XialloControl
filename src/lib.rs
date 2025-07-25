@@ -24,6 +24,13 @@ fn minimize_current_window(window: Window) -> Result<(), String> {
 }
 
 
+#[tauri::command]
+fn open_url(url: &str) -> Result<(), String> {
+    tauri_plugin_opener::open_url(url, None::<&str>).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+
 static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 
 pub fn get_app_handle() -> &'static AppHandle {
@@ -38,6 +45,7 @@ pub fn run() {
             greet,
             close_current_window,
             minimize_current_window,
+            open_url,
 
             controller::query_devices
         ])
