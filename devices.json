@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Any Xbox Controller",
+    "vendor_id": "045e",
+    "product_id": null
+  },
+  {
+    "name": "DualShock 4 (PS4)",
+    "vendor_id": "054c",
+    "product_id": null
+  },
+  {
+    "name": "DualSense (PS5)",
+    "vendor_id": "054c",
+    "product_id": null
+  }
+]

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XenoControl</title>
+  <style>
+      :root {
+          --primary-bg: #2f3542;
+          --primary-text: #ffffff;
+          --secondary-bg: #f7f9fb;
+          --card-bg: #ffffff;
+          --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          --border-radius: 10px;
+          --gap: 20px;
+      }
+
+      * {
+          box-sizing: border-box;
+      }
+
+      body {
+          margin: 0;
+          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+          background: #f0f2f5;
+          color: #333;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          -webkit-app-region: nodrag;
+      }
+
+      .window {
+          width: 1280px;
+          height: 720px;
+          background: #ffffff;
+          border-radius: var(--border-radius);
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+      }
+
+      .window-header {
+          height: 48px;
+          background: var(--primary-bg);
+          color: var(--primary-text);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 10px;
+          user-select: none;
+          -webkit-app-region: drag;
+          border-radius: var(--border-radius) var(--border-radius) 0 0; /* 确保圆角匹配 */
+      }
+
+      .header-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: bold;
+          font-size: 18px;
+      }
+
+      .header-left img {
+          height: 24px;
+          width: 24px;
+      }
+
+      .window-header button {
+          background: transparent;
+          border: none;
+          color: var(--primary-text);
+          font-size: 18px;
+          margin-left: 10px;
+          cursor: pointer;
+          -webkit-app-region: no-drag;
+          /* 移除会导致垂直排列的样式 */
+          /* border-radius: 50%; 移除 */
+          /* width: 30px; 移除 */
+          /* height: 30px; 移除 */
+          /* display: flex; 移除 */
+          /* justify-content: center; 移除 */
+          /* align-items: center; 移除 */
+          transition: all 0.2s ease;
+          padding: 4px 8px; /* 添加内边距代替宽高 */
+          border-radius: 50%; /* 使用小圆角代替圆形 */
+      }
+
+      .window-header button:hover {
+          background: rgba(255, 255, 255, 0.2);
+      }
+
+      #close-button:hover {
+          background: #e81123;
+          color: white;
+      }
+
+      .window-header button:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: scale(1.1);
+      }
+
+      #minimize-button:hover {
+          background: rgba(255, 255, 255, 0.2);
+      }
+
+      #close-button:hover {
+          background: #e81123;
+          color: white;
+      }
+
+      .window-header button:active {
+          transform: scale(0.95);
+      }
+
+      .window-body {
+          flex: 1;
+          display: flex;
+          min-height: 0;
+          padding: 0 var(--gap); /* 添加左右内边距 */
+      }
+
+      .left-panel {
+          flex: 6;
+          background: var(--secondary-bg);
+          padding: var(--gap);
+          display: flex;
+          flex-direction: column;
+          gap: var(--gap);
+          min-height: 0;
+          border-radius: 0 0 0 var(--border-radius); /* 左下角圆角 */
+      }
+
+      .right-panel {
+          flex: 4;
+          padding: var(--gap);
+          background: var(--card-bg);
+          display: flex;
+          flex-direction: column;
+          gap: var(--gap);
+          min-height: 0;
+          border-radius: 0 0 var(--border-radius) 0; /* 右下角圆角 */
+      }
+
+      .card {
+          background: var(--card-bg);
+          border-radius: var(--border-radius);
+          box-shadow: var(--card-shadow);
+          padding: 15px 20px;
+      }
+
+      /* 预设方案卡片调整 */
+      .preset-card {
+          height: auto; /* 改为自动高度 */
+          min-height: auto; /* 移除最小高度 */
+          display: flex;
+          flex-direction: column;
+      }
+
+      .preset-controls {
+          display: flex;
+          gap: 8px;
+          margin-top: 10px;
+      }
+
+      .preset-controls button {
+          flex: 1;
+          padding: 8px;
+          border: none;
+          border-radius: 6px;
+          background-color: #4c8bf5;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+          transition: background-color 0.2s;
+      }
+
+      .preset-controls button:hover {
+          background-color: #3a7de0;
+      }
+
+      .right-panel .card:not(.preset-card) {
+          flex: 1; /* 选项卡卡片占据剩余空间 */
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+          overflow: hidden;
+      }
+
+      .controller-image {
+          flex: 1;
+          background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect x='20' y='40' width='160' height='120' rx='20' fill='%23333'/%3E%3Ccircle cx='60' cy='80' r='15' fill='%23fff'/%3E%3Ccircle cx='140' cy='80' r='15' fill='%23fff'/%3E%3Crect x='80' y='110' width='40' height='20' rx='5' fill='%23fff'/%3E%3C/svg%3E") center/contain no-repeat;
+          border-radius: var(--border-radius);
+          min-height: 0;
+      }
+
+      .tabs {
+          display: flex;
+          border-bottom: 2px solid #e0e4eb;
+          margin-bottom: 10px;
+          user-select: none;
+      }
+
+      .tab {
+          padding: 8px 16px;
+          cursor: pointer;
+          font-weight: bold;
+          color: #555;
+          border-radius: 6px 6px 0 0;
+          background-color: #f1f3f6;
+          margin-right: 8px;
+          transition: background-color 0.2s;
+      }
+
+      .tab.active {
+          background-color: #ffffff;
+          color: #2f3542;
+          box-shadow: 0 -2px 0 0 #2f3542 inset;
+      }
+
+      .tab:hover:not(.active) {
+          background-color: #dce2ea;
+      }
+
+      .tab-content {
+          display: none;
+          flex-direction: column;
+          height: 100%;
+          min-height: 0;
+          flex: 1;
+      }
+
+      .tab-content.active {
+          display: flex;
+      }
+
+      .button-map,
+      .stick-map {
+          flex-grow: 1;
+          overflow-y: auto;
+          padding-right: 5px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-height: 0;
+      }
+
+      .button-map-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          background: #f1f3f6;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-size: 14px;
+          white-space: nowrap;
+      }
+
+      .button-icon {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 28px;
+          height: 28px;
+          background: #e0e4eb;
+          border-radius: 6px;
+          font-weight: bold;
+          font-size: 16px;
+          user-select: none;
+          flex-shrink: 0;
+      }
+
+      .key-text {
+          color: #555;
+      }
+
+      .window-footer {
+          height: 36px;
+          background: var(--primary-bg);
+          color: var(--primary-text);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0 15px;
+          font-size: 14px;
+          border-radius: 0 0 var(--border-radius) var(--border-radius);
+          user-select: none;
+      }
+
+      .window-footer a {
+          color: #9ec6ff;
+          text-decoration: none;
+          margin-left: 10px;
+      }
+
+      .window-footer a:hover {
+          text-decoration: underline;
+      }
+
+      label {
+          font-weight: bold;
+          margin-bottom: 5px;
+          display: inline-block;
+      }
+
+      select {
+          width: 100%;
+          padding: 10px;
+          font-size: 14px;
+          border-radius: 8px;
+          border: 1px solid #ccc;
+          background-color: #f8f9fa;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg width='10' height='7' viewBox='0 0 10 7' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 6L9 1' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 10px center;
+          background-size: 12px;
+      }
+
+      select:focus {
+          outline: none;
+          border-color: #4c8bf5;
+          box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.3);
+      }
+
+      /* 优化指示灯样式 */
+      .indicator-container {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+      }
+
+      .indicator-label {
+          font-size: 12px;
+          color: #9ec6ff;
+      }
+
+      .indicator {
+          width: 100px;
+          height: 14px;
+          border-radius: 7px;
+          background-color: #5c0000;
+          position: relative;
+          transition: all 0.3s ease;
+          box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+      }
+
+      .indicator.on {
+          background-color: #90ee90;
+          box-shadow:
+                  0 0 6px rgba(144, 238, 144, 0.8),
+                  inset 0 1px 2px rgba(0,0,0,0.3);
+      }
+
+      @media (max-width: 768px) {
+          .window {
+              width: 100%;
+              height: 100%;
+              border-radius: 0;
+          }
+
+          .window-body {
+              flex-direction: column;
+          }
+
+          .indicator-container {
+              display: none;
+          }
+      }
+
+      /* 指示灯测试按钮样式 */
+      .indicator-test-btn {
+          background: rgba(158, 198, 255, 0.2); /* 半透明背景，与链接颜色一致 */
+          color: #9ec6ff; /* 与指示灯标签颜色一致 */
+          border: 1px solid rgba(158, 198, 255, 0.5);
+          border-radius: 4px;
+          padding: 2px 8px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+          margin-left: 5px;
+      }
+
+      .indicator-test-btn:hover {
+          background: rgba(158, 198, 255, 0.3);
+      }
+  </style>
+</head>
+<body>
+<div class="window">
+  <div class="window-header">
+    <div class="header-left">
+      <!--      <img src="./assets/xenocontrol_logo.png" alt="XenoControl Logo" loading="lazy"/>-->
+      <span>XenoControl</span>
+    </div>
+    <div>
+      <button id="minimize-button">🗕</button>
+      <button id="close-button">✖</button>
+    </div>
+  </div>
+
+  <div class="window-body">
+    <div class="left-panel">
+      <div class="card">
+        <label for="device">🎮 选择设备:</label>
+        <select id="device">
+          <option value="xbox">Xbox Controller</option>
+          <option value="dualshock">DualShock 4</option>
+          <option value="dualsense">DualSense</option>
+        </select>
+      </div>
+      <div class="card controller-image"></div>
+    </div>
+
+    <div class="right-panel">
+      <!-- 预设方案卡片 -->
+      <div class="card preset-card">
+        <label for="preset">📂 预设方案:</label>
+        <select id="preset">
+          <option>默认</option>
+          <option>游戏模式</option>
+          <option>媒体控制</option>
+        </select>
+        <div class="preset-controls">
+          <button id="save-preset">保存方案</button>
+          <button id="import-preset">导入方案</button>
+        </div>
+      </div>
+
+      <!-- 选项卡卡片 -->
+      <div class="card">
+        <div class="tabs" role="tablist">
+          <div class="tab active" role="tab" aria-selected="true" data-tab="buttonMapTab">按键设置</div>
+          <div class="tab" role="tab" aria-selected="false" data-tab="stickMapTab">摇杆映射</div>
+        </div>
+
+        <div id="buttonMapTab" class="tab-content active" role="tabpanel">
+          <div class="button-map">
+            <!-- 按键映射列表保持不变 -->
+          </div>
+        </div>
+
+        <div id="stickMapTab" class="tab-content" role="tabpanel">
+          <div class="stick-map">
+            <!-- 摇杆映射列表保持不变 -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="window-footer">
+    <!-- 在左侧添加指示灯 -->
+    <div class="indicator-container">
+      <span class="indicator-label">连接状态</span>
+      <div id="status-indicator" class="indicator"></div>
+      <button id="indicator-test-btn" class="indicator-test-btn">测试</button>
+    </div>
+
+    <!-- 右侧保留原有内容 -->
+    <div>
+      <span>© 2025 XenoControl</span>
+      <a href="https://github.com/hotakus" target="_blank" rel="noopener noreferrer" title="GitHub 仓库">GitHub</a>
+    </div>
+  </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const appWindow = window.__TAURI__.window.getCurrentWindow();
+        const invoker = window.__TAURI__.core;
+
+        // 函数封装：窗口控制
+        async function windowControl(action) {
+            if (window.__TAURI__) {
+                await invoker(action);
+            } else {
+                console.log(`${action} simulated`);
+            }
+        }
+
+        // 函数封装：切换选项卡
+        function switchTab(tabElement) {
+            const targetTab = tabElement.dataset.tab;
+
+            // 移除所有激活状态
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.remove('active');
+            });
+
+            // 添加当前激活状态
+            tabElement.classList.add('active');
+            tabElement.setAttribute('aria-selected', 'true');
+            document.getElementById(targetTab).classList.add('active');
+        }
+
+        // 事件委托处理选项卡切换
+        document.querySelector('.tabs').addEventListener('click', (e) => {
+            const tab = e.target.closest('.tab');
+            if (tab) switchTab(tab);
+        });
+
+        // 窗口控制按钮
+        document.getElementById('minimize-button').addEventListener('click', () =>
+            appWindow.minimize());
+
+        document.getElementById('close-button').addEventListener('click', () =>
+            // windowControl('close_current_window'));
+            appWindow.close());
+
+        // 设备选择逻辑
+        document.getElementById('device').addEventListener('change', function() {
+            console.log('Selected device:', this.value);
+        });
+
+        // 预设方案选择逻辑
+        document.getElementById('preset').addEventListener('change', function() {
+            console.log('Selected preset:', this.value);
+        });
+
+        // 保存和导入按钮（仅样式，无功能）
+        document.getElementById('save-preset').addEventListener('click', function() {
+            console.log('保存方案');
+        });
+
+        document.getElementById('import-preset').addEventListener('click', function() {
+            console.log('导入方案');
+        });
+
+        // 在浏览器环境中模拟Tauri API
+        if (!window.__TAURI__) {
+            console.warn('Running in browser mode - Tauri API not available');
+        }
+
+        // 获取指示灯元素
+        const indicator = document.getElementById('status-indicator');
+
+        // 指示灯控制函数
+        function toggleIndicator(isOn) {
+            if (isOn) {
+                indicator.classList.add('on');
+            } else {
+                indicator.classList.remove('on');
+            }
+        }
+
+        // 将控制函数暴露到全局作用域
+        window.toggleIndicator = toggleIndicator;
+
+        // 初始状态设为关闭
+        toggleIndicator(false);
+
+        // 指示灯测试按钮功能
+        document.getElementById('indicator-test-btn').addEventListener('click', () => {
+            const indicator = document.getElementById('status-indicator');
+            const isOn = indicator.classList.contains('on');
+            toggleIndicator(!isOn);
+        });
+    });
+</script>
+</body>
+</html>
