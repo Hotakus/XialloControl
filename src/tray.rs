@@ -87,7 +87,7 @@
 // }
 
 use std::error::Error;
-use tauri::{App, AppHandle, Manager};
+use tauri::{AppHandle, Manager};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, TrayIconBuilder, TrayIconEvent};
 

@@ -4,9 +4,7 @@ use std::fs;
 use std::iter::Iterator;
 use std::path::Path;
 use std::time::Duration;
-use once_cell::sync::OnceCell;
-use tauri::{App, AppHandle, Emitter, Window};
-use tokio::sync::Mutex;
+use tauri::{AppHandle, Emitter};
 use crate::controller;
 
 
