@@ -132,17 +132,10 @@ jobs:
       - name: Build Tauri Application
         shell: bash
         run: |
-          # 打印当前目录结构，用于调试
           echo "构建前目录结构:"
           ls -l
           ls -l 
-          
-          # 在Windows上强制使用绝对路径
-          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            cargo tauri build --verbose --config '{"build": {"icon": ["'${{ github.workspace }}'/icons/icon.ico"]}}'
-          else
-            cargo tauri build --verbose
-          fi
+          cargo tauri build --verbose
 
       # 步骤 9: 上传构建产物
       - name: Upload Artifacts
