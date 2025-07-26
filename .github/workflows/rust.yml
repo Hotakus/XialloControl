@@ -32,7 +32,12 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 4: 安装 Linux 依赖
+      # ✅ 步骤 4: 为 Windows 安装 MSI 目标
+      - name: Install Windows MSI Target
+        if: matrix.platform == 'windows-latest'
+        run: rustup target add x86_64-pc-windows-msi
+
+      # 步骤 5: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -46,7 +51,7 @@ jobs:
             pkg-config \
             libayatana-appindicator3-dev
 
-      # 步骤 5: 检查 Windows WebView2
+      # 步骤 6: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -61,7 +66,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # ✅ 步骤 6: 设置版本号（修复 Windows MSI 问题）
+      # ✅ 步骤 7: 设置版本号（修复 Windows MSI 问题）
       - name: Set Application Version
         shell: bash
         run: |
@@ -95,7 +100,7 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # ✅ 步骤 7: 修复构建命令（简化 Windows 构建）
+      # ✅ 步骤 8: 修复构建命令
       - name: Build Tauri Application
         shell: bash
         run: |
@@ -107,7 +112,7 @@ jobs:
             cargo tauri build
           fi
 
-      # 步骤 8: 上传构建产物
+      # 步骤 9: 上传构建产物
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -120,14 +125,20 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      # 步骤 9: 显示构建产物信息
+      # 步骤 10: 显示构建产物信息
       - name: Show Build Results
         shell: bash
         run: |
           echo "Build artifacts:"
-          find target/release/bundle -type f -print || true
-          echo "Uploaded artifacts:"
-          find ${{ github.workspace }} -name '*.msi' -o -name '*.AppImage' -o -name '*.deb' -print || true
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            # Windows 使用不同的查找命令
+            dir /s /b target\\release\\bundle || true
+            dir /s /b target\\*.msi || true
+          else
+            # Linux 使用 find 命令
+            find target/release/bundle -type f -print || true
+            find ${{ github.workspace }} -name '*.AppImage' -o -name '*.deb' -print || true
+          fi
 
   # Release 发布任务
   release:
