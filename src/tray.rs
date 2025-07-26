@@ -87,9 +87,9 @@
 // }
 
 use std::error::Error;
-use tauri::{AppHandle, Manager};
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, TrayIconBuilder, TrayIconEvent};
+use tauri::{AppHandle, Manager};
 
 pub fn initialize(app: AppHandle) -> Result<(), Box<dyn Error>> {
     let quit_i = MenuItem::with_id(&app, "quit", "Quit", true, None::<&str>)?;
