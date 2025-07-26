@@ -2,7 +2,7 @@ name: Tauri Cross-Platform Build and Release
 
 on:
   push:
-    tags: ["v*"]
+    tags: [ "v*" ]
   workflow_dispatch:
 
 jobs:
@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [windows-latest, ubuntu-latest]
+        platform: [ windows-latest, ubuntu-latest ]
     runs-on: ${{ matrix.platform }}
     permissions:
       contents: write
@@ -136,11 +136,13 @@ jobs:
           else
             find target/release/bundle -type f -print || true
             find ${{ github.workspace }} -name '*.AppImage' -o -name '*.deb' -print || true
+          fi
+  
 
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [ build ]
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
