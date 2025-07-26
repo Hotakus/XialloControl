@@ -22,17 +22,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 步骤 2: 安装 Rust
+      # ✅ 步骤 2: 确保图标文件存在（修复 .ico 错误）
+      - name: Verify Icon Files
+        run: |
+          # 检查图标文件是否存在
+          if [ ! -f "icons/icon.ico" ]; then
+            echo "::warning::icon.ico file missing. Generating placeholder icon..."
+            # 创建一个简单的 .ico 文件作为占位符
+            convert -size 256x256 xc:white -define icon:auto-resize=256,128,64,48,32,16 placeholder.ico
+            mkdir -p icons
+            mv placeholder.ico icons/icon.ico
+          fi
+
+          # 验证其他图标格式
+          if [ ! -f "icons/icon.png" ]; then
+            echo "::warning::icon.png file missing. Generating placeholder icon..."
+            convert -size 512x512 xc:white placeholder.png
+            mv placeholder.png icons/icon.png
+          fi
+
+      # 步骤 3: 安装 Rust
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-src, clippy
 
-      # 步骤 3: 安装 Tauri CLI
+      # 步骤 4: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 4: 安装 Linux 依赖
+      # 步骤 5: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -44,23 +63,21 @@ jobs:
             patchelf \
             libudev-dev \
             pkg-config \
-            libayatana-appindicator3-dev
+            libayatana-appindicator3-dev \
+            imagemagick  # 用于图标转换
 
-      # 步骤 5: 安装 WiX 工具集
+      # 步骤 6: 安装 WiX 工具集
       - name: Install WiX Toolset for Windows
         if: matrix.platform == 'windows-latest'
         run: |
-          # 下载并安装 WiX
           $ProgressPreference = 'SilentlyContinue'
           Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip" -OutFile "wix.zip"
           Expand-Archive -Path "wix.zip" -DestinationPath "wix"
-          
-          # 使用推荐方法设置环境变量
           $wixPath = "$pwd\wix"
           echo "WIX_PATH=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      # 步骤 6: 检查 Windows WebView2
+      # 步骤 7: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -75,11 +92,10 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # ✅ 步骤 7: 完全修复 MSI 版本号问题
+      # 步骤 8: 设置版本号
       - name: Set Application Version
         shell: bash
         run: |
-          # 使用兼容方法提取版本号
           BASE_VERSION=$(grep -E '"version":' tauri.conf.json | sed -E 's/.*"version": *"([^"]+).*/\1/')
           
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
@@ -88,54 +104,38 @@ jobs:
             VERSION="${BASE_VERSION}+manual.${{ github.run_id }}"
           fi
 
-          # 对于 Windows MSI，需要完全符合规范的版本号
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            # 移除所有非数字后缀（+manual等）
             FINAL_VERSION=$(echo "$VERSION" | sed -E 's/[-+].*//')
-          
-            # 确保版本号只有三部分（major.minor.patch）
-            # 如果版本号超过三部分，取前三部分
             FINAL_VERSION=$(echo "$FINAL_VERSION" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
-          
-            # 如果版本号少于三部分，补0
             if [[ "$FINAL_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
               FINAL_VERSION="$FINAL_VERSION.0"
             elif [[ "$FINAL_VERSION" =~ ^[0-9]+$ ]]; then
               FINAL_VERSION="$FINAL_VERSION.0.0"
             fi
-          
-            echo "📦 Windows MSI version (sanitized): $FINAL_VERSION"
+            echo "📦 Windows MSI version: $FINAL_VERSION"
           else
             FINAL_VERSION=$VERSION
             echo "📦 Final version: $FINAL_VERSION"
           fi
 
-          # 替换 tauri.conf.json
           sed -i.bak -E "s/\"version\": *\"[^\"]+\"/\"version\": \"$FINAL_VERSION\"/" tauri.conf.json && rm tauri.conf.json.bak
-
-          # 替换 Cargo.toml
           sed -i.bak -E "s/^version = \"[^\"]+\"/version = \"$FINAL_VERSION\"/" Cargo.toml && rm Cargo.toml.bak
-
-          # 输出验证
           echo "Updated tauri.conf.json version:"
           grep '"version":' tauri.conf.json
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # 步骤 8: 构建 Tauri 应用
+      # 步骤 9: 构建 Tauri 应用
       - name: Build Tauri Application
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            # Windows 构建 MSI
-            echo "Building for Windows with PATH: $PATH"
             cargo tauri build --verbose
           else
-            # Linux 构建
             cargo tauri build --verbose
           fi
 
-      # 步骤 9: 上传构建产物
+      # 步骤 10: 上传构建产物
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -148,21 +148,15 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      # 步骤 10: 显示构建产物信息
+      # 步骤 11: 显示构建产物信息
       - name: Show Build Results
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            # Windows 使用 dir 命令
-            echo "Build artifacts:"
             dir /s /b target\\release\\bundle || true
-            echo "MSI files:"
             dir /s /b target\\*.msi || true
           else
-            # Linux 使用 find 命令
-            echo "Build artifacts:"
             find target/release/bundle -type f -print || true
-            echo "Linux packages:"
             find ${{ github.workspace }} -name '*.AppImage' -o -name '*.deb' -print || true
           fi
 
@@ -176,7 +170,6 @@ jobs:
       contents: write
 
     steps:
-      # 步骤 1: 下载所有构建产物
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -184,7 +177,6 @@ jobs:
           pattern: build-*
           merge-multiple: true
 
-      # 步骤 2: 自动生成 changelog
       - name: Generate Changelog
         uses: TriPSs/conventional-changelog-action@v3
         id: changelog
@@ -193,7 +185,6 @@ jobs:
           # version: ${{ github.ref_name }}
           output-file: "CHANGELOG.md"
 
-      # 步骤 3: 判断是否为预发布版本
       - name: Check Prerelease Status
         id: check-prerelease
         shell: bash
@@ -204,7 +195,6 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
           fi
 
-      # 步骤 4: 创建 GitHub Release
       - name: Create Release
         id: create-release
         uses: softprops/action-gh-release@v2
@@ -217,7 +207,6 @@ jobs:
           draft: false
           generate_release_notes: false
 
-      # 步骤 5: 显示发布结果
       - name: Show Release URL
         shell: bash
         run: echo "Release created at ${{ steps.create-release.outputs.url }}"
