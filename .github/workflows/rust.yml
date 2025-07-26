@@ -46,7 +46,7 @@ jobs:
             pkg-config \
             libayatana-appindicator3-dev
 
-      # ✅ 步骤 5: 完全修复 WiX 安装问题
+      # 步骤 5: 安装 WiX 工具集
       - name: Install WiX Toolset for Windows
         if: matrix.platform == 'windows-latest'
         run: |
@@ -55,14 +55,10 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip" -OutFile "wix.zip"
           Expand-Archive -Path "wix.zip" -DestinationPath "wix"
           
-          # 使用标准方法设置环境变量
+          # 使用推荐方法设置环境变量
           $wixPath = "$pwd\wix"
           echo "WIX_PATH=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "WIX_PATH added to environment: $wixPath"
-          
-          # 将路径添加到 PATH 使用推荐方法
           echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "Added $wixPath to PATH"
 
       # 步骤 6: 检查 Windows WebView2
       - name: Check Windows Dependencies
@@ -79,7 +75,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # 步骤 7: 设置版本号
+      # ✅ 步骤 7: 完全修复 MSI 版本号问题
       - name: Set Application Version
         shell: bash
         run: |
@@ -92,10 +88,23 @@ jobs:
             VERSION="${BASE_VERSION}+manual.${{ github.run_id }}"
           fi
 
-          # 对于 Windows MSI，需要简化版本号（移除 +manual 后缀）
+          # 对于 Windows MSI，需要完全符合规范的版本号
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            FINAL_VERSION=$(echo "$VERSION" | sed -E 's/\+.*//')
-            echo "📦 Windows version (simplified): $FINAL_VERSION"
+            # 移除所有非数字后缀（+manual等）
+            FINAL_VERSION=$(echo "$VERSION" | sed -E 's/[-+].*//')
+          
+            # 确保版本号只有三部分（major.minor.patch）
+            # 如果版本号超过三部分，取前三部分
+            FINAL_VERSION=$(echo "$FINAL_VERSION" | sed -E 's/^([0-9]+\.[0-9]+\.[0-9]+).*$/\1/')
+          
+            # 如果版本号少于三部分，补0
+            if [[ "$FINAL_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+              FINAL_VERSION="$FINAL_VERSION.0"
+            elif [[ "$FINAL_VERSION" =~ ^[0-9]+$ ]]; then
+              FINAL_VERSION="$FINAL_VERSION.0.0"
+            fi
+          
+            echo "📦 Windows MSI version (sanitized): $FINAL_VERSION"
           else
             FINAL_VERSION=$VERSION
             echo "📦 Final version: $FINAL_VERSION"
