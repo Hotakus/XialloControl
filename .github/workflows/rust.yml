@@ -103,7 +103,7 @@ jobs:
             ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
             ${{ runner.os }}-cargo-
 
-      # ✅ 步骤 10: 设置版本号
+      # ✅ 步骤 10: 修复 MSI 版本号问题
       - name: Set Application Version
         shell: bash
         run: |
@@ -111,8 +111,10 @@ jobs:
           BASE_VERSION=$(grep -E '"version":' tauri.conf.json | sed -E 's/.*"version": *"([^"]+).*/\1/')
           
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            # 对于标签版本，提取主版本号
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
+            # 对于手动构建，使用基础版本 + run_id
             VERSION="${BASE_VERSION}+manual.${{ github.run_id }}"
           fi
 
@@ -130,9 +132,17 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # 步骤 11: 并行构建（仅发布模式）
+      # 步骤 11: 构建 Tauri 应用（Windows 特殊处理）
       - name: Build Tauri Application
-        run: cargo tauri build --release --verbose
+        run: |
+          if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+            # 对于 Windows，使用简化版本号构建 MSI
+            SIMPLIFIED_VERSION=$(echo "$VERSION" | sed -E 's/\+.*//')
+            cargo tauri build --release --verbose --target x86_64-pc-windows-msi -c "{\"package\": {\"version\": \"$SIMPLIFIED_VERSION\"}}"
+          else
+            # 其他平台正常构建
+            cargo tauri build --release --verbose
+          fi
 
       # 步骤 12: 上传构建产物
       - name: Upload Artifacts
