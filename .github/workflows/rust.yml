@@ -1,28 +1,92 @@
-name: Rust
+name: Tauri 2.0 Cross-Platform Build
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
-env:
-  CARGO_TERM_COLOR: always
+    tags: ["v*"]  # 仅当推送版本标签时触发（如 v1.0.0）
+  workflow_dispatch:  # 支持手动触发
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: write  # 允许上传 Release 资产
+      id-token: write  # macOS 公证需此权限
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libsoup-3.0-dev
+      # 安装 Rust 和 Tauri CLI
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust@v1
+        with:
+          toolchain: stable
+          components: rust-src, clippy
 
-    - name: Build
-      run: cargo build --verbose
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2.0.0"
 
-    - name: Run tests
-      run: cargo test --verbose
+      # 平台依赖安装
+      - name: Install Linux Dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      - name: Install macOS Dependencies
+        if: matrix.platform == 'macos-latest'
+        run: |
+          xcode-select --install || true
+          brew install create-dmg
+
+      # 缓存加速构建
+      - name: Cache Rust Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      # 构建与签名
+      - name: Build Tauri Bundle
+        run: cargo tauri build --verbose
+        env:
+          # macOS 签名配置
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}  # Base64 编码的 .p12 文件
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # Windows 签名配置
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}  # Base64 编码的 .pfx 文件
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+
+      # macOS 公证（需 Apple ID）
+      - name: Notarize macOS App (Optional)
+        if: matrix.platform == 'macos-latest' && env.APPLE_SIGNING_IDENTITY != ''
+        run: |
+          xcrun notarytool submit \
+            --apple-id ${{ secrets.AC_USERNAME }} \
+            --password ${{ secrets.AC_PASSWORD }} \  # App 专用密码
+            --team-id ${{ secrets.AC_TEAM_ID }} \
+            --wait \
+            src-tauri/target/release/bundle/dmg/*.dmg
+
+      # 上传构建产物至 Release
+      - name: Upload Release Assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts-${{ matrix.platform }}
+          path: |
+            src-tauri/target/release/bundle/**/*.msi   # Windows
+            src-tauri/target/release/bundle/**/*.dmg    # macOS
+            src-tauri/target/release/bundle/**/*.AppImage  # Linux
