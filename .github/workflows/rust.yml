@@ -32,7 +32,7 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 4: 安装 Linux 依赖
+      # 步骤 4: 修复 Linux 依赖问题（添加 appindicator）
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -43,7 +43,8 @@ jobs:
             librsvg2-dev \
             patchelf \
             libudev-dev \
-            pkg-config
+            pkg-config \
+            libayatana-appindicator3-dev  # 修复 appindicator 问题
 
       # 步骤 5: 检查 Windows WebView2
       - name: Check Windows Dependencies
@@ -87,10 +88,11 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # ✅ 步骤 7: 修复构建命令错误
+      # ✅ 步骤 7: 修复 Windows 脚本问题
       - name: Build Tauri Application
+        shell: bash
         run: |
-          if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
             # 对于 Windows，使用简化版本号构建 MSI
             SIMPLIFIED_VERSION=$(echo "$VERSION" | sed -E 's/\+.*//')
             cargo tauri build --target x86_64-pc-windows-msi -c "{\"package\": {\"version\": \"$SIMPLIFIED_VERSION\"}}"
@@ -114,6 +116,7 @@ jobs:
 
       # 步骤 9: 显示构建产物信息
       - name: Show Build Results
+        shell: bash
         run: |
           echo "Build artifacts:"
           find target/release/bundle -type f -print || true
@@ -150,13 +153,13 @@ jobs:
       # 步骤 3: 判断是否为预发布版本
       - name: Check Prerelease Status
         id: check-prerelease
+        shell: bash
         run: |
           if [[ "${{ github.ref_name }}" =~ -[a-zA-Z0-9] ]]; then
             echo "prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "prerelease=false" >> $GITHUB_OUTPUT
           fi
-        shell: bash
 
       # 步骤 4: 创建 GitHub Release
       - name: Create Release
@@ -173,4 +176,5 @@ jobs:
 
       # 步骤 5: 显示发布结果
       - name: Show Release URL
+        shell: bash
         run: echo "Release created at ${{ steps.create-release.outputs.url }}"
