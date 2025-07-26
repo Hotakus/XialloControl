@@ -46,7 +46,7 @@ jobs:
             pkg-config \
             libayatana-appindicator3-dev
 
-      # ✅ 步骤 5: 为 Windows 安装 WiX 工具集
+      # ✅ 步骤 5: 完全修复 WiX 安装问题
       - name: Install WiX Toolset for Windows
         if: matrix.platform == 'windows-latest'
         run: |
@@ -54,7 +54,15 @@ jobs:
           $ProgressPreference = 'SilentlyContinue'
           Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip" -OutFile "wix.zip"
           Expand-Archive -Path "wix.zip" -DestinationPath "wix"
-          echo "::add-path::$pwd\wix"
+          
+          # 使用标准方法设置环境变量
+          $wixPath = "$pwd\wix"
+          echo "WIX_PATH=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "WIX_PATH added to environment: $wixPath"
+          
+          # 将路径添加到 PATH 使用推荐方法
+          echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          echo "Added $wixPath to PATH"
 
       # 步骤 6: 检查 Windows WebView2
       - name: Check Windows Dependencies
@@ -71,7 +79,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # ✅ 步骤 7: 设置版本号（修复 Windows MSI 问题）
+      # 步骤 7: 设置版本号
       - name: Set Application Version
         shell: bash
         run: |
@@ -105,12 +113,13 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # ✅ 步骤 8: 修复构建命令（使用正确的目标）
+      # 步骤 8: 构建 Tauri 应用
       - name: Build Tauri Application
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            # Windows 构建 MSI（使用默认目标）
+            # Windows 构建 MSI
+            echo "Building for Windows with PATH: $PATH"
             cargo tauri build --verbose
           else
             # Linux 构建
@@ -172,7 +181,7 @@ jobs:
         id: changelog
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          #version: ${{ github.ref_name }}
+          # version: ${{ github.ref_name }}
           output-file: "CHANGELOG.md"
 
       # 步骤 3: 判断是否为预发布版本
