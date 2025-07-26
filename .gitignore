@@ -7,3 +7,4 @@
 /gen/schemas
 
 supported_devices.*
+settings.toml
