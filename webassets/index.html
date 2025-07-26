@@ -561,6 +561,34 @@
           width: 200px;
           padding: 8px 12px;
       }
+
+      /* 轮询频率设置项样式 */
+      .polling-container {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 200px;
+      }
+
+      .polling-container input {
+          width: 100px;
+          padding: 8px 12px;
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          font-size: 14px;
+          background-color: #f8f9fa;
+      }
+
+      .polling-container input:focus {
+          outline: none;
+          border-color: #4c8bf5;
+          box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.3);
+      }
+
+      .polling-container span {
+          font-size: 14px;
+          color: #555;
+      }
   </style>
 </head>
 <body>
@@ -685,6 +713,15 @@
                 </label>
               </div>
 
+              <!-- 新增轮询频率设置项 -->
+              <div class="setting-item">
+                <label for="polling-frequency">轮询频率:</label>
+                <div class="polling-container">
+                  <input type="number" id="polling-frequency" min="1" max="1000" value="125">
+                  <span>Hz</span>
+                </div>
+              </div>
+
               <div class="setting-item">
                 <label for="theme">界面主题:</label>
                 <select id="theme">
@@ -716,7 +753,47 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const appWindow = window.__TAURI__.window.getCurrentWindow();
-        const invoker = window.__TAURI__.core.invoke;
+        const invoke = window.__TAURI__.core.invoke;
+
+        // 加载设置函数
+        async function loadSettings() {
+            try {
+                const settings = await invoke("get_current_settings");
+                console.log("当前设置:", settings);
+
+                // 更新UI
+                document.getElementById('auto-start').checked = settings.auto_start;
+                document.getElementById('minimize-to-tray').checked = settings.minimize_to_tray;
+                document.getElementById('theme').value = settings.theme;
+                document.getElementById('polling-frequency').value = settings.polling_frequency;
+                document.getElementById('deadzone').value = settings.deadzone;
+                document.getElementById('deadzone-value').textContent = settings.deadzone + '%';
+
+            } catch (error) {
+                console.error("加载设置失败:", error);
+            }
+        }
+
+        // 保存设置函数
+        async function saveSettings() {
+            const newSettings = {
+                auto_start: document.getElementById('auto-start').checked,
+                minimize_to_tray: document.getElementById('minimize-to-tray').checked,
+                theme: document.getElementById('theme').value,
+                polling_frequency: parseInt(document.getElementById('polling-frequency').value),
+                deadzone: parseInt(document.getElementById('deadzone').value),
+            };
+
+            try {
+                await invoke("update_settings", { newSettings });
+                console.log("设置保存成功");
+            } catch (error) {
+                console.error("保存设置失败:", error);
+            }
+        }
+
+        // 在应用启动时加载设置
+        loadSettings();
 
         // 重新扫描按钮
         const scanButton = document.getElementById('scan-button');
@@ -724,7 +801,7 @@
             hasUserSelectedDevice = false;
 
             try {
-                await invoker("query_devices");
+                await invoke("query_devices");
             } catch (e) {
                 console.error("重新扫描失败:", e);
             }
@@ -790,7 +867,7 @@
         // 函数封装：窗口控制
         async function windowControl(action) {
             if (window.__TAURI__) {
-                await invoker(action);
+                await invoke(action);
             } else {
                 console.log(`${action} simulated`);
             }
@@ -858,7 +935,23 @@
             document.getElementById('deadzone-value').textContent = this.value + '%';
         });
 
-// 设置选项卡激活时初始化值
+        // 轮询频率输入框处理
+        const pollingFrequency = document.getElementById('polling-frequency');
+        pollingFrequency.addEventListener('change', function () {
+            let value = parseInt(this.value);
+
+            // 确保值在1-1000范围内
+            if (value < 1) value = 1;
+            if (value > 1000) value = 1000;
+
+            this.value = value;
+            console.log('轮询频率设置为:', value, 'Hz');
+
+            // 保存设置
+            saveSettings();
+        });
+
+        // 设置选项卡激活时初始化值
         document.querySelector('.tabs').addEventListener('click', function (e) {
             const tab = e.target.closest('.tab');
             if (tab && tab.dataset.tab === 'settingTab') {
