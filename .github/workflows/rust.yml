@@ -159,6 +159,10 @@ jobs:
           git tag -l | xargs -r git tag -d
           git fetch --tags
 
+      - name: Switch to master branch
+        run: |
+          git checkout master
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
