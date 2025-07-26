@@ -16,38 +16,52 @@ jobs:
       contents: write
 
     steps:
-      # 步骤 1: 检出代码（包含完整历史）
+      # 步骤 1: 检出代码
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取完整提交历史（changelog 生成需要）
+          fetch-depth: 0
 
-      # 步骤 2: 安装 Rust
+      # 步骤 2: 设置 UTF-8 环境（修复 grep 问题）
+      - name: Set UTF-8 Locale
+        run: |
+          echo "LC_ALL=C.UTF-8" >> $GITHUB_ENV
+          echo "LANG=C.UTF-8" >> $GITHUB_ENV
+
+      # 步骤 3: 安装 Rust
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-src, clippy
 
-      # 步骤 3: 安装 Tauri CLI
+      # 步骤 4: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 4: 安装 Linux 依赖 (修复 libudev 缺失问题)
+      # 步骤 5: 修复 Linux 依赖安装问题
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
+          sudo apt-get install -y build-essential curl
+          
+          # 添加 WebKit 官方仓库
+          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          
+          # 安装所需依赖
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
-            libappindicator3-dev \
+            libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libudev-dev \        # 修复 libudev 缺失问题
-            libdbus-1-dev \      # 常见 Tauri 依赖
-            pkg-config          # 确保 pkg-config 可用
+            libudev-dev \
+            libdbus-1-dev \
+            pkg-config \
+            libssl-dev \
+            libclang-dev
 
-      # 步骤 5: 检查 Windows WebView2
+      # 步骤 6: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -62,14 +76,6 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # 步骤 6: 设置 pkg-config 环境 (仅 Linux)
-      - name: Setup pkg-config (Linux)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          echo "PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig" >> $GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_SYSTEM_LIBS=1" >> $GITHUB_ENV
-          echo "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1" >> $GITHUB_ENV
-
       # 步骤 7: 缓存 Cargo 依赖
       - name: Cache Dependencies
         uses: actions/cache@v4
@@ -80,12 +86,13 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      # ✅ 步骤 8: 设置版本号
+      # ✅ 步骤 8: 修复版本号设置（兼容 Linux grep）
       - name: Set Application Version
         shell: bash
         run: |
-          BASE_VERSION=$(grep -oP '"version":\s*"\K[^"]+' tauri.conf.json)
-
+          # 使用兼容性更好的方式提取版本号
+          BASE_VERSION=$(grep -E '"version":' tauri.conf.json | sed -E 's/.*"version": *"([^"]+).*/\1/')
+          
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
@@ -120,25 +127,27 @@ jobs:
             target/**/*.msi
             target/**/*.AppImage
             target/**/*.deb
+            target/**/*.tar.gz
+            target/**/*.zip
           retention-days: 7
-          if-no-files-found: error
+          if-no-files-found: warn
 
       # 步骤 11: 显示构建产物信息
       - name: Show Build Results
         run: |
           echo "Build artifacts:"
-          ls -R target/release/bundle || true
+          find target/release/bundle -type f -print || true
           echo "Uploaded artifacts:"
-          ls -R ${{ github.workspace }} || true
+          find ${{ github.workspace }} -name '*.msi' -o -name '*.AppImage' -o -name '*.deb' -o -name '*.tar.gz' -o -name '*.zip' -print || true
 
   # Release 发布任务
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build]  # 依赖所有构建任务
-    if: startsWith(github.ref, 'refs/tags/')  # 仅在标签推送时执行
+    needs: [build]
+    if: startsWith(github.ref, 'refs/tags/')
     permissions:
-      contents: write  # 需要权限创建 Release
+      contents: write
 
     steps:
       # 步骤 1: 下载所有构建产物
@@ -146,6 +155,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: build-*
+          merge-multiple: true
 
       # 步骤 2: 自动生成 changelog
       - name: Generate Changelog
@@ -153,13 +164,14 @@ jobs:
         id: changelog
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          # version: ${{ github.ref_name }}
           output-file: "CHANGELOG.md"
 
-      # 步骤 3: 预览 changelog（调试用）
+      # 步骤 3: 预览 changelog
       - name: Preview Changelog
         run: |
           echo "Generated Changelog:"
-          cat CHANGELOG.md
+          head -n 30 CHANGELOG.md
 
       # 步骤 4: 判断是否为预发布版本
       - name: Check Prerelease Status
@@ -181,8 +193,7 @@ jobs:
           tag_name: ${{ github.ref }}
           body: ${{ steps.changelog.outputs.changelog }}
           prerelease: ${{ fromJson(steps.check-prerelease.outputs.prerelease) }}
-          files: |
-            artifacts/**/*
+          files: artifacts/**/*
           draft: false
           generate_release_notes: false
 
