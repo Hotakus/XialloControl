@@ -22,46 +22,60 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 步骤 2: 设置 UTF-8 环境（修复 grep 问题）
+      # 步骤 2: 设置 UTF-8 环境
       - name: Set UTF-8 Locale
         run: |
           echo "LC_ALL=C.UTF-8" >> $GITHUB_ENV
           echo "LANG=C.UTF-8" >> $GITHUB_ENV
 
-      # 步骤 3: 安装 Rust
-      - name: Install Rust
+      # 步骤 3: 安装 Rust 和 sccache（编译缓存）
+      - name: Install Rust with sccache
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-src, clippy
+        env:
+          RUSTC_WRAPPER: sccache  # 启用编译缓存
 
-      # 步骤 4: 安装 Tauri CLI
+      # 步骤 4: 安装 sccache 并配置缓存
+      - name: Setup sccache
+        run: |
+          cargo install sccache --locked
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+          echo "SCCACHE_CACHE_SIZE=2G" >> $GITHUB_ENV
+          echo "SCCACHE_DIRECT_MODE=true" >> $GITHUB_ENV
+          echo "SCCACHE_IDLE_TIMEOUT=0" >> $GITHUB_ENV
+
+      # 步骤 5: 缓存 sccache 编译结果
+      - name: Cache sccache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/sccache
+          key: ${{ runner.os }}-sccache-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-sccache-
+
+      # 步骤 6: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 5: 修复 Linux 依赖安装问题
+      # 步骤 7: 修复 Linux 依赖安装问题
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential curl
+          sudo apt-get install -y build-essential
           
-          # 添加 WebKit 官方仓库
-          curl -sL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          
-          # 安装所需依赖
+          # 仅安装必需依赖
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
-            libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf \
             libudev-dev \
-            libdbus-1-dev \
-            pkg-config \
-            libssl-dev \
-            libclang-dev
+            pkg-config
 
-      # 步骤 6: 检查 Windows WebView2
+      # 步骤 8: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -76,7 +90,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # 步骤 7: 缓存 Cargo 依赖
+      # 步骤 9: 缓存 Cargo 依赖（优化策略）
       - name: Cache Dependencies
         uses: actions/cache@v4
         with:
@@ -84,13 +98,16 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ matrix.platform }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
+            ${{ runner.os }}-cargo-
 
-      # ✅ 步骤 8: 修复版本号设置（兼容 Linux grep）
+      # ✅ 步骤 10: 设置版本号
       - name: Set Application Version
         shell: bash
         run: |
-          # 使用兼容性更好的方式提取版本号
+          # 使用兼容方法提取版本号
           BASE_VERSION=$(grep -E '"version":' tauri.conf.json | sed -E 's/.*"version": *"([^"]+).*/\1/')
           
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
@@ -113,11 +130,11 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # 步骤 9: 构建 Tauri 应用
+      # 步骤 11: 并行构建（仅发布模式）
       - name: Build Tauri Application
-        run: cargo tauri build --verbose
+        run: cargo tauri build --release --verbose
 
-      # 步骤 10: 上传构建产物
+      # 步骤 12: 上传构建产物
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -127,18 +144,16 @@ jobs:
             target/**/*.msi
             target/**/*.AppImage
             target/**/*.deb
-            target/**/*.tar.gz
-            target/**/*.zip
           retention-days: 7
           if-no-files-found: warn
 
-      # 步骤 11: 显示构建产物信息
+      # 步骤 13: 显示构建产物信息
       - name: Show Build Results
         run: |
           echo "Build artifacts:"
           find target/release/bundle -type f -print || true
           echo "Uploaded artifacts:"
-          find ${{ github.workspace }} -name '*.msi' -o -name '*.AppImage' -o -name '*.deb' -o -name '*.tar.gz' -o -name '*.zip' -print || true
+          find ${{ github.workspace }} -name '*.msi' -o -name '*.AppImage' -o -name '*.deb' -print || true
 
   # Release 发布任务
   release:
@@ -167,13 +182,7 @@ jobs:
           # version: ${{ github.ref_name }}
           output-file: "CHANGELOG.md"
 
-      # 步骤 3: 预览 changelog
-      - name: Preview Changelog
-        run: |
-          echo "Generated Changelog:"
-          head -n 30 CHANGELOG.md
-
-      # 步骤 4: 判断是否为预发布版本
+      # 步骤 3: 判断是否为预发布版本
       - name: Check Prerelease Status
         id: check-prerelease
         run: |
@@ -184,7 +193,7 @@ jobs:
           fi
         shell: bash
 
-      # 步骤 5: 创建 GitHub Release
+      # 步骤 4: 创建 GitHub Release
       - name: Create Release
         id: create-release
         uses: softprops/action-gh-release@v2
@@ -197,6 +206,6 @@ jobs:
           draft: false
           generate_release_notes: false
 
-      # 步骤 6: 显示发布结果
+      # 步骤 5: 显示发布结果
       - name: Show Release URL
         run: echo "Release created at ${{ steps.create-release.outputs.url }}"
