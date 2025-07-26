@@ -1,106 +1,51 @@
-name: Tauri Cross-Platform Build
+name: Tauri Cross-Platform Build (Fixed)
 
-# ============== 触发条件配置 ==============
 on:
   push:
-    # 标签触发配置
     tags:
-      # 匹配语义化版本标签 (v1.0.0, v2.3.4)
-      - "v*"
-      # 匹配自定义发布标签 (release-1.0.0, release-stable)
-      - "release-*"
-    
-    # 分支触发配置
+      - "v*"          # 匹配所有 v 开头的标签
+      - "release-*"   # 匹配所有 release- 开头的标签
     branches:
-      # 匹配所有 release/ 开头的分支 (release/v1.0, release/stable)
-      - "release/**"
-  
-  # 手动触发配置（在 GitHub 界面手动运行工作流）
-  workflow_dispatch:
-    inputs:
-      custom_tag:
-        description: '自定义标签名称 (如 v1.0.0)'
-        required: false
+      - "release/**"  # 匹配所有 release/ 开头的分支
 
-# ============== 构建任务配置 ==============
 jobs:
   build:
-    # 策略配置：允许单个平台失败不影响其他平台
     strategy:
       fail-fast: false
-      # 平台矩阵配置（当前仅启用 Windows 和 Linux）
       matrix:
         platform: [windows-latest, ubuntu-latest]
-        # 如需启用 macOS，取消下面注释
-        # platform: [windows-latest, ubuntu-latest, macos-latest]
-    
-    # 运行环境（根据矩阵配置动态选择）
     runs-on: ${{ matrix.platform }}
-    
-    # 权限设置（上传 Release 需要写入权限）
     permissions:
       contents: write
 
-    # ============== 构建步骤 ==============
     steps:
       # 步骤 1: 检出代码
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          # 获取完整历史记录（包含标签信息）
           fetch-depth: 0
-      
-      # 步骤 2: 确定版本号
-      - name: Determine Build Version
-        id: set_version
-        run: |
-          # 情况 1: 标签触发 (v1.0.0 或 release-1.0)
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            # 提取标签名（去除 refs/tags/ 前缀）
-            VERSION=${GITHUB_REF#refs/tags/}
-          
-          # 情况 2: 分支触发 (release/v1.0)
-          elif [[ $GITHUB_REF == refs/heads/release/* ]]; then
-            # 提取分支名（去除 refs/heads/ 前缀）
-            BRANCH_NAME=${GITHUB_REF#refs/heads/}
-            # 从分支名提取版本（release/v1.0 → v1.0）
-            VERSION=${BRANCH_NAME#release/}
-          
-          # 情况 3: 手动触发
-          elif [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
-            # 使用手动输入的标签或默认值
-            VERSION=${INPUT_CUSTOM_TAG:-manual-build}
-          
-          # 情况 4: 其他情况
-          else
-            VERSION=unknown
-          fi
-          
-          # 输出版本信息（供后续步骤使用）
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Using version: $VERSION"
 
-      # 步骤 3: 安装 Rust 工具链
-      - name: Install Rust
-        uses: actions-rust-lang/setup-rust@v1
+      # 步骤 2: 修复的 Rust 安装步骤
+      - name: Install Rust (Fixed)
+        # 使用正确的 Action 名称和版本
+        uses: actions-rust/setup-rust@v1.7.0
         with:
-          # 使用稳定版工具链
           toolchain: stable
-          # 安装额外组件
           components: rust-src, clippy
-      
-      # 步骤 4: 安装 Tauri CLI
+          # 可选：设置国内镜像加速
+          # target: x86_64-unknown-linux-gnu
+          # profile: minimal
+          # default: true
+
+      # 步骤 3: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 5: Linux 专用依赖安装
+      # 步骤 4: Linux 依赖安装
       - name: Install Linux Dependencies
-        # 仅在 Ubuntu 平台运行
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          # 更新包列表
           sudo apt-get update
-          # 安装 Tauri 所需的 GTK 和 WebKit 依赖
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
@@ -108,83 +53,37 @@ jobs:
             librsvg2-dev \
             patchelf
 
-      # 步骤 6: macOS 依赖安装（已注释）
-      # - name: Install macOS Dependencies
-      #   if: matrix.platform == 'macos-latest'
-      #   run: |
-      #     # 安装 Xcode 命令行工具
-      #     xcode-select --install || true
-      #     # 安装创建 DMG 的工具
-      #     brew install create-dmg
-
-      # 步骤 7: 缓存优化
+      # 步骤 5: 缓存优化
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
-          # 缓存路径（Rust 依赖和构建目录）
           path: |
             ~/.cargo/registry
             ~/.cargo/git
             target
-          # 缓存键（基于操作系统和 Cargo.lock 哈希）
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          # 恢复键（如果精确匹配失败，尝试部分匹配）
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
-      # 步骤 8: 设置应用版本
+      # 步骤 6: 设置应用版本
       - name: Set Application Version
         run: |
-          # 更新 tauri.conf.json 中的版本号
-          sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.set_version.outputs.version }}\"/" src-tauri/tauri.conf.json
-          # 显示更新后的版本
+          # 提取标签名作为版本
+          VERSION=${GITHUB_REF#refs/tags/}
+          # 更新配置文件
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+          # 验证更新
+          echo "Updated version:"
           grep '"version":' src-tauri/tauri.conf.json
 
-      # 步骤 9: 构建应用
+      # 步骤 7: 构建应用
       - name: Build Tauri Application
         run: cargo tauri build --verbose
-        env:
-          # Windows 签名配置（需要提前设置 Secrets）
-          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
-          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          
-          # macOS 签名配置（已注释）
-          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
-      # 步骤 10: 创建 Release
-      - name: Create GitHub Release
-        id: create_release
-        # 仅当通过标签触发时创建 Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/create-release@v1
-        env:
-          # 使用 GitHub 自动生成的 token
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 步骤 8: 上传构建产物
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
         with:
-          # 使用标签名作为 Release 名
-          release_name: Release ${{ steps.set_version.outputs.version }}
-          # 使用标签名
-          tag_name: ${{ github.ref_name }}
-          # 草稿模式（设置为 true 需要手动发布）
-          draft: false
-          # 预发布标记（自动检测是否包含预发布标识）
-          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
-
-      # 步骤 11: 上传构建产物
-      - name: Upload Release Assets
-        # 仅当 Release 创建成功后运行
-        if: steps.create_release.outputs.upload_url != ''
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # 使用上一步创建的 Release 的上传 URL
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          # 要上传的文件路径（匹配所有构建产物）
-          asset_path: src-tauri/target/release/bundle/**
-          # 资产名称格式：应用名-平台-版本.扩展名
-          asset_name: app-${{ matrix.platform }}-${{ steps.set_version.outputs.version }}.zip
-          # 资产类型（自动检测）
-          asset_content_type: application/zip
+          name: build-${{ matrix.platform }}-${{ github.ref_name }}
+          path: |
+            src-tauri/target/release/bundle/**
+            src-tauri/target/**/*.msi
+            src-tauri/target/**/*.AppImage
