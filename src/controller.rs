@@ -1,17 +1,15 @@
 use hidapi::HidApi;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::iter::Iterator;
 use std::path::Path;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
-use crate::controller;
 
+// 修改为 TOML 配置文件
+pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
 
-pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.json";
-
-
-#[derive(Debug, Serialize, Deserialize)]
+// 添加 Clone trait 实现
+#[derive(Debug, Serialize, Deserialize, Clone)] // 添加 Clone trait
 pub struct SupportedDevice {
     pub name: String,
     pub vendor_id: String,
@@ -23,6 +21,12 @@ pub struct SupportedConnectedDevice {
     pub vendor_id: String,
     pub product_id: String,
     pub device_path: String, // 唯一标识，可用来打开设备
+}
+
+// 包装结构体用于 TOML 序列化
+#[derive(Debug, Serialize, Deserialize)]
+struct SupportedDevicesConfig {
+    devices: Vec<SupportedDevice>,
 }
 
 fn default_devices() -> Vec<SupportedDevice> {
@@ -40,32 +44,68 @@ fn default_devices() -> Vec<SupportedDevice> {
         SupportedDevice {
             name: "DualSense (PS5)".into(),
             vendor_id: "054c".into(),
-            // product_id: Some("0ce6".into()),
             product_id: None,
         },
     ]
 }
 
 pub fn load_or_create_config(path: &str) -> Vec<SupportedDevice> {
-    if Path::new(path).exists() {
-        let data = fs::read_to_string(path).expect("Failed to read config");
-        serde_json::from_str(&data).expect("Failed to parse JSON")
+    let config_path = Path::new(path);
+
+    if config_path.exists() {
+        // 读取 TOML 文件
+        let toml_str = match fs::read_to_string(path) {
+            Ok(content) => content,
+            Err(e) => {
+                log::error!("Failed to read TOML config: {}", e);
+                return default_devices();
+            }
+        };
+
+        // 解析 TOML
+        match toml::from_str::<SupportedDevicesConfig>(&toml_str) {
+            Ok(config) => config.devices,
+            Err(e) => {
+                log::error!("Failed to parse TOML config: {}", e);
+                default_devices()
+            }
+        }
     } else {
-        println!("🛠️  Config not found. Generating default...");
+        println!("🛠️ Config not found. Generating default TOML config...");
 
         let default = default_devices();
-        let json =
-            serde_json::to_string_pretty(&default).expect("Failed to serialize default config");
-        fs::write(path, json).expect("Failed to write default config");
+        let config = SupportedDevicesConfig {
+            devices: default.clone(),
+        };
+
+        // 序列化为 TOML
+        match toml::to_string_pretty(&config) {
+            Ok(toml_str) => {
+                if let Err(e) = fs::write(path, toml_str) {
+                    log::error!("Failed to write default TOML config: {}", e);
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to serialize TOML config: {}", e);
+            }
+        }
 
         default
     }
 }
 
+// 以下函数保持不变
 pub fn list_supported_connected_devices(
     config: &[SupportedDevice],
 ) -> Vec<SupportedConnectedDevice> {
-    let api = HidApi::new().expect("Failed to init hidapi");
+    let api = match HidApi::new() {
+        Ok(api) => api,
+        Err(e) => {
+            log::error!("Failed to init hidapi: {}", e);
+            return Vec::new();
+        }
+    };
+
     let mut supported_devices = Vec::new();
 
     for device in api.device_list() {
@@ -81,11 +121,11 @@ pub fn list_supported_connected_devices(
         });
 
         if let Some(_supported) = matched {
-            // device.path() 是唯一字符串路径，用于打开设备
             let device_info = SupportedConnectedDevice {
                 name: device
                     .product_string()
-                    .unwrap_or_default().to_string(),
+                    .unwrap_or("Unknown Device")
+                    .to_string(),
                 vendor_id: vid.clone(),
                 product_id: pid.clone(),
                 device_path: device.path().to_string_lossy().to_string(),
@@ -97,35 +137,32 @@ pub fn list_supported_connected_devices(
 }
 
 fn _query_devices() -> Vec<String> {
-    let config = controller::load_or_create_config(&SUPPORTED_DEVICES_FILE);
-    let devices = controller::list_supported_connected_devices(&config);
+    let config = load_or_create_config(SUPPORTED_DEVICES_FILE);
+    let devices = list_supported_connected_devices(&config);
 
-    let mut devices_name: Vec<String> = Vec::new();
-    for device in &devices {
-        devices_name.push(device.name.clone());
-    }
-
-    devices_name
+    devices.iter().map(|device| device.name.clone()).collect()
 }
 
 #[tauri::command]
 pub async fn query_devices(app: tauri::AppHandle) -> Vec<String> {
     let devices_name = _query_devices();
-    app.emit("update_devices",devices_name.clone()).unwrap();
+    if let Err(e) = app.emit("update_devices", devices_name.clone()) {
+        log::error!("Failed to emit update_devices event: {}", e);
+    }
     log::debug!("query_devices");
     devices_name
 }
 
-
 pub fn listen(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {
-        log::info!("🛠️  Controller listening...");
+        log::info!("🛠️ Controller listening...");
 
-        let mut devices_name;
         loop {
-            devices_name = _query_devices();
-            app_handle.emit("update_devices",devices_name.clone()).unwrap();
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            let devices_name = _query_devices();
+            if let Err(e) = app_handle.emit("update_devices", devices_name.clone()) {
+                log::error!("Failed to emit update_devices event: {}", e);
+            }
+            tokio::time::sleep(Duration::from_millis(500)).await;
         }
     });
 }
