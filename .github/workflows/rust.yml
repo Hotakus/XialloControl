@@ -2,8 +2,8 @@ name: Tauri Cross-Platform Build (Fixed)
 
 on:
   push:
-    tags: ["v*"]   # 匹配所有 v 开头的标签
-  workflow_dispatch: # 支持手动触发
+    tags: ["v*"]   # 匹配 v 开头的标签，如 v0.1.8
+  workflow_dispatch: # 手动触发支持
 
 jobs:
   build:
@@ -22,22 +22,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 步骤 2: 修复的 Rust 安装 - 使用正确的 Action 名称
+      # 步骤 2: 安装 Rust
       - name: Install Rust
-        # 使用正确的 rust-lang 官方 Action
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: rust-src, clippy
-          # 可选：设置国内镜像加速（中国大陆用户）
-          # registry-mirror: https://rsproxy.cn
-          # cache: cargo
 
       # 步骤 3: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 4: Linux 依赖安装
+      # 步骤 4: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -49,15 +44,14 @@ jobs:
             librsvg2-dev \
             patchelf
 
-      # 步骤 5: Windows 依赖检查（确保 WebView2 存在）
+      # 步骤 5: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
+        shell: pwsh
         run: |
-          # 检查 WebView2 是否安装
           $regPath = "HKLM:\SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
           if (-not (Test-Path $regPath)) {
             Write-Host "WebView2 not found, installing..."
-            # 下载并安装 WebView2
             $installerPath = "$env:TEMP\MicrosoftEdgeWebview2Setup.exe"
             Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $installerPath
             Start-Process -FilePath $installerPath -ArgumentList "/silent /install" -Wait
@@ -65,7 +59,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # 步骤 6: 缓存优化
+      # 步骤 6: 缓存 Cargo 依赖
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
@@ -75,26 +69,38 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      # 步骤 7: 设置应用版本
+      # ✅ 步骤 7: 设置版本号（同步 tauri.conf.json 和 Cargo.toml）
       - name: Set Application Version
+        shell: bash
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
+          BASE_VERSION=$(grep -oP '"version":\s*"\K[^"]+' tauri.conf.json)
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            VERSION="0.0.0-${{ github.run_id }}"  
+            VERSION="${BASE_VERSION}+manual.${{ github.run_id }}"
           fi
 
-          # 替换 version 字段
-          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" tauri.conf.json
-          echo "Building version: $VERSION"
+          echo "📦 Final version: $VERSION"
 
-      # 步骤 8: 构建应用
+          # 替换 tauri.conf.json
+          sed -i.bak -E "s/\"version\": *\"[^\"]+\"/\"version\": \"$VERSION\"/" tauri.conf.json && rm tauri.conf.json.bak
+
+          # 替换 Cargo.toml
+          sed -i.bak -E "s/^version = \"[^\"]+\"/version = \"$VERSION\"/" Cargo.toml && rm Cargo.toml.bak
+
+          # 输出验证
+          echo "Updated tauri.conf.json version:"
+          grep '"version":' tauri.conf.json
+          echo "Updated Cargo.toml version:"
+          grep '^version =' Cargo.toml
+
+      # 步骤 8: 构建 Tauri 应用
       - name: Build Tauri Application
         run: cargo tauri build --verbose
 
-      # 步骤 9: 修复的产物上传 - 使用 v4 替代弃用的 v3
+      # 步骤 9: 上传构建产物
       - name: Upload Artifacts
-        # 使用 upload-artifact v4 替代已弃用的 v3
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.platform }}-${{ github.ref_name || 'manual' }}
@@ -102,10 +108,10 @@ jobs:
             target/release/bundle/**
             target/**/*.msi
             target/**/*.AppImage
-          retention-days: 7  # 设置自动清理时间
-          if-no-files-found: error  # 如果没有文件则失败
+          retention-days: 7
+          if-no-files-found: error
 
-      # 步骤 10: 添加调试信息
+      # 步骤 10: 显示构建产物信息
       - name: Show Build Results
         run: |
           echo "Build artifacts:"
