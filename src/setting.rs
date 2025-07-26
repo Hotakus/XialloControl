@@ -40,7 +40,7 @@ impl Default for AppSettings {
         Self {
             auto_start: true,
             minimize_to_tray: true,
-            theme: "system".to_string(),
+            theme: "light".to_string(),
             polling_frequency: DEFAULT_POLLING_FREQUENCY,
             deadzone: DEFAULT_DEADZONE,
         }

@@ -3,6 +3,7 @@ use tauri::{AppHandle, Window};
 
 mod controller;
 mod tray;
+mod setting;
 
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -47,7 +48,9 @@ pub fn run() {
             minimize_current_window,
             open_url,
 
-            controller::query_devices
+            controller::query_devices,
+            setting::get_current_settings,
+            setting::update_settings
         ])
         .setup(|app| {
             let app_handle = app.handle();
