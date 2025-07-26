@@ -1,0 +1,164 @@
+use anyhow::{Context, Result};
+use log; // 仅导入 log crate
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
+
+// 设置文件名
+const SETTINGS_FILE: &str = "settings.toml";
+
+// 默认设置值
+const DEFAULT_POLLING_FREQUENCY: u32 = 125; // 125 Hz
+const DEFAULT_DEADZONE: u8 = 10; // 10%
+
+/// 应用程序设置
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AppSettings {
+    /// 开机自启动
+    #[serde(default = "bool_true")]
+    pub auto_start: bool,
+
+    /// 最小化到托盘
+    #[serde(default = "bool_true")]
+    pub minimize_to_tray: bool,
+
+    /// 界面主题
+    #[serde(default = "default_theme")]
+    pub theme: String,
+
+    /// 轮询频率 (Hz)
+    #[serde(default = "default_polling_frequency")]
+    pub polling_frequency: u32,
+
+    /// 摇杆死区范围 (%)
+    #[serde(default = "default_deadzone")]
+    pub deadzone: u8,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            auto_start: true,
+            minimize_to_tray: true,
+            theme: "system".to_string(),
+            polling_frequency: DEFAULT_POLLING_FREQUENCY,
+            deadzone: DEFAULT_DEADZONE,
+        }
+    }
+}
+
+// 默认值辅助函数
+fn bool_true() -> bool {
+    true
+}
+fn default_theme() -> String {
+    "system".to_string()
+}
+fn default_polling_frequency() -> u32 {
+    DEFAULT_POLLING_FREQUENCY
+}
+fn default_deadzone() -> u8 {
+    DEFAULT_DEADZONE
+}
+
+/// 获取设置文件路径
+fn get_settings_path() -> &'static str {
+    SETTINGS_FILE
+}
+
+/// 加载应用设置
+pub fn load_settings() -> AppSettings {
+    let settings_path = get_settings_path();
+    log::debug!("尝试加载设置文件: {}", settings_path);
+
+    // 如果设置文件不存在，返回默认设置
+    if !Path::new(settings_path).exists() {
+        log::debug!("设置文件不存在，使用默认设置");
+        return AppSettings::default();
+    }
+
+    // 读取并解析设置文件
+    match fs::read_to_string(settings_path) {
+        Ok(toml_str) => {
+            log::debug!("成功读取设置文件内容");
+            match toml::from_str(&toml_str) {
+                Ok(settings) => {
+                    log::debug!("成功解析设置文件");
+                    settings
+                }
+                Err(e) => {
+                    log::error!("解析设置文件失败: {}, 使用默认设置", e);
+                    AppSettings::default()
+                }
+            }
+        }
+        Err(e) => {
+            log::error!("读取设置文件失败: {}, 使用默认设置", e);
+            AppSettings::default()
+        }
+    }
+}
+
+/// 保存应用设置
+pub fn save_settings(settings: &AppSettings) -> Result<()> {
+    let settings_path = get_settings_path();
+    log::debug!("尝试保存设置到文件: {}", settings_path);
+
+    // 序列化设置
+    let toml_str = toml::to_string_pretty(settings)
+        .context("序列化设置失败")
+        .map_err(|e| {
+            log::error!("序列化设置失败: {}", e);
+            e
+        })?;
+
+    // 写入文件
+    fs::write(settings_path, &toml_str)
+        .with_context(|| format!("写入设置文件失败: {}", settings_path))
+        .map_err(|e| {
+            log::error!("保存设置到文件失败: {}", e);
+            e
+        })?;
+
+    log::info!("设置已成功保存到: {}", settings_path);
+    Ok(())
+}
+
+/// 更新应用设置
+#[tauri::command]
+pub async fn update_settings(new_settings: AppSettings) -> Result<(), String> {
+    log::debug!("接收到更新设置请求: {:?}", new_settings);
+
+    // 验证轮询频率范围
+    if new_settings.polling_frequency < 1 || new_settings.polling_frequency > 1000 {
+        let msg = "轮询频率必须在1-1000Hz范围内".to_string();
+        log::error!("{}", msg);
+        return Err(msg);
+    }
+
+    // 验证死区范围
+    if new_settings.deadzone > 30 {
+        let msg = "死区范围不能超过30%".to_string();
+        log::error!("{}", msg);
+        return Err(msg);
+    }
+
+    // 保存设置
+    save_settings(&new_settings).map_err(|e| {
+        let msg = format!("保存设置失败: {}", e);
+        log::error!("{}", msg);
+        msg
+    })?;
+
+    log::info!("设置已成功更新");
+    Ok(())
+}
+
+/// 获取当前设置
+#[tauri::command]
+pub async fn get_current_settings() -> Result<AppSettings, String> {
+    log::debug!("获取当前设置");
+    let settings = load_settings();
+    log::debug!("当前设置: {:?}", settings);
+    Ok(settings)
+}
