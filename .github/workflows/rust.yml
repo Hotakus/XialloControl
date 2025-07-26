@@ -160,7 +160,6 @@ jobs:
           git fetch --tags
 
       - name: Checkout tag commit
-        # 直接切换到触发的 tag，避免和 master 分支不一致
         run: git checkout ${{ github.ref }}
 
       - name: Download Artifacts
@@ -175,9 +174,13 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Generate Changelog with conventional-changelog CLI
+      - name: Install changelog dependencies
         run: |
-          npx conventional-changelog -p angular -i CHANGELOG.md -s -r 5
+          npm install -g conventional-changelog-cli conventional-changelog-angular
+
+      - name: Generate Changelog
+        run: |
+          conventional-changelog -p angular -i CHANGELOG.md -s -r 5
 
       - name: Read changelog content
         id: read_changelog
@@ -197,7 +200,7 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Release
+      - name: Create GitHub Release
         id: create-release
         uses: softprops/action-gh-release@v2
         with:
@@ -211,7 +214,8 @@ jobs:
 
       - name: Show Release URL
         shell: bash
-        run: echo "Release created at ${{ steps.create-release.outputs.url }}"
+        run: echo "✅ Release created at ${{ steps.create-release.outputs.url }}"
+
 
 
 
