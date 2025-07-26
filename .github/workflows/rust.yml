@@ -22,9 +22,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      # ✅ 修复的图标验证步骤
+      # ✅ 优化的图标验证步骤
       - name: Verify Icon Files
-        shell: bash  # 强制使用bash解释器
+        shell: bash
         run: |
           # 检查图标文件是否存在
           if [ ! -f "icons/icon.ico" ]; then
@@ -32,15 +32,13 @@ jobs:
           
             # 跨平台兼容的图标生成
             if [[ "$RUNNER_OS" == "Windows" ]]; then
-              # Windows使用内置工具生成简单图标
-              magick -size 16x16 xc:white -bordercolor black -border 1 win_icon.ico
-              mkdir -p icons
-              mv win_icon.ico icons/icon.ico
+              # Windows使用内置的PowerShell命令生成简单图标
+              powershell -Command "[Reflection.Assembly]::LoadWithPartialName('System.Drawing') | Out-Null; 
+                $bitmap = New-Object System.Drawing.Bitmap(16,16);
+                $bitmap.Save('icons\icon.ico', [System.Drawing.Imaging.ImageFormat]::Ico)"
             else
-              # Linux/macOS使用原方法
-              convert -size 256x256 xc:white -define icon:auto-resize=256,128,64,48,32,16 placeholder.ico
-              mkdir -p icons
-              mv placeholder.ico icons/icon.ico
+              # Linux使用ImageMagick（已预装）
+              convert -size 16x16 xc:white icons/icon.ico
             fi
           fi
 
@@ -48,20 +46,15 @@ jobs:
           if [ ! -f "icons/icon.png" ]; then
             echo "::warning::icon.png file missing. Generating placeholder icon..."
             if [[ "$RUNNER_OS" == "Windows" ]]; then
-              magick -size 512x512 xc:white placeholder.png
+              # Windows使用PowerShell
+              powershell -Command "[Reflection.Assembly]::LoadWithPartialName('System.Drawing') | Out-Null; 
+                $bitmap = New-Object System.Drawing.Bitmap(16,16);
+                $bitmap.Save('icons\icon.png', [System.Drawing.Imaging.ImageFormat]::Png)"
             else
-              convert -size 512x512 xc:white placeholder.png
+              # Linux使用ImageMagick
+              convert -size 16x16 xc:white icons/icon.png
             fi
-            mv placeholder.png icons/icon.png
           fi
-
-      # ✅ Windows专用：安装ImageMagick
-      - name: Install ImageMagick (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: powershell
-        run: |
-          choco install imagemagick -y --no-progress
-          refreshenv
 
       # 步骤 3: 安装 Rust
       - name: Install Rust
@@ -85,8 +78,7 @@ jobs:
             patchelf \
             libudev-dev \
             pkg-config \
-            libayatana-appindicator3-dev \
-            imagemagick  # 用于图标转换
+            libayatana-appindicator3-dev
 
       # 步骤 6: 安装 WiX 工具集
       - name: Install WiX Toolset for Windows
