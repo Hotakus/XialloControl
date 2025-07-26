@@ -86,7 +86,7 @@ jobs:
           fi
           
           # 更新配置文件
-          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" tauri.conf.json
           echo "Building version: $VERSION"
 
       # 步骤 8: 构建应用
