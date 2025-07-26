@@ -152,6 +152,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          fetch-tags: true
+          # 强制清理本地的 tags，避免冲突
+          clean: true
 
       - name: Download Artifacts
         uses: actions/download-artifact@v4
