@@ -4,6 +4,7 @@
 
 mod controller;
 mod tray;
+mod setting;
 
 fn main() {
     simple_logger::init_with_level(log::Level::Debug).unwrap();
