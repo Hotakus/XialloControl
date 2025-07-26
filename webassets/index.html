@@ -952,23 +952,27 @@
             }
         });
 
-// 开机自启动和最小化到托盘保存逻辑
+        // 开机自启动和最小化到托盘保存逻辑
         document.getElementById('auto-start').addEventListener('change', function () {
             console.log('开机自启动:', this.checked);
-            // 这里添加实际保存设置的代码
+            saveSettings();
         });
-
 
         document.getElementById('minimize-to-tray').addEventListener('change', function () {
             console.log('最小化到托盘:', this.checked);
-            minimize_to_tray = this.checked
-            // 这里添加实际保存设置的代码
+            minimize_to_tray = this.checked;
+            saveSettings();
         });
 
-// 主题切换
+        // 主题切换
         document.getElementById('theme').addEventListener('change', function () {
             console.log('主题切换为:', this.value);
-            // 这里添加主题切换的实际代码
+            saveSettings();
+        });
+
+        // 死区滑块保存设置
+        document.getElementById('deadzone').addEventListener('input', function() {
+            saveSettings();
         });
 
         // 在浏览器环境中模拟Tauri API
@@ -1007,7 +1011,7 @@
                 // 如果在Tauri环境中
                 if (window.__TAURI__) {
                     e.preventDefault(); // 阻止默认打开方式
-                    invoker("open_url", {url: githubLink.href});
+                    invoke("open_url", {url: githubLink.href});
                 }
                 // 否则，默认行为（在新标签页打开）会正常进行
             });
