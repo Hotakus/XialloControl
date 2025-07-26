@@ -21,52 +21,41 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          path: ${{ github.workspace }}
 
-      # ✅ 优化的图标验证步骤
-      - name: Verify Icon Files
+      # ✅ 关键修复：验证图标路径
+      - name: Verify Icon Paths
         shell: bash
         run: |
-          # 检查图标文件是否存在
-          if [ ! -f "icons/icon.ico" ]; then
-            echo "::warning::icon.ico file missing. Generating placeholder icon..."
+          echo "当前工作目录: $(pwd)"
+          echo "图标文件列表:"
+          ls -l icons/
           
-            # 跨平台兼容的图标生成
-            if [[ "$RUNNER_OS" == "Windows" ]]; then
-              # Windows使用内置的PowerShell命令生成简单图标
-              powershell -Command "[Reflection.Assembly]::LoadWithPartialName('System.Drawing') | Out-Null; 
-                $bitmap = New-Object System.Drawing.Bitmap(16,16);
-                $bitmap.Save('icons\icon.ico', [System.Drawing.Imaging.ImageFormat]::Ico)"
-            else
-              # Linux使用ImageMagick（已预装）
-              convert -size 16x16 xc:white icons/icon.ico
-            fi
+          # 确保图标路径正确
+          if [ -f "icons/icon.ico" ]; then
+            echo "✅ 找到 icon.ico 文件"
+          else
+            echo "::error::未找到 icons/icon.ico 文件！请确保图标位于项目根目录的 icons 文件夹中"
+            exit 1
+          fi
+          
+          if [ -f "icons/icon.png" ]; then
+            echo "✅ 找到 icon.png 文件"
+          else
+            echo "::warning::未找到 icons/icon.png 文件，非Windows构建可能使用默认图标"
           fi
 
-          # 验证其他图标格式
-          if [ ! -f "icons/icon.png" ]; then
-            echo "::warning::icon.png file missing. Generating placeholder icon..."
-            if [[ "$RUNNER_OS" == "Windows" ]]; then
-              # Windows使用PowerShell
-              powershell -Command "[Reflection.Assembly]::LoadWithPartialName('System.Drawing') | Out-Null; 
-                $bitmap = New-Object System.Drawing.Bitmap(16,16);
-                $bitmap.Save('icons\icon.png', [System.Drawing.Imaging.ImageFormat]::Png)"
-            else
-              # Linux使用ImageMagick
-              convert -size 16x16 xc:white icons/icon.png
-            fi
-          fi
-
-      # 步骤 3: 安装 Rust
+      # 步骤 2: 安装 Rust
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-src, clippy
 
-      # 步骤 4: 安装 Tauri CLI
+      # 步骤 3: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 5: 安装 Linux 依赖
+      # 步骤 4: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -80,7 +69,7 @@ jobs:
             pkg-config \
             libayatana-appindicator3-dev
 
-      # 步骤 6: 安装 WiX 工具集
+      # 步骤 5: 安装 WiX 工具集
       - name: Install WiX Toolset for Windows
         if: matrix.platform == 'windows-latest'
         run: |
@@ -91,7 +80,7 @@ jobs:
           echo "WIX_PATH=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      # 步骤 7: 检查 Windows WebView2
+      # 步骤 6: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -106,7 +95,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # 步骤 8: 设置版本号
+      # 步骤 7: 设置版本号
       - name: Set Application Version
         shell: bash
         run: |
@@ -139,17 +128,23 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # 步骤 9: 构建 Tauri 应用
+      # ✅ 关键修复：确保使用正确图标路径
       - name: Build Tauri Application
         shell: bash
         run: |
+          # 打印当前目录结构，用于调试
+          echo "构建前目录结构:"
+          ls -l
+          ls -l src-tauri
+          
+          # 在Windows上强制使用绝对路径
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            cargo tauri build --verbose
+            cargo tauri build --verbose --config '{"build": {"icon": ["'${{ github.workspace }}'/icons/icon.ico"]}}'
           else
             cargo tauri build --verbose
           fi
 
-      # 步骤 10: 上传构建产物
+      # 步骤 9: 上传构建产物
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -162,7 +157,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      # 步骤 11: 显示构建产物信息
+      # 步骤 10: 显示构建产物信息
       - name: Show Build Results
         shell: bash
         run: |
