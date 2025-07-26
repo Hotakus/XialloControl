@@ -2,8 +2,8 @@ name: Tauri Cross-Platform Build and Release
 
 on:
   push:
-    tags: ["v*"]   # 匹配 v 开头的标签，如 v0.1.8
-  workflow_dispatch: # 手动触发支持
+    tags: ["v*"]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -16,14 +16,12 @@ jobs:
       contents: write
 
     steps:
-      # 步骤 1: 检出代码
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           path: ${{ github.workspace }}
 
-      # ✅ 关键修复：验证图标路径
       - name: Verify Icon Paths
         shell: bash
         run: |
@@ -31,31 +29,21 @@ jobs:
           echo "图标文件列表:"
           ls -l icons/
           
-          # 确保图标路径正确
           if [ -f "icons/icon.ico" ]; then
             echo "✅ 找到 icon.ico 文件"
           else
-            echo "::error::未找到 icons/icon.ico 文件！请确保图标位于项目根目录的 icons 文件夹中"
+            echo "::error::未找到 icons/icon.ico 文件！请确保图标位于 icons/ 文件夹中"
             exit 1
           fi
-          
-          if [ -f "icons/icon.png" ]; then
-            echo "✅ 找到 icon.png 文件"
-          else
-            echo "::warning::未找到 icons/icon.png 文件，非Windows构建可能使用默认图标"
-          fi
 
-      # 步骤 2: 安装 Rust
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-src, clippy
 
-      # 步骤 3: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 4: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -69,7 +57,6 @@ jobs:
             pkg-config \
             libayatana-appindicator3-dev
 
-      # 步骤 5: 安装 WiX 工具集
       - name: Install WiX Toolset for Windows
         if: matrix.platform == 'windows-latest'
         run: |
@@ -80,7 +67,6 @@ jobs:
           echo "WIX_PATH=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-      # 步骤 6: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -95,7 +81,6 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # 步骤 7: 设置版本号
       - name: Set Application Version
         shell: bash
         run: |
@@ -115,29 +100,21 @@ jobs:
             elif [[ "$FINAL_VERSION" =~ ^[0-9]+$ ]]; then
               FINAL_VERSION="$FINAL_VERSION.0.0"
             fi
-            echo "📦 Windows MSI version: $FINAL_VERSION"
           else
             FINAL_VERSION=$VERSION
-            echo "📦 Final version: $FINAL_VERSION"
           fi
 
           sed -i.bak -E "s/\"version\": *\"[^\"]+\"/\"version\": \"$FINAL_VERSION\"/" tauri.conf.json && rm tauri.conf.json.bak
           sed -i.bak -E "s/^version = \"[^\"]+\"/version = \"$FINAL_VERSION\"/" Cargo.toml && rm Cargo.toml.bak
-          echo "Updated tauri.conf.json version:"
-          grep '"version":' tauri.conf.json
-          echo "Updated Cargo.toml version:"
-          grep '^version =' Cargo.toml
+          echo "📦 Version: $FINAL_VERSION"
 
-      # ✅ 关键修复：确保使用正确图标路径
       - name: Build Tauri Application
         shell: bash
         run: |
           echo "构建前目录结构:"
           ls -l
-          ls -l 
           cargo tauri build --verbose
 
-      # 步骤 9: 上传构建产物
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -150,7 +127,6 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      # 步骤 10: 显示构建产物信息
       - name: Show Build Results
         shell: bash
         run: |
@@ -160,9 +136,7 @@ jobs:
           else
             find target/release/bundle -type f -print || true
             find ${{ github.workspace }} -name '*.AppImage' -o -name '*.deb' -print || true
-          fi
 
-  # Release 发布任务
   release:
     name: Create Release
     runs-on: ubuntu-latest
@@ -172,6 +146,11 @@ jobs:
       contents: write
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
