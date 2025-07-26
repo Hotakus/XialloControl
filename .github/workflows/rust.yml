@@ -124,7 +124,7 @@ jobs:
             target/**/*.AppImage
             target/**/*.deb
           retention-days: 7
-          if-no-files-found: warn
+          if-no-files-found: error  # 改为 error 确保文件存在
 
       - name: Show Build Results
         shell: bash
@@ -146,22 +146,68 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout code with tags
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.ref }}
+          fetch-tags: true  # 必须获取所有标签才能生成 changelog
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: build-*
+          merge-multiple: true
 
-      - name: Generate Release Notes
-        id: changelog
+      - name: Verify downloaded artifacts
         run: |
-          # 简洁的变更日志生成
-          echo "changes=$(git log --pretty=format:'- %s (%h)' $(git describe --tags --abbrev=0 ${{ github.ref_name }}^)..${{ github.ref_name }})" >> $GITHUB_OUTPUT
+          echo "已下载的构建文件:"
+          find artifacts -type f -print
+          if [ -z "$(find artifacts -type f)" ]; then
+            echo "::error::未找到任何构建文件!"
+            exit 1
+          fi
+
+      - name: Generate Changelog
+        id: generate_changelog
+        run: |
+          # 获取当前标签
+          CURRENT_TAG="${{ github.ref_name }}"
+          
+          # 获取上一个标签（如果有）
+          PREV_TAG=$(git describe --tags --abbrev=0 "$CURRENT_TAG^" 2>/dev/null || true)
+          
+          # 创建 changelog.md 文件
+          echo "# Release $CURRENT_TAG" > changelog.md
+          echo "" >> changelog.md
+          echo "## Changelog" >> changelog.md
+          echo "" >> changelog.md
+          
+          if [ -z "$PREV_TAG" ]; then
+            # 没有上一个标签，获取所有提交
+            echo "没有找到之前的标签，将显示所有提交记录" | tee -a changelog.md
+            git log --pretty=format:'- %s (%h)' >> changelog.md
+          else
+            # 获取两个标签之间的提交
+            echo "从 $PREV_TAG 到 $CURRENT_TAG 的变更:" | tee -a changelog.md
+            git log --pretty=format:'- %s (%h)' "$PREV_TAG".."$CURRENT_TAG" >> changelog.md
+          fi
+          
+          echo "" >> changelog.md
+          echo "## Build Artifacts" >> changelog.md
+          echo "" >> changelog.md
+          
+          # 添加构建文件列表
+          echo "### Windows" >> changelog.md
+          find artifacts -name '*.msi' -exec echo "- {}" \; | sed 's|artifacts/||' >> changelog.md
+          echo "" >> changelog.md
+          
+          echo "### Linux" >> changelog.md
+          find artifacts -name '*.AppImage' -o -name '*.deb' -exec echo "- {}" \; | sed 's|artifacts/||' >> changelog.md
+          
+          # 显示生成的 changelog
+          echo "生成的 changelog:"
+          cat changelog.md
 
       - name: Create Release
         id: create_release
@@ -171,31 +217,21 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           release_name: Release ${{ github.ref_name }}
-          body: |
-            ### Changelog
-            ${{ steps.changelog.outputs.changes }}
+          body: file://changelog.md  # 直接从文件读取内容
           draft: false
           prerelease: false
 
-#      - name: Upload Release Assets
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: artifacts
-#          asset_name: build-artifacts-${{ github.ref_name }}
-#          asset_content_type: application/zip
       - name: Upload Release Assets
         run: |
           # 上传 artifacts 目录中的所有文件
           for file in $(find artifacts -type f); do
             echo "📤 Uploading $file"
+            filename=$(basename "$file")
             curl -sS \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Content-Type: $(file -b --mime-type $file)" \
+              -H "Content-Type: $(file -b --mime-type "$file")" \
               --data-binary @"$file" \
-              "${{ steps.create_release.outputs.upload_url }}?name=$(basename $file)"
+              "${{ steps.create_release.outputs.upload_url }}?name=$filename"
           done
 
       - name: Show Release URL
