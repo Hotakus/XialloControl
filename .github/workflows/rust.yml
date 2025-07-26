@@ -32,12 +32,7 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # ✅ 步骤 4: 为 Windows 安装 MSI 目标
-      - name: Install Windows MSI Target
-        if: matrix.platform == 'windows-latest'
-        run: rustup target add x86_64-pc-windows-msi
-
-      # 步骤 5: 安装 Linux 依赖
+      # 步骤 4: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -50,6 +45,16 @@ jobs:
             libudev-dev \
             pkg-config \
             libayatana-appindicator3-dev
+
+      # ✅ 步骤 5: 为 Windows 安装 WiX 工具集
+      - name: Install WiX Toolset for Windows
+        if: matrix.platform == 'windows-latest'
+        run: |
+          # 下载并安装 WiX
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip" -OutFile "wix.zip"
+          Expand-Archive -Path "wix.zip" -DestinationPath "wix"
+          echo "::add-path::$pwd\wix"
 
       # 步骤 6: 检查 Windows WebView2
       - name: Check Windows Dependencies
@@ -100,16 +105,16 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # ✅ 步骤 8: 修复构建命令
+      # ✅ 步骤 8: 修复构建命令（使用正确的目标）
       - name: Build Tauri Application
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            # Windows 构建 MSI
-            cargo tauri build --target x86_64-pc-windows-msi
+            # Windows 构建 MSI（使用默认目标）
+            cargo tauri build --verbose
           else
             # Linux 构建
-            cargo tauri build
+            cargo tauri build --verbose
           fi
 
       # 步骤 9: 上传构建产物
@@ -129,14 +134,17 @@ jobs:
       - name: Show Build Results
         shell: bash
         run: |
-          echo "Build artifacts:"
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            # Windows 使用不同的查找命令
+            # Windows 使用 dir 命令
+            echo "Build artifacts:"
             dir /s /b target\\release\\bundle || true
+            echo "MSI files:"
             dir /s /b target\\*.msi || true
           else
             # Linux 使用 find 命令
+            echo "Build artifacts:"
             find target/release/bundle -type f -print || true
+            echo "Linux packages:"
             find ${{ github.workspace }} -name '*.AppImage' -o -name '*.deb' -print || true
           fi
 
@@ -164,7 +172,7 @@ jobs:
         id: changelog
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # version: ${{ github.ref_name }}
+          #version: ${{ github.ref_name }}
           output-file: "CHANGELOG.md"
 
       # 步骤 3: 判断是否为预发布版本
