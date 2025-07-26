@@ -22,51 +22,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 步骤 2: 设置 UTF-8 环境
-      - name: Set UTF-8 Locale
-        run: |
-          echo "LC_ALL=C.UTF-8" >> $GITHUB_ENV
-          echo "LANG=C.UTF-8" >> $GITHUB_ENV
-
-      # 步骤 3: 安装 Rust 和 sccache（编译缓存）
-      - name: Install Rust with sccache
+      # 步骤 2: 安装 Rust
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-src, clippy
-        env:
-          RUSTC_WRAPPER: sccache  # 启用编译缓存
 
-      # 步骤 4: 安装 sccache 并配置缓存
-      - name: Setup sccache
-        run: |
-          cargo install sccache --locked
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-          echo "SCCACHE_CACHE_SIZE=2G" >> $GITHUB_ENV
-          echo "SCCACHE_DIRECT_MODE=true" >> $GITHUB_ENV
-          echo "SCCACHE_IDLE_TIMEOUT=0" >> $GITHUB_ENV
-
-      # 步骤 5: 缓存 sccache 编译结果
-      - name: Cache sccache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/sccache
-          key: ${{ runner.os }}-sccache-${{ hashFiles('Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-sccache-
-
-      # 步骤 6: 安装 Tauri CLI
+      # 步骤 3: 安装 Tauri CLI
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 7: 修复 Linux 依赖安装问题
+      # 步骤 4: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential
-          
-          # 仅安装必需依赖
           sudo apt-get install -y \
             libwebkit2gtk-4.1-dev \
             libgtk-3-dev \
@@ -75,7 +45,7 @@ jobs:
             libudev-dev \
             pkg-config
 
-      # 步骤 8: 检查 Windows WebView2
+      # 步骤 5: 检查 Windows WebView2
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -90,20 +60,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # 步骤 9: 缓存 Cargo 依赖（优化策略）
-      - name: Cache Dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-${{ matrix.platform }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}-
-            ${{ runner.os }}-cargo-
-
-      # ✅ 步骤 10: 修复 MSI 版本号问题
+      # ✅ 步骤 6: 设置版本号
       - name: Set Application Version
         shell: bash
         run: |
@@ -111,10 +68,8 @@ jobs:
           BASE_VERSION=$(grep -E '"version":' tauri.conf.json | sed -E 's/.*"version": *"([^"]+).*/\1/')
           
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            # 对于标签版本，提取主版本号
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            # 对于手动构建，使用基础版本 + run_id
             VERSION="${BASE_VERSION}+manual.${{ github.run_id }}"
           fi
 
@@ -132,19 +87,19 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # 步骤 11: 构建 Tauri 应用（Windows 特殊处理）
+      # ✅ 步骤 7: 修复构建命令错误
       - name: Build Tauri Application
         run: |
           if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
             # 对于 Windows，使用简化版本号构建 MSI
             SIMPLIFIED_VERSION=$(echo "$VERSION" | sed -E 's/\+.*//')
-            cargo tauri build --release --verbose --target x86_64-pc-windows-msi -c "{\"package\": {\"version\": \"$SIMPLIFIED_VERSION\"}}"
+            cargo tauri build --target x86_64-pc-windows-msi -c "{\"package\": {\"version\": \"$SIMPLIFIED_VERSION\"}}"
           else
             # 其他平台正常构建
-            cargo tauri build --release --verbose
+            cargo tauri build
           fi
 
-      # 步骤 12: 上传构建产物
+      # 步骤 8: 上传构建产物
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -157,7 +112,7 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      # 步骤 13: 显示构建产物信息
+      # 步骤 9: 显示构建产物信息
       - name: Show Build Results
         run: |
           echo "Build artifacts:"
