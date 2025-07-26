@@ -100,9 +100,9 @@ jobs:
         with:
           name: build-${{ matrix.platform }}-${{ github.ref_name || 'manual' }}
           path: |
-            src-tauri/target/release/bundle/**
-            src-tauri/target/**/*.msi
-            src-tauri/target/**/*.AppImage
+            target/release/bundle/**
+            target/**/*.msi
+            target/**/*.AppImage
           retention-days: 7  # 设置自动清理时间
           if-no-files-found: error  # 如果没有文件则失败
 
@@ -110,6 +110,6 @@ jobs:
       - name: Show Build Results
         run: |
           echo "Build artifacts:"
-          ls -R src-tauri/target/release/bundle || true
+          ls -R target/release/bundle || true
           echo "Uploaded artifacts:"
           ls -R ${{ github.workspace }} || true
