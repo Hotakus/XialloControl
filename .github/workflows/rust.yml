@@ -25,7 +25,7 @@ jobs:
       # 步骤 2: 修复的 Rust 安装 - 使用正确的 Action 名称
       - name: Install Rust
         # 使用正确的 rust-lang 官方 Action
-        uses: rust-lang/setup-rust@v1
+        uses: actions-rust/setup-rust@v1.7.0
         with:
           toolchain: stable
           components: rust-src, clippy
