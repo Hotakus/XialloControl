@@ -78,14 +78,13 @@ jobs:
       # 步骤 7: 设置应用版本
       - name: Set Application Version
         run: |
-          # 提取标签名作为版本
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
           else
-            VERSION=manual-${{ github.run_id }}
+            VERSION="0.0.0-${{ github.run_id }}"  
           fi
-          
-          # 更新配置文件
+
+          # 替换 version 字段
           sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" tauri.conf.json
           echo "Building version: $VERSION"
 
