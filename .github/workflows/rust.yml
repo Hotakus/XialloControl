@@ -32,7 +32,7 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0"
 
-      # 步骤 4: 修复 Linux 依赖问题（添加 appindicator）
+      # 步骤 4: 安装 Linux 依赖
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-latest'
         run: |
@@ -44,7 +44,7 @@ jobs:
             patchelf \
             libudev-dev \
             pkg-config \
-            libayatana-appindicator3-dev  # 修复 appindicator 问题
+            libayatana-appindicator3-dev
 
       # 步骤 5: 检查 Windows WebView2
       - name: Check Windows Dependencies
@@ -61,7 +61,7 @@ jobs:
             Write-Host "WebView2 is already installed"
           }
 
-      # ✅ 步骤 6: 设置版本号
+      # ✅ 步骤 6: 设置版本号（修复 Windows MSI 问题）
       - name: Set Application Version
         shell: bash
         run: |
@@ -74,13 +74,20 @@ jobs:
             VERSION="${BASE_VERSION}+manual.${{ github.run_id }}"
           fi
 
-          echo "📦 Final version: $VERSION"
+          # 对于 Windows MSI，需要简化版本号（移除 +manual 后缀）
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            FINAL_VERSION=$(echo "$VERSION" | sed -E 's/\+.*//')
+            echo "📦 Windows version (simplified): $FINAL_VERSION"
+          else
+            FINAL_VERSION=$VERSION
+            echo "📦 Final version: $FINAL_VERSION"
+          fi
 
           # 替换 tauri.conf.json
-          sed -i.bak -E "s/\"version\": *\"[^\"]+\"/\"version\": \"$VERSION\"/" tauri.conf.json && rm tauri.conf.json.bak
+          sed -i.bak -E "s/\"version\": *\"[^\"]+\"/\"version\": \"$FINAL_VERSION\"/" tauri.conf.json && rm tauri.conf.json.bak
 
           # 替换 Cargo.toml
-          sed -i.bak -E "s/^version = \"[^\"]+\"/version = \"$VERSION\"/" Cargo.toml && rm Cargo.toml.bak
+          sed -i.bak -E "s/^version = \"[^\"]+\"/version = \"$FINAL_VERSION\"/" Cargo.toml && rm Cargo.toml.bak
 
           # 输出验证
           echo "Updated tauri.conf.json version:"
@@ -88,16 +95,15 @@ jobs:
           echo "Updated Cargo.toml version:"
           grep '^version =' Cargo.toml
 
-      # ✅ 步骤 7: 修复 Windows 脚本问题
+      # ✅ 步骤 7: 修复构建命令（简化 Windows 构建）
       - name: Build Tauri Application
         shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            # 对于 Windows，使用简化版本号构建 MSI
-            SIMPLIFIED_VERSION=$(echo "$VERSION" | sed -E 's/\+.*//')
-            cargo tauri build --target x86_64-pc-windows-msi -c "{\"package\": {\"version\": \"$SIMPLIFIED_VERSION\"}}"
+            # Windows 构建 MSI
+            cargo tauri build --target x86_64-pc-windows-msi
           else
-            # 其他平台正常构建
+            # Linux 构建
             cargo tauri build
           fi
 
