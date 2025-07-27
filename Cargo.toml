@@ -1,6 +1,6 @@
 [package]
 name = "xenocontrol"
-version = "0.1.5"
+version = "0.2.1"
 description = "XenoControl by Hotakus"
 authors = ["Hotakus"]
 edition = "2024"
@@ -50,9 +50,10 @@ tauri-plugin-autostart = "2"
 
 # 系统交互
 enigo = "0.2"     # 输入模拟
-gilrs = "0.10"    # 游戏手柄支持
+gilrs = "0.11"    # 游戏手柄支持
 hidapi = "2"      # HID设备访问
 dirs = "6.0.0"    # 目录路径获取
+rusty-xinput = "1"
 
 # 数据处理
 serde = { version = "1", features = ["derive"] }
