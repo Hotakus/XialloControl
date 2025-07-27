@@ -1,9 +1,13 @@
-use hidapi::HidApi;
+use crate::xeno_utils::get_app_root;
+// ---------------------- 外部依赖 ----------------------
+use hidapi::{HidApi};
+use once_cell::sync::Lazy;
+use rusty_xinput::{XInputHandle};
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
-use std::time::Duration;
+use std::sync::Mutex;
+use std::{fs, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
+// ---------------------- 设备信息结构体 ----------------------
 
 // 修改为 TOML 配置文件
 pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
