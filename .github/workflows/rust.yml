@@ -113,6 +113,22 @@ jobs:
           echo "构建前目录结构:"
           ls -l
           cargo tauri build --verbose
+          # 仅针对 Windows 平台重命名安装包
+          if [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            # 查找所有 MSI 文件
+            find target/release/bundle/msi -name '*.msi' -print0 | while IFS= read -r -d '' file; do
+              # 获取文件名和目录
+              dir=$(dirname "$file")
+              filename=$(basename "$file")
+          
+              # 移除语言标记 (如 _en-US)
+              new_name=$(echo "$filename" | sed -E 's/_en-US//g')
+          
+              # 重命名文件
+              mv "$file" "$dir/$new_name"
+              echo "✅ 重命名: $filename -> $new_name"
+            done
+          fi
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
