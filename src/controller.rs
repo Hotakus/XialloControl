@@ -9,88 +9,151 @@ use std::{fs, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 // ---------------------- 设备信息结构体 ----------------------
 
-// 修改为 TOML 配置文件
+/// 设备信息，既可表示支持的设备配置，也可表示已连接设备
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DeviceInfo {
+    pub name: String,
+    pub vendor_id: String,
+    pub product_id: Option<String>, // 配置时可选，运行时检测设备时一般有值
+    pub device_path: Option<String>, // 连接设备专属，配置时为 None
+    pub controller_type: ControllerType, // 设备类型
+}
+
+// ---------------------- 常量定义 ----------------------
+
+pub struct Handles {
+    pub app_handle: AppHandle,
+    pub xinput: XInputHandle,
+}
+
+static HANDLES: Lazy<Mutex<Option<Handles>>> = Lazy::new(|| Mutex::new(None));
+
 pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
+pub static FREQ: Lazy<Mutex<u32>> = Lazy::new(|| Mutex::new(125));
+pub static TIME_INTERVAL: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
+pub static CURRENT_DEVICE: Lazy<Mutex<DeviceInfo>> = Lazy::new(|| {
+    Mutex::new(DeviceInfo {
+        name: "".into(),
+        vendor_id: "".into(),
+        product_id: None,
+        device_path: None,
+        controller_type: ControllerType::Other,
+    })
+});
 
-// 添加 Clone trait 实现
-#[derive(Debug, Serialize, Deserialize, Clone)] // 添加 Clone trait
-pub struct SupportedDevice {
-    pub name: String,
-    pub vendor_id: String,
-    pub product_id: Option<String>, // 可选字段
+// ---------------------- 控制器类型定义 ----------------------
+
+/// 控制器类型枚举
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ControllerType {
+    Xbox,
+    PlayStation,
+    Switch,
+    Other,
 }
 
-pub struct SupportedConnectedDevice {
-    pub name: String,
-    pub vendor_id: String,
-    pub product_id: String,
-    pub device_path: String, // 唯一标识，可用来打开设备
+/// 根据厂商ID判断控制器类型
+pub fn detect_controller_type(vid: &str) -> ControllerType {
+    match vid.to_ascii_lowercase().as_str() {
+        "045e" => ControllerType::Xbox,
+        "054c" => ControllerType::PlayStation,
+        "057e" => ControllerType::Switch,
+        _ => ControllerType::Other,
+    }
 }
 
-// 包装结构体用于 TOML 序列化
+// ---------------------- TOML 配置结构 ----------------------
+
 #[derive(Debug, Serialize, Deserialize)]
 struct SupportedDevicesConfig {
-    devices: Vec<SupportedDevice>,
+    devices: Vec<DeviceInfo>,
 }
 
-fn default_devices() -> Vec<SupportedDevice> {
-    vec![
-        SupportedDevice {
+// ---------------------- 默认设备配置 ----------------------
+
+/// 默认支持的设备列表（配置用）
+fn default_devices() -> Vec<DeviceInfo> {
+    let devices = vec![
+        DeviceInfo {
             name: "Any Xbox Controller".into(),
             vendor_id: "045e".into(),
             product_id: None,
+            device_path: None,
+            controller_type: ControllerType::Xbox,
         },
-        SupportedDevice {
+        DeviceInfo {
             name: "DualShock 4 (PS4)".into(),
             vendor_id: "054c".into(),
             product_id: None,
+            device_path: None,
+            controller_type: ControllerType::PlayStation,
         },
-        SupportedDevice {
+        DeviceInfo {
             name: "DualSense (PS5)".into(),
             vendor_id: "054c".into(),
             product_id: None,
+            device_path: None,
+            controller_type: ControllerType::PlayStation,
         },
-    ]
+        DeviceInfo {
+            name: "Switch Pro".into(),
+            vendor_id: "057e".into(),
+            product_id: None,
+            device_path: None,
+            controller_type: ControllerType::Switch,
+        },
+    ];
+
+    devices
 }
 
-pub fn load_or_create_config(path: &str) -> Vec<SupportedDevice> {
-    let config_path = Path::new(path);
+// ---------------------- 配置加载 ----------------------
+
+/// 从配置文件加载支持的设备，如果不存在则生成默认配置文件
+pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
+    let config_path = get_app_root().join(path);
 
     if config_path.exists() {
-        // 读取 TOML 文件
-        let toml_str = match fs::read_to_string(path) {
+        let toml_str = match fs::read_to_string(config_path) {
             Ok(content) => content,
             Err(e) => {
-                log::error!("Failed to read TOML config: {}", e);
+                log::error!("读取 TOML 配置文件失败: {}", e);
                 return default_devices();
             }
         };
 
-        // 解析 TOML
         match toml::from_str::<SupportedDevicesConfig>(&toml_str) {
-            Ok(config) => config.devices,
+            Ok(mut config) => {
+                // 确保配置中的每个设备都有正确的 controller_type（兼容旧配置）
+                for device in &mut config.devices {
+                    device.controller_type = detect_controller_type(&device.vendor_id);
+                }
+                config.devices
+            }
             Err(e) => {
-                log::error!("Failed to parse TOML config: {}", e);
+                log::error!("解析 TOML 配置文件失败: {}", e);
                 default_devices()
             }
         }
     } else {
-        println!("🛠️ Config not found. Generating default TOML config...");
+        println!("🛠️ 配置文件不存在，正在生成默认 TOML 配置...");
+        println!("{:?}", config_path);
 
-        let default = default_devices();
+        let mut default = default_devices();
+        // 默认设备的 controller_type 已设置
+
         let config = SupportedDevicesConfig {
             devices: default.clone(),
         };
 
-        // 序列化为 TOML
         match toml::to_string_pretty(&config) {
             Ok(toml_str) => {
-                if let Err(e) = fs::write(path, toml_str) {
-                    log::error!("Failed to write default TOML config: {}", e);
+                if let Err(e) = fs::write(config_path, toml_str) {
+                    log::error!("写入默认 TOML 配置文件失败: {}", e);
                 }
             }
             Err(e) => {
-                log::error!("Failed to serialize TOML config: {}", e);
+                log::error!("序列化 TOML 配置文件失败: {}", e);
             }
         }
 
@@ -98,14 +161,14 @@ pub fn load_or_create_config(path: &str) -> Vec<SupportedDevice> {
     }
 }
 
-// 以下函数保持不变
-pub fn list_supported_connected_devices(
-    config: &[SupportedDevice],
-) -> Vec<SupportedConnectedDevice> {
+// ---------------------- 设备检测 ----------------------
+
+/// 根据配置过滤当前连接的支持设备，补充运行时设备信息
+pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo> {
     let api = match HidApi::new() {
         Ok(api) => api,
         Err(e) => {
-            log::error!("Failed to init hidapi: {}", e);
+            log::error!("初始化 hidapi 失败: {}", e);
             return Vec::new();
         }
     };
@@ -116,55 +179,141 @@ pub fn list_supported_connected_devices(
         let vid = format!("{:04x}", device.vendor_id());
         let pid = format!("{:04x}", device.product_id());
 
+        // 匹配配置支持的设备（厂商ID和可选产品ID匹配）
         let matched = config.iter().find(|d| {
-            d.vendor_id == vid
+            d.vendor_id.eq_ignore_ascii_case(&vid)
                 && match &d.product_id {
-                    Some(pid_cfg) => pid_cfg == &pid,
+                    Some(pid_cfg) => pid_cfg.eq_ignore_ascii_case(&pid),
                     None => true,
                 }
         });
 
-        if let Some(_supported) = matched {
-            let device_info = SupportedConnectedDevice {
-                name: device
-                    .product_string()
-                    .unwrap_or("Unknown Device")
-                    .to_string(),
+        if let Some(supported) = matched {
+            // 构造运行时设备信息，带 device_path 和具体 product_id，类型也重新确认
+            let device_info = DeviceInfo {
+                name: device.product_string().unwrap_or("未知设备").to_string(),
                 vendor_id: vid.clone(),
-                product_id: pid.clone(),
-                device_path: device.path().to_string_lossy().to_string(),
+                product_id: Some(pid.clone()),
+                device_path: Some(device.path().to_string_lossy().to_string()),
+                controller_type: detect_controller_type(&vid),
             };
             supported_devices.push(device_info);
         }
     }
+
     supported_devices
 }
 
-fn _query_devices() -> Vec<String> {
-    let config = load_or_create_config(SUPPORTED_DEVICES_FILE);
-    let devices = list_supported_connected_devices(&config);
+// ---------------------- 内部工具函数 ----------------------
 
-    devices.iter().map(|device| device.name.clone()).collect()
+pub fn get_app_handle() -> AppHandle {
+    let handles = HANDLES.lock().unwrap();
+    handles
+        .as_ref()
+        .expect("HANDLES not initialized")
+        .app_handle
+        .clone()
+}
+
+pub fn get_xinput() -> XInputHandle {
+    let handles = HANDLES.lock().unwrap();
+    handles
+        .as_ref()
+        .expect("HANDLES not initialized")
+        .xinput
+        .clone()
+}
+
+fn _list_supported_devices() -> Vec<DeviceInfo> {
+    let config = load_or_create_config(SUPPORTED_DEVICES_FILE);
+    list_supported_connected_devices(&config)
+}
+
+fn _query_devices() -> Vec<DeviceInfo> {
+    _list_supported_devices()
+    // devices.iter().map(|d| d.name.clone()).collect()
+}
+
+fn _find_device_by_name(name: &str) -> Option<DeviceInfo> {
+    let devices = _list_supported_devices();
+    devices.into_iter().find(|d| d.name == name)
+}
+
+// ---------------------- Tauri 命令接口 ----------------------
+
+#[tauri::command]
+pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
+    let devices = _query_devices();
+    if let Err(e) = app.emit("update_devices", devices.clone()) {
+        log::error!("发送 update_devices 事件失败: {}", e);
+    }
+    log::debug!("执行了 query_devices 命令");
+    log::debug!("设备列表: {:?}", &devices);
+    devices
 }
 
 #[tauri::command]
-pub async fn query_devices(app: tauri::AppHandle) -> Vec<String> {
-    let devices_name = _query_devices();
-    if let Err(e) = app.emit("update_devices", devices_name.clone()) {
-        log::error!("Failed to emit update_devices event: {}", e);
+pub async fn use_device(device_name: String) -> bool {
+    log::debug!("尝试使用设备: {}", device_name);
+    match _find_device_by_name(&device_name) {
+        Some(device) => {
+            log::debug!(
+                "找到设备: {}，厂商ID: {}, 产品ID: {}, 设备路径: {:?}, 类型: {:?}",
+                device.name,
+                device.vendor_id,
+                device.product_id.clone().unwrap_or_default(),
+                device.device_path.as_deref(),
+                device.controller_type
+            );
+
+            let mut current_device = CURRENT_DEVICE.lock().unwrap();
+            *current_device = device.clone();
+
+            log::info!("✅ 使用设备: {}", current_device.name);
+            true
+        }
+        None => {
+            log::error!("❌ 未找到名为 '{}' 的设备", device_name);
+            false
+        }
     }
-    log::debug!("query_devices");
-    devices_name
 }
 
-pub fn listen(app_handle: AppHandle) {
-    tauri::async_runtime::spawn(async move {
-        log::info!("🛠️ Controller listening...");
+#[tauri::command]
+pub fn disconnect_device() -> bool {
+    log::debug!("尝试断开设备连接");
+    let mut current_device = CURRENT_DEVICE.lock().unwrap();
+    *current_device = default_devices()[0].clone();
+    log::info!("✅ 已断开当前设备");
+    true
+}
 
+#[tauri::command]
+pub async fn set_frequency(freq: u32) {
+    let freq = freq.clamp(1, 8000); // 限制范围
+    let mut global_freq = FREQ.lock().unwrap();
+    let mut time_interval = TIME_INTERVAL.lock().unwrap();
+
+    *global_freq = freq;
+    *time_interval = 1.0 / freq as f32;
+
+    log::info!(
+        "轮询频率已设置为: {} Hz ({} seconds)",
+        *global_freq,
+        *time_interval
+    );
+}
+
+// ---------------------- 后台监听任务 ----------------------
+
+pub fn polling_devices() {
+    tauri::async_runtime::spawn(async move {
+        log::info!("🛠️ 控制器监听已启动...");
+        let app_handle = get_app_handle();
         loop {
             let devices_name = _query_devices();
             if let Err(e) = app_handle.emit("update_devices", devices_name.clone()) {
-                log::error!("Failed to emit update_devices event: {}", e);
+                log::error!("发送 update_devices 事件失败: {}", e);
             }
             tokio::time::sleep(Duration::from_millis(500)).await;
         }
