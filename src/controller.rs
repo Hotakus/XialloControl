@@ -170,3 +170,128 @@ pub fn listen(app_handle: AppHandle) {
         }
     });
 }
+
+fn poll_xbox(device: &DeviceInfo) {
+    // TODO: 调用你的 xbox 轮询函数
+    let xinput = get_xinput();
+    let compose_code: u32 = 0x00;
+
+    match xinput.get_state(0) {
+        Ok(state) => {
+            // 象征性使用 Rust 风格的方法判断按钮
+            if state.south_button() {
+                println!("Xbox A 键（South）被按下");
+            }
+            if state.east_button() {
+                println!("Xbox B 键（East）被按下");
+            }
+            if state.north_button() {
+                println!("Xbox Y 键（North）被按下");
+            }
+            if state.west_button() {
+                println!("Xbox X 键（West）被按下");
+            }
+
+            // 摇杆坐标
+            let (lx, ly) = state.left_stick_normalized();
+            println!("左摇杆 raw = ({}, {})", lx, ly);
+            // let (rx, ry) = state.right_stick_raw();
+            // println!("右摇杆 raw = ({}, {})", rx, ry);
+        }
+        Err(err) => {
+            println!("手柄未连接或无法读取状态: {:?}", err);
+            // TODO: 处理异常情况
+            disconnect_device();
+            let app_handle = get_app_handle();
+            if let Err(e) = app_handle.emit("physical_connect_status", false) {
+                log::error!("发送 physical_connect_status 事件失败: {}", e);
+            }
+        }
+    }
+}
+
+/// 轮询设备异步函数
+ fn poll_controller(device: &DeviceInfo) {
+    match device.controller_type {
+        ControllerType::Xbox => {
+            // log::debug!("轮询 Xbox 设备: {}", device.name);
+            // TODO: 调用你的 xbox 轮询函数
+            poll_xbox(device);
+        }
+        _ => {
+            // log::debug!("轮询其他设备: {}", device.name);
+            // TODO: 调用其他设备轮询函数
+            // 例如 poll_other(device, app_handle).await;
+        }
+    }
+}
+
+pub fn listen() {
+    thread::spawn( ||  {
+        log::info!("🎧 启动设备监听任务");
+
+        let mut last_device: Option<DeviceInfo> = None;
+
+        loop {
+            let time_interval = *TIME_INTERVAL.lock().unwrap();
+            let current_device = CURRENT_DEVICE.lock().unwrap().clone();
+
+            let is_current_valid = current_device.device_path.is_some();
+            let is_last_valid = last_device
+                .as_ref()
+                .map(|d| d.device_path.is_some())
+                .unwrap_or(false);
+
+            // 设备连接/切换/断开检测
+            match (is_last_valid, is_current_valid) {
+                (false, true) => {
+                    log::info!("🔌 连接新设备: {}", current_device.name);
+                    last_device = Some(current_device.clone());
+                    // TODO: 初始化监听逻辑
+                }
+                (true, true) => {
+                    if last_device.as_ref().unwrap().device_path != current_device.device_path {
+                        log::info!(
+                            "🔄 设备切换: {} → {}",
+                            last_device.as_ref().unwrap().name,
+                            current_device.name
+                        );
+                        last_device = Some(current_device.clone());
+                        // TODO: 切换监听逻辑
+                    }
+                    // 设备相同，不操作
+                }
+                (true, false) => {
+                    log::info!("❌ 设备断开: {}", last_device.as_ref().unwrap().name);
+                    last_device = None;
+                    // TODO: 清理监听逻辑
+                }
+                (false, false) => {
+                    // 无设备，不操作
+                }
+            }
+
+            // 调用轮询函数
+            if let Some(device) = &last_device {
+                poll_controller(device);
+            }
+
+            thread::sleep(Duration::from_secs_f32(time_interval));
+        }
+    });
+}
+
+pub fn initialize(app_handle: AppHandle) {
+    let xinput = XInputHandle::load_default().unwrap();
+    let mut handles = HANDLES.lock().unwrap();
+
+    *handles = Some(Handles {
+        app_handle: app_handle.clone(),
+        xinput,
+    });
+
+    _list_supported_devices();
+
+    polling_devices();
+    listen();
+}
