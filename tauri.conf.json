@@ -14,10 +14,11 @@
         "title": "XenoControl",
         "fullscreen": false,
         "decorations": false,
-        "width": 1180,
+        "width": 1080,
         "height": 720,
         "resizable": false,
-        "transparent": true
+        "transparent": true,
+        "maximizable": false
       }
     ],
     "security": {
