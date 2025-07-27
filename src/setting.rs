@@ -1,8 +1,11 @@
+use crate::xeno_utils::get_app_root;
 use anyhow::{Context, Result};
-use log; // 仅导入 log crate
+use log;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use tauri::AppHandle;
+use tauri_plugin_autostart::ManagerExt;
 
 // 设置文件名
 const SETTINGS_FILE: &str = "settings.toml";
@@ -68,17 +71,18 @@ fn get_settings_path() -> &'static str {
 
 /// 加载应用设置
 pub fn load_settings() -> AppSettings {
-    let settings_path = get_settings_path();
-    log::debug!("尝试加载设置文件: {}", settings_path);
+    let settings_path = get_app_root().join(get_settings_path());
+    log::debug!("尝试加载设置文件: {}", &settings_path.display());
 
     // 如果设置文件不存在，返回默认设置
-    if !Path::new(settings_path).exists() {
+    if !Path::new(&settings_path).exists() {
         log::debug!("设置文件不存在，使用默认设置");
+        save_settings(&AppSettings::default()).unwrap();
         return AppSettings::default();
     }
 
     // 读取并解析设置文件
-    match fs::read_to_string(settings_path) {
+    match fs::read_to_string(&settings_path) {
         Ok(toml_str) => {
             log::debug!("成功读取设置文件内容");
             match toml::from_str(&toml_str) {
@@ -101,8 +105,8 @@ pub fn load_settings() -> AppSettings {
 
 /// 保存应用设置
 pub fn save_settings(settings: &AppSettings) -> Result<()> {
-    let settings_path = get_settings_path();
-    log::debug!("尝试保存设置到文件: {}", settings_path);
+    let settings_path = get_app_root().join(get_settings_path());
+    log::debug!("尝试保存设置到文件: {:?}", &settings_path);
 
     // 序列化设置
     let toml_str = toml::to_string_pretty(settings)
@@ -113,25 +117,25 @@ pub fn save_settings(settings: &AppSettings) -> Result<()> {
         })?;
 
     // 写入文件
-    fs::write(settings_path, &toml_str)
-        .with_context(|| format!("写入设置文件失败: {}", settings_path))
+    fs::write(&settings_path, &toml_str)
+        .with_context(|| format!("写入设置文件失败: {:?}", &settings_path))
         .map_err(|e| {
             log::error!("保存设置到文件失败: {}", e);
             e
         })?;
 
-    log::info!("设置已成功保存到: {}", settings_path);
+    log::info!("设置已成功保存到: {:?}", &settings_path);
     Ok(())
 }
 
 /// 更新应用设置
 #[tauri::command]
-pub async fn update_settings(new_settings: AppSettings) -> Result<(), String> {
+pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Result<(), String> {
     log::debug!("接收到更新设置请求: {:?}", new_settings);
 
     // 验证轮询频率范围
-    if new_settings.polling_frequency < 1 || new_settings.polling_frequency > 1000 {
-        let msg = "轮询频率必须在1-1000Hz范围内".to_string();
+    if new_settings.polling_frequency < 1 || new_settings.polling_frequency > 8000 {
+        let msg = "轮询频率必须在1-8000Hz范围内".to_string();
         log::error!("{}", msg);
         return Err(msg);
     }
@@ -150,6 +154,19 @@ pub async fn update_settings(new_settings: AppSettings) -> Result<(), String> {
         msg
     })?;
 
+    // 获取自动启动管理器
+    let autostart_manager = app.autolaunch();
+    if (new_settings.auto_start && !autostart_manager.is_enabled().unwrap()) {
+        // 启用 autostart
+        let _ = autostart_manager.enable();
+        log::info!("已启用开机自启动");
+    } else if (!new_settings.auto_start && autostart_manager.is_enabled().unwrap()) {
+        // 禁用 autostart
+        let _ = autostart_manager.disable();
+        log::info!("已禁用开机自启动");
+    }
+    log::debug!("registered for autostart? {}", autostart_manager.is_enabled().unwrap());
+
     log::info!("设置已成功更新");
     Ok(())
 }
@@ -161,4 +178,8 @@ pub async fn get_current_settings() -> Result<AppSettings, String> {
     let settings = load_settings();
     log::debug!("当前设置: {:?}", settings);
     Ok(settings)
+}
+
+pub fn initialize() {
+    log::debug!("初始化设置");
 }
