@@ -14,6 +14,11 @@
           --border-radius: 10px;
           --gap: 20px;
           --active-shadow: 0 0 15px rgba(0, 0, 0, 0.3) inset;
+          --overlay-bg: rgba(0, 0, 0, 0.5);
+          --modal-bg: #ffffff;
+          --modal-width: 500px;
+          --danger: #e74c3c;
+          --success: #2ecc71;
       }
 
       * {
@@ -30,14 +35,15 @@
           align-items: center;
           height: 100vh;
           -webkit-app-region: nodrag;
+          background: linear-gradient(135deg, #1e3c72, #2a5298);
       }
 
       .window {
-          width: 1280px;
+          width: 1080px;
           height: 720px;
           background: #ffffff;
           border-radius: var(--border-radius);
-          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
           overflow: hidden;
           display: flex;
           flex-direction: column;
@@ -271,6 +277,51 @@
           min-height: 0;
       }
 
+      .button-map-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+      }
+
+      .button-map-title {
+          font-weight: bold;
+          font-size: 16px;
+          color: #2f3542;
+      }
+
+      .button-map-controls {
+          display: flex;
+          gap: 8px;
+      }
+
+      .button-map-controls button {
+          width: 36px;
+          height: 36px;
+          padding: 0;
+          border: none;
+          border-radius: 8px;
+          background-color: #4c8bf5;
+          color: white;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .button-map-controls button:hover {
+          background-color: #3a7de0;
+          transform: translateY(-1px);
+      }
+
+      .button-map-controls button:active {
+          transform: translateY(1px);
+          background-color: #2a5dbf;
+          box-shadow: var(--active-shadow);
+          transition: none;
+      }
+
       .button-map-item {
           display: flex;
           align-items: center;
@@ -280,6 +331,11 @@
           border-radius: 6px;
           font-size: 14px;
           white-space: nowrap;
+          position: relative;
+      }
+
+      .button-map-item:hover {
+          background: #e0e4eb;
       }
 
       .button-icon {
@@ -298,6 +354,48 @@
 
       .key-text {
           color: #555;
+          flex: 1;
+      }
+
+      .key-value {
+          font-weight: bold;
+          color: #2f3542;
+          background: #e0e4eb;
+          padding: 4px 10px;
+          border-radius: 4px;
+          min-width: 120px;
+          text-align: center;
+      }
+
+      .item-actions {
+          display: flex;
+          gap: 5px;
+      }
+
+      .item-action-btn {
+          width: 28px;
+          height: 28px;
+          border: none;
+          border-radius: 5px;
+          background: #dce2eb;
+          color: #555;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+      }
+
+      .item-action-btn:hover {
+          background: #c8d1e0;
+      }
+
+      .item-action-btn.edit {
+          color: #2a5dbf;
+      }
+
+      .item-action-btn.delete {
+          color: #e74c3c;
       }
 
       .window-footer {
@@ -425,30 +523,50 @@
           flex: 1;
       }
 
-      #scan-button {
-          padding: 8px 12px;
-          background-color: #4c8bf5;
-          color: white;
+      /* 新按钮样式 */
+      .icon-button {
+          width: 36px;
+          height: 36px;
+          padding: 0;
           border: none;
           border-radius: 6px;
-          font-size: 14px;
-          font-weight: bold;
           cursor: pointer;
           transition: all 0.15s ease;
-          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: #4c8bf5;
+          color: white;
       }
 
-      #scan-button:hover {
+      .icon-button:hover {
           background-color: #3a7de0;
           transform: translateY(-1px);
       }
 
-      /* 增强扫描按钮按下效果 */
-      #scan-button:active {
+      .icon-button:active {
           transform: translateY(1px);
           background-color: #2a5dbf;
           box-shadow: var(--active-shadow);
           transition: none;
+      }
+
+      .icon-button.connected {
+          background-color: #28a745;
+      }
+
+      .icon-button.connected:hover {
+          background-color: #218838;
+      }
+
+      .icon-button.connected:active {
+          background-color: #1e7e34;
+      }
+
+      .icon-button svg {
+          width: 20px;
+          height: 20px;
+          fill: white;
       }
 
       /* 设置容器 */
@@ -589,12 +707,288 @@
           font-size: 14px;
           color: #555;
       }
+
+      /* 状态提示 */
+      .status-message {
+          margin-top: 10px;
+          padding: 8px;
+          border-radius: 6px;
+          font-size: 13px;
+          text-align: center;
+          background: #f0f7ff;
+          color: #4c8bf5;
+      }
+
+      .status-message.error {
+          background: #ffecec;
+          color: #e74c3c;
+      }
+
+      .status-message.success {
+          background: #e6f7ee;
+          color: #28a745;
+      }
+
+      /* 动画效果 */
+      @keyframes pulse {
+          0% {
+              transform: scale(1);
+          }
+          50% {
+              transform: scale(1.05);
+          }
+          100% {
+              transform: scale(1);
+          }
+      }
+
+      .icon-button.scanning svg {
+          animation: pulse 1.5s infinite;
+      }
+
+      @keyframes rotate {
+          from {
+              transform: rotate(360deg);
+          }
+          to {
+              transform: rotate(0deg);
+          }
+      }
+
+      .spin {
+          animation: rotate 0.3s linear;
+      }
+
+      /* 模态窗口样式 */
+      .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: var(--overlay-bg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s ease;
+      }
+
+      .modal-overlay.active {
+          opacity: 1;
+          visibility: visible;
+      }
+
+      .modal {
+          background: var(--modal-bg);
+          width: var(--modal-width);
+          border-radius: var(--border-radius);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          overflow: hidden;
+          transform: translateY(20px);
+          transition: transform 0.3s ease;
+      }
+
+      .modal-overlay.active .modal {
+          transform: translateY(0);
+      }
+
+      .modal-header {
+          background: var(--primary-bg);
+          color: var(--primary-text);
+          padding: 15px 20px;
+          font-size: 18px;
+          font-weight: bold;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+      }
+
+      .modal-close {
+          background: none;
+          border: none;
+          color: var(--primary-text);
+          font-size: 20px;
+          cursor: pointer;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: all 0.2s ease;
+      }
+
+      .modal-close:hover {
+          background: rgba(255, 255, 255, 0.2);
+      }
+
+      .modal-body {
+          padding: 20px;
+      }
+
+      .form-group {
+          margin-bottom: 20px;
+      }
+
+      .form-group label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 600;
+          color: #2f3542;
+      }
+
+      .form-control {
+          width: 100%;
+          padding: 12px 15px;
+          border: 1px solid #dce2eb;
+          border-radius: 8px;
+          background: #f8f9fa;
+          font-size: 14px;
+          transition: all 0.2s ease;
+      }
+
+      .form-control:focus {
+          outline: none;
+          border-color: #4c8bf5;
+          box-shadow: 0 0 0 3px rgba(76, 139, 245, 0.2);
+      }
+
+      .key-detector {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+      }
+
+      .detector-area {
+          height: 80px;
+          border: 2px dashed #dce2eb;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          color: #7a859e;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          background: #f8f9fa;
+          user-select: none;
+          text-align: center;
+          padding: 0 20px;
+      }
+
+      .detector-area.active {
+          background: #e6f0ff;
+          border-color: #4c8bf5;
+          color: #4c8bf5;
+      }
+
+      .detector-hint {
+          font-size: 12px;
+          color: #7a859e;
+          text-align: center;
+      }
+
+      .modal-footer {
+          padding: 15px 20px;
+          background: #f8f9fa;
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          border-top: 1px solid #e0e4eb;
+      }
+
+      .btn {
+          padding: 10px 20px;
+          border-radius: 8px;
+          border: none;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+      }
+
+      .btn-primary {
+          background: #4c8bf5;
+          color: white;
+      }
+
+      .btn-primary:hover {
+          background: #3a7de0;
+      }
+
+      .btn-primary:active {
+          background: #2a5dbf;
+          box-shadow: var(--active-shadow);
+      }
+
+      .btn-outline {
+          background: transparent;
+          border: 1px solid #dce2eb;
+          color: #555;
+      }
+
+      .btn-outline:hover {
+          background: #f1f3f6;
+      }
+
+      .btn-outline:active {
+          background: #e0e4eb;
+          box-shadow: var(--active-shadow);
+      }
+
+      .key-display {
+          font-size: 18px;
+          font-weight: bold;
+          color: #2f3542;
+          min-height: 30px;
+          text-align: center;
+          padding: 10px;
+          border-radius: 6px;
+          background: #f1f3f6;
+          margin-top: 5px;
+      }
+
+      .empty-state {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 30px;
+          color: #7a859e;
+      }
+
+      .empty-state i {
+          font-size: 48px;
+          margin-bottom: 15px;
+          color: #dce2eb;
+      }
+
+      .tab-content-container {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          min-height: 0;
+      }
+
+      .button-map {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+      }
   </style>
 </head>
+
 <body>
 <div class="window">
-  <div class="window-header">
+  <div class="window-header" id="titlebar">
     <div class="header-left">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white">
+        <path d="M18 2h-3.5l-1-1h-5l-1 1H6v2h12V2zm3 7H3v11c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9zM8 12h2v5H8v-5zm6 0h2v5h-2v-5z"/>
+      </svg>
       <span>XenoControl</span>
     </div>
     <div>
@@ -610,9 +1004,28 @@
         <div class="device-select-row">
           <select id="device">
             <option value="null">请选择设备</option>
+            <!--            <option value="0">Xbox 控制器 (COM3)</option>-->
+            <!--            <option value="1">PS5 DualSense 控制器</option>-->
+            <!--            <option value="2">Switch Pro 控制器</option>-->
           </select>
-          <button id="scan-button">重新扫描</button>
+          <!-- 新的连接按钮 -->
+          <button id="connect-button" title="连接设备" class="icon-button">
+            <svg t="1753595424804" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19662" width="200" height="200">
+              <path
+                  d="M521.6 158.08a111.36 111.36 0 0 1 111.36 111.36V480l96 96V269.44a206.72 206.72 0 0 0-394.24-87.68L411.52 256a110.72 110.72 0 0 1 110.08-97.92zM864 846.08l-135.04-135.04-96-96-222.08-222.08-96-96-135.04-134.4L112 230.4l202.88 202.24v306.56a206.72 206.72 0 0 0 394.24 87.68l87.04 87.04z m-341.76 4.48a111.36 111.36 0 0 1-111.36-111.36V528.64l221.44 221.44a110.72 110.72 0 0 1-110.72 100.48z"
+                  fill="#ffffff" p-id="19663"></path>
+            </svg>
+          </button>
+          <!-- 修改后的扫描按钮（图标化） -->
+          <button id="scan-button" title="扫描设备" class="icon-button">
+            <svg t="1753598068869" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23500" width="200" height="200">
+              <path
+                  d="M511.94 125.24c-118 0-227 54.22-298.6 142.52V85.33H128V469.34h341.33V384H240.67c48.43-104.78 154.16-173.43 271.27-173.43 164.72 0 298.73 134.01 298.73 298.73S676.66 808.03 511.94 808.03c-111.71 0-213.25-61.57-265-160.69l-75.64 39.5c66.51 127.39 197.04 206.52 340.64 206.52C723.71 893.37 896 721.08 896 509.3S723.71 125.24 511.94 125.24z"
+                  fill="#ffffff" p-id="23501"></path>
+            </svg>
+          </button>
         </div>
+        <div id="status-message" class="status-message">选择设备后点击连接按钮</div>
       </div>
 
       <div class="card controller-image"></div>
@@ -624,27 +1037,21 @@
         <div class="preset-header">
           <select id="preset" class="preset-select">
             <option>默认</option>
-            <option>游戏模式</option>
-            <option>媒体控制</option>
           </select>
           <div class="preset-controls">
-            <button id="save-preset" title="保存方案">
-              <div class="preset-icon">
-                <svg t="1753484107165" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3450" width="20" height="20">
-                  <path
-                      d="M893.3 293.3L730.7 130.7c-12-12-28.3-18.7-45.3-18.7H160c-35.3 0-64 28.7-64 64v704c0 35.3 28.7 64 64 64h704c35.3 0 64-28.7 64-64V338.7c0-17-6.7-33.3-18.7-45.4zM768 352v128H256V352h512z m-128 512H384v-96h256v96z m192-192H256V256h128v128h384v384z"
-                      fill="white" p-id="3451"></path>
-                </svg>
-              </div>
+            <button id="save-preset" title="保存方案" class="icon-button">
+              <svg t="1753597230725" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="20689" width="200" height="200">
+                <path
+                    d="M72.902194 16.295914h800.074322a23.563011 23.563011 0 0 1 18.773333 8.874667l117.561807 142.974623c3.721634 4.525419 5.527398 9.568344 5.527398 15.437076v764.080172c0 40.145204-32.745978 72.902194-72.902194 72.902193H72.913204C32.745978 1020.564645 0 987.807656 0 947.662452V89.198108C0 49.041892 32.745978 16.295914 72.902194 16.295914z m37.854967 516.217118a4.866753 4.866753 0 0 0-4.855742 4.877764v363.795269c0 2.664602 2.180129 4.844731 4.855742 4.844731h795.449807a4.844731 4.844731 0 0 0 4.855742-4.844731v-363.795269a4.877763 4.877763 0 0 0-4.855742-4.877764H110.757161zM228.616258 124.64172a4.877763 4.877763 0 0 0-4.855742 4.866753V354.105806c0 2.686624 2.180129 4.866753 4.855742 4.866753h557.606538a4.866753 4.866753 0 0 0 4.855742-4.866753V129.508473a4.877763 4.877763 0 0 0-4.855742-4.866753H228.616258z"
+                    fill="#ffffff" p-id="20690"></path>
+              </svg>
             </button>
-            <button id="import-preset" title="导入方案">
-              <div class="preset-icon">
-                <svg t="1753484107165" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3450" width="20" height="20">
-                  <path
-                      d="M512 714.666667c-8.533333 0-17.066667-2.133333-23.466667-8.533334l-341.333333-341.333333c-12.8-12.8-12.8-32 0-44.8 12.8-12.8 32-12.8 44.8 0l320 317.866667 317.866667-320c12.8-12.8 32-12.8 44.8 0 12.8 12.8 12.8 32 0 44.8L533.333333 704c-4.266667 8.533333-12.8 10.666667-21.333333 10.666667z"
-                      fill="white" p-id="3451"></path>
-                </svg>
-              </div>
+            <button id="import-preset" title="导入方案" class="icon-button">
+              <svg t="1753597486869" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="22279" width="64" height="64">
+                <path
+                    d="M601.152 708.288 400 568 344 568l0 112-224 0 0 112 224 0 0 112L400 904l201.152-140.288C624 749.504 624 722.496 601.152 708.288L601.152 708.288zM891.264 331.2 638.656 76.864C630.528 68.608 619.456 64 607.936 64L232 64C196.032 64 176 83.712 176 120L176 512 288 512 288 176l280 0 0 168c0 24.192 32 56 56 56l168 0 0.768 448L624 848 624 960l224 0c35.968 0 56-19.712 56-56L904 362.176C904 350.528 899.392 339.392 891.264 331.2L891.264 331.2z"
+                    p-id="22280" fill="#ffffff"></path>
+              </svg>
             </button>
           </div>
         </div>
@@ -658,14 +1065,59 @@
         </div>
 
         <div id="buttonMapTab" class="tab-content active" role="tabpanel">
-          <div class="button-map">
-            <!-- 按键映射列表保持不变 -->
+          <div class="tab-content-container">
+            <div class="button-map-header">
+              <div class="button-map-title"><i class="fas fa-keyboard"></i> 按键映射</div>
+              <div class="button-map-controls">
+                <button id="add-button-map" title="添加映射" class="icon-button">
+                  <svg t="1753626247148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2595" width="200" height="200">
+                    <path d="M508.9 926.4c-36.3-1.6-64.6-32.2-64.6-68.6V166.1c0-36.3 28.3-66.9 64.6-68.6 38.8-1.7 70.7 29.2 70.7 67.6v693.7c0 38.4-31.9 69.4-70.7 67.6z" fill="#ffffff" p-id="2596"></path>
+                    <path d="M858.9 579.6H165.2c-37.4 0-67.6-30.3-67.6-67.6 0-37.4 30.3-67.6 67.6-67.6h693.7c37.4 0 67.6 30.3 67.6 67.6 0 37.4-30.3 67.6-67.6 67.6z" fill="#ffffff" p-id="2597"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="button-map" id="button-mapping-list">
+              <div class="empty-state">
+                <p>尚未添加任何按键映射
+                  点击右上角的按钮添加映射
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
         <div id="stickMapTab" class="tab-content" role="tabpanel">
-          <div class="stick-map">
-            <!-- 摇杆映射列表保持不变 -->
+          <div class="tab-content-container">
+            <div class="stick-map">
+              <div class="button-map-item">
+                <div class="button-icon"><i class="fas fa-arrows-alt"></i></div>
+                <div class="key-text">左摇杆</div>
+                <div class="key-value">WASD 方向键</div>
+                <div class="item-actions">
+                  <button class="item-action-btn edit"><i class="fas fa-edit"></i></button>
+                  <button class="item-action-btn delete"><i class="fas fa-trash-alt"></i></button>
+                </div>
+              </div>
+              <div class="button-map-item">
+                <div class="button-icon"><i class="fas fa-arrows-alt"></i></div>
+                <div class="key-text">右摇杆</div>
+                <div class="key-value">鼠标移动</div>
+                <div class="item-actions">
+                  <button class="item-action-btn edit"><i class="fas fa-edit"></i></button>
+                  <button class="item-action-btn delete"><i class="fas fa-trash-alt"></i></button>
+                </div>
+              </div>
+              <div class="button-map-item">
+                <div class="button-icon"><i class="fas fa-th"></i></div>
+                <div class="key-text">方向键</div>
+                <div class="key-value">键盘方向键</div>
+                <div class="item-actions">
+                  <button class="item-action-btn edit"><i class="fas fa-edit"></i></button>
+                  <button class="item-action-btn delete"><i class="fas fa-trash-alt"></i></button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -673,7 +1125,7 @@
           <div class="settings-container">
             <!-- 摇杆设置组 -->
             <div class="setting-group">
-              <h3>🎮 摇杆设置</h3>
+              <h3><i class="fas fa-gamepad"></i> 摇杆设置</h3>
 
               <div class="setting-item">
                 <label for="deadzone">死区范围:</label>
@@ -686,7 +1138,7 @@
 
             <!-- 软件设置组 -->
             <div class="setting-group">
-              <h3>⚙️ 软件设置</h3>
+              <h3><i class="fas fa-cog"></i> 软件设置</h3>
 
               <div class="setting-item">
                 <label for="auto-start">开机自启动:</label>
@@ -708,7 +1160,7 @@
               <div class="setting-item">
                 <label for="polling-frequency">轮询频率:</label>
                 <div class="polling-container">
-                  <input type="number" id="polling-frequency" min="1" max="1000" value="125">
+                  <input type="number" id="polling-frequency" min="1" max="8000" value="125">
                   <span>Hz</span>
                 </div>
               </div>
@@ -732,130 +1184,514 @@
     <div class="indicator-container">
       <span class="indicator-label">连接状态</span>
       <div id="status-indicator" class="indicator"></div>
-      <!--      <button id="indicator-test-btn" class="indicator-test-btn">测试</button>-->
     </div>
 
     <div>
       <span>© 2025 XenoControl</span>
-      <a id="github-link" href="https://github.com/hotakus" target="_blank" rel="noopener noreferrer" title="GitHub 仓库">GitHub</a>
+      <a id="github-link" href="https://github.com/Hotakus/XenoControl" target="_blank" rel="noopener noreferrer" title="GitHub 仓库">GitHub</a>
     </div>
   </div>
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const appWindow = window.__TAURI__.window.getCurrentWindow();
-        const invoke = window.__TAURI__.core.invoke;
 
-        // 加载设置函数
+<!-- 添加映射模态窗口 -->
+<div class="modal-overlay" id="mapping-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span id="modal-title">添加按键映射</span>
+      <button class="modal-close" id="close-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label><i class="fas fa-gamepad"></i> 选择手柄按键</label>
+        <select class="form-control" id="controller-button">
+          <option value="">-- 请选择按键 --</option>
+          <option value="A">A 按钮</option>
+          <option value="B">B 按钮</option>
+          <option value="X">X 按钮</option>
+          <option value="Y">Y 按钮</option>
+          <option value="LB">左肩键 (LB)</option>
+          <option value="RB">右肩键 (RB)</option>
+        </select>
+      </div>
+
+      <div class="form-group key-detector">
+        <label><i class="fas fa-keyboard"></i> 映射到键盘按键</label>
+        <div class="detector-area" id="key-detector-area">
+          点击此处并按下键盘按键或组合键
+        </div>
+        <div class="detector-hint">支持单键或组合键（如 Ctrl+C、Alt+F4）</div>
+        <div class="key-display" id="key-display"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="cancel-btn">取消</button>
+      <button class="btn btn-primary" id="confirm-btn">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+    // 等待DOM加载完成
+    document.addEventListener('DOMContentLoaded', () => {
+        // ======================
+        // 1. 初始化部分
+        // ======================
+
+        // 获取Tauri API对象
+        const appWindow = window.__TAURI__?.window.getCurrentWindow();
+        const invoke = window.__TAURI__?.core.invoke;
+
+        // 缓存常用UI元素
+        const uiElements = {
+            autoStart: document.getElementById('auto-start'),
+            minimizeToTray: document.getElementById('minimize-to-tray'),
+            theme: document.getElementById('theme'),
+            pollingFrequency: document.getElementById('polling-frequency'),
+            deadzone: document.getElementById('deadzone'),
+            deadzoneValue: document.getElementById('deadzone-value'),
+            deviceSelect: document.getElementById('device'),
+            minimizeButton: document.getElementById('minimize-button'),
+            closeButton: document.getElementById('close-button'),
+            scanButton: document.getElementById('scan-button'),
+            connectButton: document.getElementById('connect-button'),
+            preset: document.getElementById('preset'),
+            savePreset: document.getElementById('save-preset'),
+            importPreset: document.getElementById('import-preset'),
+            addButtonMap: document.getElementById('add-button-map'),
+            indicator: document.getElementById('status-indicator'),
+            githubLink: document.getElementById('github-link'),
+            tabs: document.querySelector('.tabs'),
+            statusMessage: document.getElementById('status-message')
+        };
+
+        // 应用状态变量
+        let hasUserSelectedDevice = false;
+        let currentDevices = [];
+        let device_selected = {
+            name: "",
+            vendor_id: "",
+            product_id: "",
+            device_path: "",
+            controller_type: ""
+        };
+        let minimize_to_tray = true;
+        let isConnected = false; // 设备连接状态标志
+
+        // 连接状态图标
+        const icon_connected = `<svg t="1753591538385" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19479" width="200" height="200"><path d="M728.96 269.44a207.36 207.36 0 1 0-414.08 0v133.12a239.36 239.36 0 0 1 96-93.44v-39.68a111.36 111.36 0 1 1 222.08 0v200.96a111.36 111.36 0 0 1-111.36 111.36 110.08 110.08 0 0 1-69.76-25.6v108.8a203.52 203.52 0 0 0 69.76 12.8 207.36 207.36 0 0 0 207.36-207.36z" fill="#ffffff" p-id="19480"></path><path d="M632.96 680.32v58.88a111.36 111.36 0 1 1-222.08 0V520.32a111.36 111.36 0 0 1 110.72-111.36 110.08 110.08 0 0 1 42.88 8.96 112.64 112.64 0 0 1 26.88 16.64v-108.8a204.8 204.8 0 0 0-69.76-12.8 207.36 207.36 0 0 0-206.72 207.36v219.52a207.36 207.36 0 1 0 414.08 0V588.16a238.72 238.72 0 0 1-96 92.16z" fill="#ffffff" p-id="19481"></path></svg>`;
+        const icon_disconnected = `<svg t="1753595424804" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19662" width="200" height="200"><path d="M521.6 158.08a111.36 111.36 0 0 1 111.36 111.36V480l96 96V269.44a206.72 206.72 0 0 0-394.24-87.68L411.52 256a110.72 110.72 0 0 1 110.08-97.92zM864 846.08l-135.04-135.04-96-96-222.08-222.08-96-96-135.04-134.4L112 230.4l202.88 202.24v306.56a206.72 206.72 0 0 0 394.24 87.68l87.04 87.04z m-341.76 4.48a111.36 111.36 0 0 1-111.36-111.36V528.64l221.44 221.44a110.72 110.72 0 0 1-110.72 100.48z" fill="#ffffff" p-id="19663"></path></svg>`;
+
+        // 初始状态设置
+        toggleIndicator(false);
+        updateStatusMessage("请选择一个设备并点击连接按钮");
+
+        // ======================
+        // 2. 映射配置功能
+        // ======================
+
+        // 设备类型变量
+        let deviceType = 'xbox';
+        let mappings = [];
+        let editingMappingId = null;
+
+        // 特殊键的显示名称映射
+        const keyDisplayNames = {
+            ' ': '空格键',
+            'Control': 'Ctrl',
+            'Shift': 'Shift',
+            'Alt': 'Alt',
+            'Meta': 'Cmd',
+            'ArrowUp': '↑',
+            'ArrowDown': '↓',
+            'ArrowLeft': '←',
+            'ArrowRight': '→',
+            'Escape': 'Esc',
+            'Tab': 'Tab',
+            'CapsLock': 'Caps Lock',
+            'Enter': 'Enter',
+            'Backspace': 'Backspace',
+            'Delete': 'Delete',
+            'Insert': 'Insert',
+            'Home': 'Home',
+            'End': 'End',
+            'PageUp': 'Page Up',
+            'PageDown': 'Page Down',
+            'ContextMenu': '菜单键',
+            'F1': 'F1',
+            'F2': 'F2',
+            'F3': 'F3',
+            'F4': 'F4',
+            'F5': 'F5',
+            'F6': 'F6',
+            'F7': 'F7',
+            'F8': 'F8',
+            'F9': 'F9',
+            'F10': 'F10',
+            'F11': 'F11',
+            'F12': 'F12'
+        };
+
+        // DOM 元素
+        const addButton = document.getElementById('add-button-map');
+        const modal = document.getElementById('mapping-modal');
+        const closeModal = document.getElementById('close-modal');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const keyDetector = document.getElementById('key-detector-area');
+        const keyDisplay = document.getElementById('key-display');
+        const controllerButtonSelect = document.getElementById('controller-button');
+        const modalTitle = document.getElementById('modal-title');
+        const mappingList = document.getElementById('button-mapping-list');
+
+        // 当前按下的键
+        let currentKeys = {
+            ctrl: false,
+            shift: false,
+            alt: false,
+            meta: false,
+            key: null
+        };
+
+        // 按键监听器
+        let keyListenerActive = false;
+
+        // 打开模态窗口（添加）
+        addButton.addEventListener('click', function () {
+            openModalForNew();
+        });
+
+        // 打开模态窗口（编辑）
+        function openModalForEdit(mapping) {
+            modalTitle.textContent = "编辑按键映射";
+            controllerButtonSelect.value = mapping.controllerButton;
+            keyDisplay.textContent = mapping.keyboardKey;
+            editingMappingId = mapping.id;
+
+            modal.classList.add('active');
+        }
+
+        // 打开模态窗口（新增）
+        function openModalForNew() {
+            modalTitle.textContent = "添加按键映射";
+            controllerButtonSelect.value = "";
+            keyDisplay.textContent = "";
+            editingMappingId = null;
+
+            modal.classList.add('active');
+            updateControllerButtons();
+        }
+
+        // 关闭模态窗口
+        function closeModalFunc() {
+            modal.classList.remove('active');
+            stopKeyDetection();
+        }
+
+        closeModal.addEventListener('click', closeModalFunc);
+        cancelBtn.addEventListener('click', closeModalFunc);
+
+        // 开始按键检测
+        function startKeyDetection() {
+            if (keyListenerActive) return;
+
+            keyListenerActive = true;
+            currentKeys = {
+                ctrl: false,
+                shift: false,
+                alt: false,
+                meta: false,
+                key: null
+            };
+
+            keyDetector.classList.add('active');
+            keyDetector.textContent = '请按下键盘按键...';
+            keyDisplay.textContent = '';
+
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+        }
+
+        // 停止按键检测
+        function stopKeyDetection() {
+            if (!keyListenerActive) return;
+
+            keyListenerActive = false;
+            keyDetector.classList.remove('active');
+            keyDetector.textContent = '点击此处并按下键盘按键或组合键';
+
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        }
+
+        // 处理按键按下
+        function handleKeyDown(e) {
+            e.preventDefault();
+
+            // 更新修饰键状态
+            if (e.key === 'Control' || e.key === 'Ctrl') {
+                currentKeys.ctrl = true;
+            } else if (e.key === 'Shift') {
+                currentKeys.shift = true;
+            } else if (e.key === 'Alt') {
+                currentKeys.alt = true;
+            } else if (e.key === 'Meta') {
+                currentKeys.meta = true;
+            } else {
+                // 如果是非修饰键
+                currentKeys.key = e.key;
+            }
+
+            updateKeyDisplay();
+        }
+
+        // 处理按键释放
+        function handleKeyUp(e) {
+            // 当非修饰键释放时结束检测
+            if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+                stopKeyDetection();
+            }
+        }
+
+        // 更新按键显示
+        function updateKeyDisplay() {
+            let displayText = '';
+
+            if (currentKeys.ctrl) displayText += 'Ctrl + ';
+            if (currentKeys.shift) displayText += 'Shift + ';
+            if (currentKeys.alt) displayText += 'Alt + ';
+            if (currentKeys.meta) displayText += 'Cmd + ';
+
+            if (currentKeys.key) {
+                const key = currentKeys.key;
+                displayText += keyDisplayNames[key] || key.toUpperCase();
+            }
+
+            keyDisplay.textContent = displayText;
+        }
+
+        // 按键检测区域点击事件
+        keyDetector.addEventListener('click', startKeyDetection);
+
+        // 确认按钮功能
+        document.getElementById('confirm-btn').addEventListener('click', function () {
+            const controllerButton = controllerButtonSelect.value;
+            const keyValue = keyDisplay.textContent;
+
+            if (!controllerButton) {
+                alert('请选择手柄按键');
+                return;
+            }
+
+            if (!keyValue) {
+                alert('请设置键盘映射按键');
+                return;
+            }
+
+            if (editingMappingId) {
+                // 编辑现有映射
+                const mapping = mappings.find(m => m.id === editingMappingId);
+                if (mapping) {
+                    mapping.controllerButton = controllerButton;
+                    mapping.keyboardKey = keyValue;
+                }
+            } else {
+                // 添加新映射
+                const newMapping = {
+                    id: Date.now(), // 使用时间戳作为唯一ID
+                    controllerButton,
+                    keyboardKey: keyValue
+                };
+                mappings.push(newMapping);
+            }
+
+            // 更新UI
+            renderMappings();
+
+            // 关闭模态窗口
+            closeModalFunc();
+        });
+
+        // 根据设备类型更新手柄按键选项
+        function updateControllerButtons() {
+            // 清空现有选项（保留第一个）
+            while (controllerButtonSelect.options.length > 1) {
+                controllerButtonSelect.remove(1);
+            }
+
+            // 根据设备类型添加选项
+            let buttons = [];
+
+            if (deviceType === 'xbox') {
+                buttons = [
+                    {value: 'A', text: 'A 按钮'},
+                    {value: 'B', text: 'B 按钮'},
+                    {value: 'X', text: 'X 按钮'},
+                    {value: 'Y', text: 'Y 按钮'},
+                    {value: 'LB', text: '左肩键 (LB)'},
+                    {value: 'RB', text: '右肩键 (RB)'},
+                    {value: 'LT', text: '左扳机 (LT)'},
+                    {value: 'RT', text: '右扳机 (RT)'},
+                    {value: 'START', text: '开始按钮'},
+                    {value: 'SELECT', text: '选择按钮'}
+                ];
+            } else if (deviceType === 'ps') {
+                buttons = [
+                    {value: 'CROSS', text: '叉按钮 (CROSS)'},
+                    {value: 'CIRCLE', text: '圆按钮 (CIRCLE)'},
+                    {value: 'SQUARE', text: '方按钮 (SQUARE)'},
+                    {value: 'TRIANGLE', text: '三角按钮 (TRIANGLE)'},
+                    {value: 'L1', text: '左肩键 (L1)'},
+                    {value: 'R1', text: '右肩键 (R1)'},
+                    {value: 'L2', text: '左扳机 (L2)'},
+                    {value: 'R2', text: '右扳机 (R2)'},
+                    {value: 'OPTIONS', text: '选项按钮'},
+                    {value: 'SHARE', text: '分享按钮'}
+                ];
+            } else if (deviceType === 'switchpro') {
+                buttons = [
+                    {value: 'B', text: 'B 按钮'},
+                    {value: 'A', text: 'A 按钮'},
+                    {value: 'Y', text: 'Y 按钮'},
+                    {value: 'X', text: 'X 按钮'},
+                    {value: 'L', text: '左肩键 (L)'},
+                    {value: 'R', text: '右肩键 (R)'},
+                    {value: 'ZL', text: '左扳机 (ZL)'},
+                    {value: 'ZR', text: '右扳机 (ZR)'},
+                    {value: 'PLUS', text: '加号按钮'},
+                    {value: 'MINUS', text: '减号按钮'}
+                ];
+            }
+
+            // 添加新选项
+            buttons.forEach(button => {
+                const option = document.createElement('option');
+                option.value = button.value;
+                option.textContent = button.text;
+                controllerButtonSelect.appendChild(option);
+            });
+        }
+
+        // 渲染映射列表
+        function renderMappings() {
+            if (mappings.length === 0) {
+                mappingList.innerHTML = `
+                    <div class="empty-state">
+                        <svg t="1753627389377" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3769" width="32" height="32"><path d="M921.6 208.3c12.6 0 24.5 5 33.5 14s14 20.9 14 33.5v512.3c0 12.6-5 24.5-14 33.5s-20.9 14-33.5 14H102.4c-12.6 0-24.4-5-33.4-14s-14-20.9-14-33.5V255.9c0-12.6 5-24.5 14-33.5s20.9-14 33.4-14h819.2m0-55.1H102.4C46.1 153.3 0 199.4 0 255.9v512.3c0 56.4 46.1 102.5 102.4 102.5h819.1c56.4 0 102.4-46.1 102.4-102.5V255.9c0.1-56.5-45.9-102.6-102.3-102.6zM460.8 307h102.4v102.5H460.8V307z m0 153.7h102.4v102.5H460.8V460.7zM307.2 307h102.4v102.5H307.2V307z m0 153.7h102.4v102.5H307.2V460.7zM256 563.2H153.7V460.9H256v102.3z m0-153.6H153.7V307.2H256v102.4z m614.4 358.5H153.8V665.8h716.6v102.3zM716.8 563.2H614.5V460.9h102.3v102.3z m0-153.6H614.5V307.2h102.3v102.4z m153.6 153.6H768.1V460.9h102.3v102.3z m0-153.6H768.1V307.2h102.3v102.4z m0 0" p-id="3770" fill="#3A7DE0"></path></svg>
+                        <p>尚未添加任何按键映射</p>
+                        <p>点击右上角的
+                          <svg t="1753627455046" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4836" width="32" height="32"><path d="M508.9 926.4c-36.3-1.6-64.6-32.2-64.6-68.6V166.1c0-36.3 28.3-66.9 64.6-68.6 38.8-1.7 70.7 29.2 70.7 67.6v693.7c0 38.4-31.9 69.4-70.7 67.6z" fill="#4C8BF5" p-id="4837"></path><path d="M858.9 579.6H165.2c-37.4 0-67.6-30.3-67.6-67.6 0-37.4 30.3-67.6 67.6-67.6h693.7c37.4 0 67.6 30.3 67.6 67.6 0 37.4-30.3 67.6-67.6 67.6z" fill="#4C8BF5" p-id="4838"></path></svg>
+                          按钮添加映射
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            mappingList.innerHTML = '';
+
+            mappings.forEach(mapping => {
+                const item = document.createElement('div');
+                item.className = 'button-map-item';
+                item.innerHTML = `
+                    <div class="button-icon">${mapping.controllerButton}</div>
+                    <div class="key-text">映射到键盘按键</div>
+                    <div class="key-value">${mapping.keyboardKey}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn edit" data-id="${mapping.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="item-action-btn delete" data-id="${mapping.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+                mappingList.appendChild(item);
+            });
+
+            // 添加编辑事件
+            document.querySelectorAll('.item-action-btn.edit').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const mappingId = parseInt(this.dataset.id);
+                    const mapping = mappings.find(m => m.id === mappingId);
+                    if (mapping) {
+                        openModalForEdit(mapping);
+                    }
+                });
+            });
+
+            // 添加删除事件
+            document.querySelectorAll('.item-action-btn.delete').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const mappingId = parseInt(this.dataset.id);
+                    mappings = mappings.filter(m => m.id !== mappingId);
+                    renderMappings();
+                });
+            });
+        }
+
+        // 根据设备名称确定设备类型
+        function detectDeviceType(deviceName) {
+            if (deviceName.includes('Xbox')) {
+                return 'xbox';
+            } else if (deviceName.includes('PS') || deviceName.includes('PlayStation')) {
+                return 'ps';
+            } else if (deviceName.includes('Switch')) {
+                return 'switchpro';
+            }
+            return 'xbox'; // 默认
+        }
+
+        // 设备连接后更新映射配置
+        function updateMappingsForDevice(deviceName) {
+            deviceType = detectDeviceType(deviceName);
+            updateControllerButtons();
+            renderMappings();
+        }
+
+        // ======================
+        // 3. 设置管理函数
+        // ======================
+
+        // 加载应用设置
         async function loadSettings() {
+            if (!invoke) return;
             try {
                 const settings = await invoke("get_current_settings");
-                console.log("当前设置:", settings);
-
-                // 更新UI
-                document.getElementById('auto-start').checked = settings.auto_start;
-                document.getElementById('minimize-to-tray').checked = settings.minimize_to_tray;
-                document.getElementById('theme').value = settings.theme;
-                document.getElementById('polling-frequency').value = settings.polling_frequency;
-                document.getElementById('deadzone').value = settings.deadzone;
-                document.getElementById('deadzone-value').textContent = settings.deadzone + '%';
-
+                // 更新UI元素
+                uiElements.autoStart.checked = settings.auto_start;
+                uiElements.minimizeToTray.checked = settings.minimize_to_tray;
+                uiElements.theme.value = settings.theme;
+                uiElements.pollingFrequency.value = settings.polling_frequency;
+                uiElements.deadzone.value = settings.deadzone;
+                uiElements.deadzoneValue.textContent = settings.deadzone + '%';
+                // 设置后端频率
+                invoke("set_frequency", {freq: settings.polling_frequency});
             } catch (error) {
                 console.error("加载设置失败:", error);
             }
         }
 
-        // 保存设置函数
+        // 保存应用设置
         async function saveSettings() {
+            if (!invoke) return;
             const newSettings = {
-                auto_start: document.getElementById('auto-start').checked,
-                minimize_to_tray: document.getElementById('minimize-to-tray').checked,
-                theme: document.getElementById('theme').value,
-                polling_frequency: parseInt(document.getElementById('polling-frequency').value),
-                deadzone: parseInt(document.getElementById('deadzone').value),
+                auto_start: uiElements.autoStart.checked,
+                minimize_to_tray: uiElements.minimizeToTray.checked,
+                theme: uiElements.theme.value,
+                polling_frequency: parseInt(uiElements.pollingFrequency.value),
+                deadzone: parseInt(uiElements.deadzone.value),
             };
-
             try {
-                await invoke("update_settings", { newSettings });
-                console.log("设置保存成功");
+                await invoke("update_settings", {newSettings});
             } catch (error) {
                 console.error("保存设置失败:", error);
             }
         }
 
-        // 在应用启动时加载设置
-        loadSettings();
+        // ======================
+        // 4. 窗口控制函数
+        // ======================
 
-        // 重新扫描按钮
-        const scanButton = document.getElementById('scan-button');
-        scanButton.addEventListener('click', async () => {
-            hasUserSelectedDevice = false;
-
-            try {
-                await invoke("query_devices");
-            } catch (e) {
-                console.error("重新扫描失败:", e);
-            }
-        });
-
-        const deviceSelect = document.getElementById('device');
-        let hasUserSelectedDevice = false;  // 用户是否选择了设备
-        let currentDevices = [];            // 当前显示的设备列表缓存
-
-        // 监听用户选择行为
-        deviceSelect.addEventListener('change', function () {
-            if (this.value !== "null") {
-                hasUserSelectedDevice = true;
-            }
-            console.log('Selected device:', this.value);
-        });
-
-        appWindow.listen('update_devices', (event) => {
-            const devices = event.payload;
-
-            // 如果设备列表为 0，强制重置选择状态
-            if (devices.length === 0) {
-                hasUserSelectedDevice = false;
-            }
-
-            // 如果用户已选择设备，跳过刷新
-            if (hasUserSelectedDevice) {
-                toggleIndicator(devices.length > 0);
-                return;
-            }
-
-            // 如果设备列表没有变化，也不刷新
-            if (currentDevices === devices) {
-                return;
-            }
-
-            currentDevices = devices;
-            console.log("设备列表：", currentDevices);
-
-            // 清空现有选项
-            deviceSelect.innerHTML = '';
-
-            // 添加默认选项
-            const defaultOption = document.createElement('option');
-            defaultOption.textContent = '请选择设备';
-            defaultOption.disabled = true;
-            defaultOption.selected = true;
-            deviceSelect.appendChild(defaultOption);
-
-            // 添加设备选项
-            devices.forEach((device, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                // option.textContent = `${device.name} (VID: ${device.vendor_id.toString(16)}, PID: ${device.product_id.toString(16)})`;
-                option.textContent = `${index}: ${device}`
-                deviceSelect.appendChild(option);
-            });
-
-            // 更新连接状态
-            toggleIndicator(devices.length > 0);
-        });
-
-        // 函数封装：窗口控制
+        // 窗口操作命令
         async function windowControl(action) {
             if (window.__TAURI__) {
                 await invoke(action);
@@ -864,10 +1700,69 @@
             }
         }
 
-        // 函数封装：切换选项卡
+        // ======================
+        // 5. 设备管理函数
+        // ======================
+
+        // 更新设备列表
+        function updateDeviceList(devices) {
+            if (devices.length === 0) hasUserSelectedDevice = false;
+            if (hasUserSelectedDevice) {
+                toggleIndicator(devices.length > 0);
+                return;
+            }
+            if (JSON.stringify(currentDevices) === JSON.stringify(devices)) return;
+
+            currentDevices = devices;
+            // 清空并重建设备下拉菜单
+            uiElements.deviceSelect.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.textContent = '请选择设备';
+            defaultOption.disabled = true;
+            defaultOption.selected = true;
+            defaultOption.value = "null";
+            uiElements.deviceSelect.appendChild(defaultOption);
+
+            currentDevices.forEach((device, index) => {
+                const option = document.createElement('option');
+                option.value = index.toString();
+                option.textContent = `${index}: ${device.name}`;
+                uiElements.deviceSelect.appendChild(option);
+            });
+        }
+
+        // 断开连接并刷新设备
+        async function _close_and_query_device() {
+            if (isConnected && device_selected) {
+                await invoke("disconnect_device", {deviceName: device_selected.name});
+                isConnected = false;
+                uiElements.connectButton.classList.remove('connected');
+                uiElements.connectButton.innerHTML = icon_disconnected;
+                toggleIndicator(false);
+            }
+
+            hasUserSelectedDevice = false;
+            device_selected = null;
+            uiElements.deviceSelect.selectedIndex = 0;
+
+            let devices = await invoke("query_devices");
+
+            updateDeviceList(devices);
+        }
+
+        // 去除设备名前缀
+        function stripDevicePrefixFromString(name) {
+            const index = name.indexOf(":");
+            return index !== -1 ? name.slice(index + 1).trim() : name;
+        }
+
+        // ======================
+        // 6. UI交互函数
+        // ======================
+
+        // 切换选项卡
         function switchTab(tabElement) {
             const targetTab = tabElement.dataset.tab;
-
             // 移除所有激活状态
             document.querySelectorAll('.tab').forEach(t => {
                 t.classList.remove('active');
@@ -876,146 +1771,228 @@
             document.querySelectorAll('.tab-content').forEach(c => {
                 c.classList.remove('active');
             });
-
-            // 添加当前激活状态
+            // 激活当前选项卡
             tabElement.classList.add('active');
             tabElement.setAttribute('aria-selected', 'true');
             document.getElementById(targetTab).classList.add('active');
         }
 
-        // 事件委托处理选项卡切换
-        document.querySelector('.tabs').addEventListener('click', (e) => {
-            const tab = e.target.closest('.tab');
-            if (tab) switchTab(tab);
-        });
+        // 更新状态指示灯
+        function toggleIndicator(isOn) {
+            isOn ?
+                uiElements.indicator.classList.add('on') :
+                uiElements.indicator.classList.remove('on');
+        }
+
+        // 处理轮询频率变化
+        function handlePollingFrequencyChange() {
+            const min = 1, max = 8 * 1000;
+            let value = parseInt(uiElements.pollingFrequency.value);
+            value = Math.min(Math.max(value, min), max);
+            uiElements.pollingFrequency.value = value;
+
+            if (invoke) invoke("set_frequency", {freq: value});
+            saveSettings();
+        }
+
+        // 更新状态消息
+        function updateStatusMessage(message, isError = false) {
+            uiElements.statusMessage.textContent = message;
+            uiElements.statusMessage.className = 'status-message';
+            if (isError) {
+                uiElements.statusMessage.classList.add('error');
+            } else if (message.includes('成功') || message.includes('连接')) {
+                uiElements.statusMessage.classList.add('success');
+            }
+        }
+
+        // ======================
+        // 7. 事件监听器
+        // ======================
+
+        // 窗口事件监听
+        if (appWindow && invoke) {
+            appWindow.listen('physical_connect_status', (event) => {
+                if (event.payload === false) {
+                    console.log(`手柄 ${device_selected.name} 物理断开连接`);
+                    updateStatusMessage(`手柄 ${device_selected.name} 物理断开连接!`, true);
+                    _close_and_query_device();
+                }
+            });
+        }
+
+        // 加载初始设置
+        loadSettings();
+
+        // 选项卡切换
+        if (uiElements.tabs) {
+            uiElements.tabs.addEventListener('click', (e) => {
+                const tab = e.target.closest('.tab');
+                if (tab) {
+                    switchTab(tab);
+                    if (tab.dataset.tab === 'settingTab') {
+                        uiElements.deadzoneValue.textContent = uiElements.deadzone.value + '%';
+                    }
+                }
+            });
+        }
 
         // 窗口控制按钮
-        document.getElementById('minimize-button').addEventListener('click', () =>
-            appWindow.minimize());
-
-        minimize_to_tray = true
-        document.getElementById('close-button').addEventListener('click', () => {
-            if (document.getElementById('minimize-to-tray').checked) {
-                appWindow.hide()
+        uiElements.minimizeButton?.addEventListener('click', () => appWindow?.minimize());
+        uiElements.closeButton?.addEventListener('click', () => {
+            // minimize_to_tray ? appWindow?.hide() : appWindow?.close();
+            if (minimize_to_tray) {
+                console.log("最小化窗口");
+                appWindow?.hide();
             } else {
-                appWindow.close()
+                console.log("关闭窗口");
+                appWindow?.close();
             }
         });
 
-        // 设备选择逻辑
-        document.getElementById('device').addEventListener('change', function () {
-            console.log('Selected device:', this.value);
-        });
+        // 设备选择
+        uiElements.deviceSelect?.addEventListener('change', function () {
+            if (this.value !== "null") {
+                hasUserSelectedDevice = true;
+                console.log(`test选择设备: ${this.options[this.selectedIndex].text}`);
+                _name = stripDevicePrefixFromString(this.options[this.selectedIndex].text);
+                currentDevices.forEach((device, index) => {
+                    if (device.name === _name) {
+                        device_selected = device;
+                        updateStatusMessage(`已选择设备: ${_name}`);
+                    } else {
+                        device_selected = null;
+                        updateStatusMessage(`找不到设备: ${_name}`, true);
+                    }
+                })
 
-        // 预设方案选择逻辑
-        document.getElementById('preset').addEventListener('change', function () {
-            console.log('Selected preset:', this.value);
-        });
-
-        // 保存和导入按钮（仅样式，无功能）
-        document.getElementById('save-preset').addEventListener('click', function () {
-            console.log('保存方案');
-        });
-
-        document.getElementById('import-preset').addEventListener('click', function () {
-            console.log('导入方案');
-        });
-
-        // 摇杆死区滑块交互
-        document.getElementById('deadzone').addEventListener('input', function () {
-            document.getElementById('deadzone-value').textContent = this.value + '%';
-        });
-
-        // 轮询频率输入框处理
-        const pollingFrequency = document.getElementById('polling-frequency');
-        pollingFrequency.addEventListener('change', function () {
-            let value = parseInt(this.value);
-
-            // 确保值在1-1000范围内
-            if (value < 1) value = 1;
-            if (value > 1000) value = 1000;
-
-            this.value = value;
-            console.log('轮询频率设置为:', value, 'Hz');
-
-            // 保存设置
-            saveSettings();
-        });
-
-        // 设置选项卡激活时初始化值
-        document.querySelector('.tabs').addEventListener('click', function (e) {
-            const tab = e.target.closest('.tab');
-            if (tab && tab.dataset.tab === 'settingTab') {
-                // 初始化死区显示值
-                const deadzoneSlider = document.getElementById('deadzone');
-                document.getElementById('deadzone-value').textContent = deadzoneSlider.value + '%';
+            } else {
+                device_selected = null;
+                updateStatusMessage("请选择一个设备");
             }
         });
 
-        // 开机自启动和最小化到托盘保存逻辑
-        document.getElementById('auto-start').addEventListener('change', function () {
-            console.log('开机自启动:', this.checked);
-            saveSettings();
+        // 扫描设备按钮
+        uiElements.scanButton?.addEventListener('click', async () => {
+            uiElements.scanButton.classList.add('scanning');
+            updateStatusMessage("正在扫描设备...");
+            const icon = document.querySelector("#scan-button .icon");
+            icon.classList.add("spin");
+
+            await _close_and_query_device();
+
+            icon.addEventListener("animationend", () => {
+                icon.classList.remove("spin");
+            }, {once: true});
+
+
+            updateStatusMessage(`扫描完成！发现${currentDevices.length}个可用设备`);
+            uiElements.scanButton.classList.remove('scanning');
         });
 
-        document.getElementById('minimize-to-tray').addEventListener('change', function () {
-            console.log('最小化到托盘:', this.checked);
+        // 连接/断开按钮
+        uiElements.connectButton?.addEventListener('click', async function () {
+            if (!device_selected || uiElements.deviceSelect.value === "null") {
+                updateStatusMessage("请先选择一个设备", true);
+                return;
+            }
+
+            isConnected = !isConnected;
+            const deviceName = stripDevicePrefixFromString(device_selected.name);
+            const controllerType = device_selected.controller_type;
+
+            if (isConnected) {
+                updateStatusMessage(`正在连接设备: ${deviceName}...`);
+                if (await invoke("use_device", {deviceName})) {
+                    updateStatusMessage(`设备 ${deviceName} 已成功连接`);
+                    this.classList.add('connected');
+                    this.innerHTML = icon_connected;
+                    toggleIndicator(true);
+
+                    // 连接成功后更新映射配置
+                    updateMappingsForDevice(controllerType);
+                } else {
+                    updateStatusMessage(`连接失败`, true);
+                    this.classList.remove('connected');
+                    this.innerHTML = icon_disconnected;
+                    toggleIndicator(false);
+                    isConnected = false; // 回滚状态
+                }
+            } else {
+                updateStatusMessage(`正在断开设备: ${deviceName}...`);
+                if (await invoke("disconnect_device", {deviceName})) {
+                    updateStatusMessage(`设备已断开`);
+                    this.classList.remove('connected');
+                    this.innerHTML = icon_disconnected;
+                    toggleIndicator(false);
+                } else {
+                    updateStatusMessage(`断开失败`, true);
+                    this.classList.add('connected');
+                    this.innerHTML = icon_disconnected;
+                    toggleIndicator(false);
+                    isConnected = true; // 回滚状态
+                }
+            }
+        });
+
+        // 预设管理
+        uiElements.preset?.addEventListener('change', function () {
+            updateStatusMessage(`已切换到预设方案: ${this.value}`);
+        });
+        uiElements.savePreset?.addEventListener('click', function () {
+            updateStatusMessage('预设方案已保存');
+        });
+        uiElements.importPreset?.addEventListener('click', function () {
+            updateStatusMessage('预设方案导入成功');
+        });
+
+        // 死区设置
+        uiElements.deadzone?.addEventListener('input', function () {
+            uiElements.deadzoneValue.textContent = this.value + '%';
+        });
+        uiElements.deadzone?.addEventListener('mouseup', saveSettings);
+
+        // 设置变更监听
+        uiElements.pollingFrequency?.addEventListener('change', handlePollingFrequencyChange);
+        uiElements.autoStart?.addEventListener('change', function () {
+            saveSettings();
+            updateStatusMessage(`开机自启动已${this.checked ? '启用' : '禁用'}`);
+        });
+        uiElements.minimizeToTray?.addEventListener('change', function () {
             minimize_to_tray = this.checked;
             saveSettings();
+            updateStatusMessage(`最小化到托盘已${this.checked ? '启用' : '禁用'}`);
         });
-
-        // 主题切换
-        document.getElementById('theme').addEventListener('change', function () {
-            console.log('主题切换为:', this.value);
+        uiElements.theme?.addEventListener('change', function () {
             saveSettings();
+            updateStatusMessage(`已切换到${this.options[this.selectedIndex].text}主题`);
         });
 
-        // 死区滑块保存设置
-        document.getElementById('deadzone').addEventListener('input', function() {
-            saveSettings();
+        // GitHub链接特殊处理
+        uiElements.githubLink?.addEventListener('click', async (e) => {
+            if (window.__TAURI__ && invoke) {
+                e.preventDefault();
+                invoke("open_url", {url: uiElements.githubLink.href});
+            }
         });
 
-        // 在浏览器环境中模拟Tauri API
+        // 浏览器环境模拟
         if (!window.__TAURI__) {
             console.warn('Running in browser mode - Tauri API not available');
         }
 
-        // 获取指示灯元素
-        const indicator = document.getElementById('status-indicator');
-
-        // 指示灯控制函数
-        function toggleIndicator(isOn) {
-            if (isOn) {
-                indicator.classList.add('on');
-            } else {
-                indicator.classList.remove('on');
-            }
-        }
-
-        // 将控制函数暴露到全局作用域
-        window.toggleIndicator = toggleIndicator;
-
-        // 初始状态设为关闭
-        toggleIndicator(false);
-
-        // 指示灯测试按钮功能
-        document.getElementById('indicator-test-btn').addEventListener('click', () => {
-            const indicator = document.getElementById('status-indicator');
-            const isOn = indicator.classList.contains('on');
-            toggleIndicator(!isOn);
+        // 标题栏双击事件阻止
+        document.getElementById("titlebar").addEventListener("dblclick", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
         });
 
-        const githubLink = document.getElementById('github-link');
-        if (githubLink) {
-            githubLink.addEventListener('click', async (e) => {
-                // 如果在Tauri环境中
-                if (window.__TAURI__) {
-                    e.preventDefault(); // 阻止默认打开方式
-                    invoke("open_url", {url: githubLink.href});
-                }
-                // 否则，默认行为（在新标签页打开）会正常进行
-            });
-        }
+        // 暴露函数到全局
+        window.toggleIndicator = toggleIndicator;
+
+        // 初始化映射功能
+        updateControllerButtons();
+        renderMappings();
     });
 </script>
 </body>
