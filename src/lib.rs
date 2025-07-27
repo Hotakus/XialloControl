@@ -1,10 +1,11 @@
-use std::sync::OnceLock;
-use tauri::{AppHandle, Window};
+use std::env;
+use tauri::Window;
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 
 mod controller;
 mod tray;
 mod setting;
-
+mod xeno_utils;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -31,17 +32,13 @@ fn open_url(url: &str) -> Result<(), String> {
     Ok(())
 }
 
-
-static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
-
-pub fn get_app_handle() -> &'static AppHandle {
-    APP_HANDLE.get().expect("AppHandle not initialized")
-}
-
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec!["--flag1", "--flag2"]),
+        ))
         .invoke_handler(tauri::generate_handler![
             greet,
             close_current_window,
@@ -49,13 +46,19 @@ pub fn run() {
             open_url,
 
             controller::query_devices,
+            controller::use_device,
+            controller::disconnect_device,
+            controller::set_frequency,
+
             setting::get_current_settings,
             setting::update_settings
         ])
         .setup(|app| {
             let app_handle = app.handle();
             let _ = tray::initialize(app_handle.clone());
-            let _ = controller::listen(app_handle.clone());
+            let _ = controller::initialize(app_handle.clone());
+            let _ = xeno_utils::initialize();
+            let _ = setting::initialize();
             Ok(())
         })
         .run(tauri::generate_context!())
