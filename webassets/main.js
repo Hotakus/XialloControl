@@ -827,8 +827,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 在主题切换事件监听器中添加应用主题功能
-    uiElements.theme?.addEventListener('change', function() {
+    uiElements.theme?.addEventListener('change', function () {
         saveSettings();
         applyTheme(this.value);
     });
+
+    async function titlebarLogic() {
+        platform = await invoke("get_platform");
+        if (platform === "windows") {
+            document.getElementById("titlebar")?.classList.remove("hidden");
+        } else if (platform === "linux") {
+            document.getElementById("titlebar")?.classList.add("hidden");
+        }
+    }
+
+    titlebarLogic();
 });
