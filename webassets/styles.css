@@ -113,13 +113,13 @@ body {
     flex: 1;
     display: flex;
     min-height: 0;
-    padding: 0 var(--gap);
+    padding: 0 ;
 }
 
 .left-panel {
     flex: 6;
     background: var(--secondary-bg);
-    padding: var(--gap);
+    padding: var(--gap) 0;
     display: flex;
     flex-direction: column;
     gap: var(--gap);
@@ -129,7 +129,7 @@ body {
 
 .right-panel {
     flex: 4;
-    padding: var(--gap);
+    padding: var(--gap) 0;
     background: var(--card-bg);
     display: flex;
     flex-direction: column;
@@ -143,6 +143,7 @@ body {
     border-radius: var(--border-radius);
     box-shadow: var(--card-shadow);
     padding: 15px 20px;
+    margin: 0 var(--gap);
 }
 
 .preset-card {
@@ -971,4 +972,79 @@ input:checked + .slider:before {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+}
+
+/* 在 :root 中添加指示灯颜色变量 */
+:root {
+    --indicator-off: #934242;
+    --indicator-on: #00dc72;
+}
+
+/* 更新浅色主题的指示灯颜色 */
+body.theme-light .indicator {
+    background-color: var(--indicator-off);
+}
+
+body.theme-light .indicator.on {
+    background-color: var(--indicator-on);
+}
+
+/* 优化深色主题配色 */
+body.theme-dark {
+    --primary-bg: #1a1e2a;
+    --secondary-bg: #212837;
+    --card-bg: #2a3040;
+    --modal-bg: #2a3040;
+    --indicator-off: #990000;
+    --indicator-on: #008000;
+}
+
+/* 系统主题跟随优化 */
+@media (prefers-color-scheme: light) {
+    body.theme-system {
+        --indicator-off: #934242;
+        --indicator-on: #00dc72;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    body.theme-system {
+        --primary-bg: #1a1e2a;
+        --secondary-bg: #212837;
+        --card-bg: #2a3040;
+        --modal-bg: #2a3040;
+        --indicator-off: #990000;
+        --indicator-on: #008000;
+    }
+}
+
+/* 更新指示灯样式 */
+.indicator {
+    background-color: var(--indicator-off);
+}
+
+.indicator.on {
+    background-color: var(--indicator-on);
+}
+
+/* 优化深色模式下的文本对比度 */
+body.theme-dark .button-map-item .key-text,
+body.theme-dark .button-map-item .key-value,
+body.theme-dark .setting-item label,
+body.theme-dark .tab {
+    color: #e0e4eb;
+}
+
+body.theme-dark .empty-state {
+    color: #a0a8b8;
+}
+
+/* 优化深色模式按钮悬停效果 */
+body.theme-dark .icon-button:hover {
+    background-color: #3a7de0;
+}
+
+body.theme-dark .preset-controls button:hover,
+body.theme-dark .button-map-controls button:hover {
+    background-color: #3a7de0;
 }
