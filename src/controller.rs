@@ -56,6 +56,7 @@ pub enum ControllerType {
     Xbox,
     PlayStation,
     Switch,
+    BETOP,
     Other,
 }
 
@@ -65,6 +66,7 @@ pub fn detect_controller_type(vid: &str) -> ControllerType {
         "045e" => ControllerType::Xbox,
         "054c" => ControllerType::PlayStation,
         "057e" => ControllerType::Switch,
+        "20bc" => ControllerType::BETOP,
         _ => ControllerType::Other,
     }
 }
@@ -203,34 +205,6 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
         });
 
         if let Some(supported) = matched {
-            // println!(
-            //     "---------\n\n发现设备: {:?} \
-            //  \n厂商ID: {:?} \
-            //  \n产品ID: {:?} \
-            //  \n厂商  ：{:?} \
-            //  \n序列号：{:?} \
-            //  \n发布号：{:?} \
-            //  \nTypeID: {:?} \
-            //  \n路径  : {:?} \
-            //  \n总线  ：{:?} \
-            //  \n用法  ：{:?} \
-            //  \n用法页：{:?} \
-            //  \n接口  ：{:?}",
-            //     device.product_string().unwrap_or("未知设备"),
-            //     vid,
-            //     pid,
-            //     device.manufacturer_string().unwrap_or("未知厂商"),
-            //     device.serial_number().unwrap_or("未知序列号"),
-            //     device.release_number(),
-            //     device.type_id(),
-            //     device.path().to_string_lossy().to_string(),
-            //     device.bus_type(),
-            //     device.usage(),
-            //     device.usage_page(),
-            //     device.interface_number()
-            // );
-
-            // 构造运行时设备信息，带 device_path 和具体 product_id，类型也重新确认
             let device_info = DeviceInfo {
                 name: device.product_string().unwrap_or("未知设备").to_string(),
                 vendor_id: vid.clone(),
