@@ -102,6 +102,13 @@ fn default_devices() -> Vec<DeviceInfo> {
             device_path: None,
             controller_type: ControllerType::Switch,
         },
+        DeviceInfo {
+            name: "[ BETOP CONTROLLER ]".into(),
+            vendor_id: "20bc".into(),
+            product_id: Some("1263".into()),
+            device_path: None,
+            controller_type: ControllerType::Other,
+        },
     ];
 
     devices
