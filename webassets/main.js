@@ -432,6 +432,12 @@ document.addEventListener('DOMContentLoaded', () => {
             uiElements.deadzoneValue.textContent = settings.deadzone + '%';
             // 设置后端频率
             invoke("set_frequency", {freq: settings.polling_frequency});
+
+            minimize_to_tray = settings.minimize_to_tray;
+
+
+            // 应用主题设置
+            applyTheme(settings.theme);
         } catch (error) {
             console.error("加载设置失败:", error);
         }
@@ -498,23 +504,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 断开连接并刷新设备
-    async function _close_and_query_device() {
-        if (isConnected && device_selected) {
-            await invoke("disconnect_device", {deviceName: device_selected.name});
-            isConnected = false;
+    async function disconnectCurrentDevice() {
+        if (!isConnected || !device_selected) return true;
+
+        const deviceName = device_selected.name;
+        updateStatusMessage(`正在断开设备: ${deviceName}...`);
+
+        try {
+            await invoke("disconnect_device", {deviceName});
+            updateStatusMessage(`设备已断开`);
             uiElements.connectButton.classList.remove('connected');
             uiElements.connectButton.innerHTML = icon_disconnected;
             toggleIndicator(false);
+            isConnected = false;
+            return true;
+        } catch (error) {
+            console.error("断开连接失败:", error);
+            updateStatusMessage(`断开失败`, true);
+            return false;
         }
+    }
+
+    async function _close_and_query_device() {
+        await disconnectCurrentDevice();
 
         hasUserSelectedDevice = false;
         device_selected = null;
         uiElements.deviceSelect.selectedIndex = 0;
 
-        let devices = await invoke("query_devices");
-
-        updateDeviceList(devices);
+        try {
+            const devices = await invoke("query_devices");
+            updateDeviceList(devices);
+        } catch (error) {
+            console.error("查询设备失败:", error);
+            updateStatusMessage("设备查询失败", true);
+        }
     }
 
     // 去除设备名前缀
@@ -618,24 +642,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 设备选择
-    uiElements.deviceSelect?.addEventListener('change', function () {
-        if (this.value !== "null") {
-            hasUserSelectedDevice = true;
-            console.log(`test选择设备: ${this.options[this.selectedIndex].text}`);
-            _name = stripDevicePrefixFromString(this.options[this.selectedIndex].text);
-            currentDevices.forEach((device, index) => {
-                if (device.name === _name) {
-                    device_selected = device;
-                    updateStatusMessage(`已选择设备: ${_name}`);
-                } else {
-                    device_selected = null;
-                    updateStatusMessage(`找不到设备: ${_name}`, true);
-                }
-            })
-
-        } else {
+    uiElements.deviceSelect?.addEventListener('change', async function () {
+        if (this.value === "null") {
             device_selected = null;
             updateStatusMessage("请选择一个设备");
+            return;
+        }
+
+        const selectedIndex = parseInt(this.value);
+        if (isNaN(selectedIndex)) {
+            updateStatusMessage("无效的设备选择", true);
+            return;
+        }
+
+        // 如果已有连接设备，先断开
+        if (isConnected && device_selected) {
+            const success = await disconnectCurrentDevice();
+            if (!success) {
+                // 断开失败时保持原选择
+                this.value = currentDevices.indexOf(device_selected).toString();
+                return;
+            }
+        }
+
+        // 检查索引是否有效
+        if (selectedIndex >= 0 && selectedIndex < currentDevices.length) {
+            device_selected = currentDevices[selectedIndex];
+            hasUserSelectedDevice = true;
+            updateStatusMessage(`已选择设备: ${device_selected.name}`);
+        } else {
+            device_selected = null;
+            updateStatusMessage(`无效的设备索引: ${selectedIndex}`, true);
         }
     });
 
@@ -760,4 +797,54 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初始化映射功能
     updateControllerButtons();
     renderMappings();
+
+    // 应用主题设置
+    function applyTheme(theme) {
+        // 移除所有主题类
+        document.body.classList.remove('theme-light', 'theme-dark', 'theme-system');
+
+        // 应用新主题
+        if (theme === 'system') {
+            document.body.classList.add('theme-system');
+            // 添加系统主题变化监听
+            const systemThemeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+            const handleSystemThemeChange = () => {
+                // 当系统主题变化时，重新应用主题
+                applyTheme('system');
+            };
+            systemThemeMedia.addEventListener('change', handleSystemThemeChange);
+        } else {
+            document.body.classList.add(`theme-${theme}`);
+        }
+
+        // 更新状态消息
+        const themeTextMap = {
+            light: '浅色模式',
+            dark: '深色模式',
+            system: '跟随系统'
+        };
+        updateStatusMessage(`已切换到${themeTextMap[theme]}主题`);
+    }
+
+    // 在主题切换事件监听器中添加应用主题功能
+    uiElements.theme?.addEventListener('change', function() {
+        saveSettings();
+        applyTheme(this.value);
+    });
+
+    // async function loopAsync() {
+    //     while (true) {
+    //         // const gamepads = await navigator.getGamepads();
+    //         // console.log('gamepads', gamepads[0].axes);
+    //         // await new Promise(resolve => setTimeout(resolve, 800)); // 每秒执行一次
+    //         gamepads = navigator.getGamepads().filter(g => g !== null)
+    //         gamepads.forEach((gamepad) => {
+    //             console.log(gamepads[0].)
+    //         });
+    //
+    //         await new Promise(resolve => setTimeout(resolve, 800)); // 每秒执行一次
+    //     }
+    // }
+    //
+    // loopAsync();
 });
