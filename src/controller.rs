@@ -367,6 +367,7 @@ fn poll_other_controllers(device: &DeviceInfo) {
     println!("poll_other_controllers");
 }
 
+#[cfg(target_os = "windows")]
 fn _poll_xbox_controller_state(state: XInputState) {
     // 象征性使用 Rust 风格的方法判断按钮
     if state.south_button() {
