@@ -4,7 +4,6 @@
 use std::thread;
 use std::time::Duration;
 use gilrs::{Button, Event, Gilrs};
-use crate::controller::{_list_supported_devices, list_supported_connected_devices, load_or_create_config, SUPPORTED_DEVICES_FILE};
 
 mod controller;
 mod setting;
