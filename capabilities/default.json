@@ -16,9 +16,6 @@
     "core:window:allow-internal-toggle-maximize",
     "autostart:allow-enable",
     "autostart:allow-disable",
-    "autostart:allow-is-enabled",
-    "core:app:default",
-    "core:event:allow-listen",
-    "gamepad:default"
+    "autostart:allow-is-enabled"
   ]
 }
