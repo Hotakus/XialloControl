@@ -831,20 +831,4 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSettings();
         applyTheme(this.value);
     });
-
-    // async function loopAsync() {
-    //     while (true) {
-    //         // const gamepads = await navigator.getGamepads();
-    //         // console.log('gamepads', gamepads[0].axes);
-    //         // await new Promise(resolve => setTimeout(resolve, 800)); // 每秒执行一次
-    //         gamepads = navigator.getGamepads().filter(g => g !== null)
-    //         gamepads.forEach((gamepad) => {
-    //             console.log(gamepads[0].)
-    //         });
-    //
-    //         await new Promise(resolve => setTimeout(resolve, 800)); // 每秒执行一次
-    //     }
-    // }
-    //
-    // loopAsync();
 });
