@@ -834,10 +834,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function titlebarLogic() {
         platform = await invoke("get_platform");
+        const titlebar = document.getElementById("titlebar");
         if (platform === "windows") {
-            document.getElementById("titlebar")?.classList.remove("hidden");
+            console.log("windows");
+            titlebar.classList.add("show");
+            titlebar.classList.remove("hide");
         } else if (platform === "linux") {
-            document.getElementById("titlebar")?.classList.add("hidden");
+            console.log("linux");
+            titlebar.classList.add("hide");
+            titlebar.classList.remove("show");
+        } else {
+            console.warn(`未知平台: ${platform}`);
         }
     }
 

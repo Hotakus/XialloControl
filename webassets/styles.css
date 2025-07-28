@@ -42,7 +42,7 @@ body {
     flex-direction: column;
 }
 
-.window-header {
+.window-header.show {
     height: 48px;
     background: var(--primary-bg);
     color: var(--primary-text);
@@ -53,6 +53,10 @@ body {
     user-select: none;
     -webkit-app-region: drag;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.window-header.hide {
+    display: none;
 }
 
 .header-left {
