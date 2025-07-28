@@ -1,13 +1,58 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::thread;
+use std::time::Duration;
+use gilrs::{Button, Event, Gilrs};
+use crate::controller::{_list_supported_devices, list_supported_connected_devices, load_or_create_config, SUPPORTED_DEVICES_FILE};
+
 mod controller;
-mod tray;
 mod setting;
+mod tray;
 mod xeno_utils;
+mod controller_supports;
 
 fn main() {
     simple_logger::init_with_level(log::Level::Debug).unwrap();
+
+    // let mut gilrs = Gilrs::new().unwrap();
+    //
+    // println!("🎮 gilrs 0.11 已初始化");
+    //
+    // gilrs.gamepads().for_each(|(id, gamepad)| {
+    //     println!("{} is {:?}", gamepad.name(), gamepad.power_info());
+    // });
+    //
+    // println!("\n开始监听输入事件...\n", );
+    //
+    // let mut active_gamepad = None;
+    //
+    // loop {
+    //     // Examine new events
+    //     while let Some(Event {
+    //         id, event, time, ..
+    //     }) = gilrs.next_event()
+    //     {
+    //         println!("{:?} New event from {}: {:?}", time, id, event);
+    //         active_gamepad = Some(id);
+    //         gilrs.gamepads().for_each(|(id, gamepad)| {
+    //             println!("{} is {:?}", gamepad.name(), gamepad.power_info());
+    //         });
+    //     }
+    //
+    //     // You can also use cached gamepad state
+    //     if let Some(gamepad) = active_gamepad.map(|id| gilrs.gamepad(id)) {
+    //         if gamepad.is_pressed(Button::South) {
+    //             println!("Button South is pressed (XBox - A, PS - X)");
+    //         }
+    //     }
+    //     thread::sleep(Duration::from_millis(500));
+    // }
+    //
+    // let config = load_or_create_config(SUPPORTED_DEVICES_FILE);
+    // let supported_devices = list_supported_connected_devices(&config);
+    
+
     xenocontrol_lib::run();
 }
 
@@ -92,4 +137,3 @@ fn main() {
 //         }
 //     }
 // }
-
