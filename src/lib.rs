@@ -47,7 +47,6 @@ fn open_url(url: &str) -> Result<(), String> {
 
 #[tauri::command]
 fn get_platform() -> String {
-    println!("{:?}", std::env::consts::OS.to_string());
     std::env::consts::OS.to_string() // "linux" | "windows" | "macos" 等
 }
 
