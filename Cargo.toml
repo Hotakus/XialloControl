@@ -1,6 +1,6 @@
 [package]
 name = "xenocontrol"
-version = "0.2.11"
+version = "0.2.12"
 description = "XenoControl by Hotakus"
 authors = ["Hotakus"]
 edition = "2024"
@@ -37,7 +37,7 @@ codegen-units = 1   # 最大化优化
 rpath = false
 
 [build-dependencies]
-tauri-build = { version = "2" }
+tauri-build = { version = "2", features = [] }
 
 [dependencies]
 # Tauri 核心
