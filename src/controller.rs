@@ -1,12 +1,15 @@
 use crate::xeno_utils::get_app_root;
 // ---------------------- 外部依赖 ----------------------
-use hidapi::{HidApi};
+use hidapi::HidApi;
 use once_cell::sync::Lazy;
-use rusty_xinput::{XInputHandle};
+use gilrs::Gilrs;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::{fs, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
+
+#[cfg(target_os = "windows")]
+use rusty_xinput::{XInputHandle, XInputState};
 // ---------------------- 设备信息结构体 ----------------------
 
 /// 设备信息，既可表示支持的设备配置，也可表示已连接设备
@@ -23,7 +26,11 @@ pub struct DeviceInfo {
 
 pub struct Handles {
     pub app_handle: AppHandle,
-    pub xinput: XInputHandle,
+
+    pub gilrs_handle: Gilrs,
+
+    #[cfg(target_os = "windows")]
+    pub xinput_handle: XInputHandle,
 }
 
 static HANDLES: Lazy<Mutex<Option<Handles>>> = Lazy::new(|| Mutex::new(None));
@@ -196,6 +203,33 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
         });
 
         if let Some(supported) = matched {
+            // println!(
+            //     "---------\n\n发现设备: {:?} \
+            //  \n厂商ID: {:?} \
+            //  \n产品ID: {:?} \
+            //  \n厂商  ：{:?} \
+            //  \n序列号：{:?} \
+            //  \n发布号：{:?} \
+            //  \nTypeID: {:?} \
+            //  \n路径  : {:?} \
+            //  \n总线  ：{:?} \
+            //  \n用法  ：{:?} \
+            //  \n用法页：{:?} \
+            //  \n接口  ：{:?}",
+            //     device.product_string().unwrap_or("未知设备"),
+            //     vid,
+            //     pid,
+            //     device.manufacturer_string().unwrap_or("未知厂商"),
+            //     device.serial_number().unwrap_or("未知序列号"),
+            //     device.release_number(),
+            //     device.type_id(),
+            //     device.path().to_string_lossy().to_string(),
+            //     device.bus_type(),
+            //     device.usage(),
+            //     device.usage_page(),
+            //     device.interface_number()
+            // );
+
             // 构造运行时设备信息，带 device_path 和具体 product_id，类型也重新确认
             let device_info = DeviceInfo {
                 name: device.product_string().unwrap_or("未知设备").to_string(),
@@ -222,12 +256,13 @@ pub fn get_app_handle() -> AppHandle {
         .clone()
 }
 
+#[cfg(target_os = "windows")]
 pub fn get_xinput() -> XInputHandle {
     let handles = HANDLES.lock().unwrap();
     handles
         .as_ref()
         .expect("HANDLES not initialized")
-        .xinput
+        .xinput_handle
         .clone()
 }
 
@@ -327,63 +362,97 @@ pub fn polling_devices() {
     });
 }
 
-fn poll_xbox(device: &DeviceInfo) {
+
+fn poll_other_controllers(device: &DeviceInfo) {
+    println!("poll_other_controllers");
+}
+
+fn _poll_xbox_controller_state(state: XInputState) {
+    // 象征性使用 Rust 风格的方法判断按钮
+    if state.south_button() {
+        println!("Xbox A 键（South）被按下");
+    }
+    if state.east_button() {
+        println!("Xbox B 键（East）被按下");
+    }
+    if state.north_button() {
+        println!("Xbox Y 键（North）被按下");
+    }
+    if state.west_button() {
+        println!("Xbox X 键（West）被按下");
+    }
+    if state.guide_button() {
+        println!("Xbox Guide 键被按下");
+    }
+    if state.start_button() {
+        println!("Xbox Start 键被按下");
+    }
+    if state.left_thumb_button() {
+        println!("Xbox 左摇杆按下");
+    }
+    if state.right_thumb_button() {
+        println!("Xbox 右摇杆按下");
+    }
+
+    // 摇杆坐标
+    let (lx, ly) = state.left_stick_normalized();
+    println!("左摇杆 raw = ({}, {})", lx, ly);
+    // let (rx, ry) = state.right_stick_raw();
+    // println!("右摇杆 raw = ({}, {})", rx, ry);
+}
+
+#[cfg(target_os = "windows")]
+fn poll_xbox_controller(device: &DeviceInfo) {
     // TODO: 调用你的 xbox 轮询函数
     let xinput = get_xinput();
     let compose_code: u32 = 0x00;
 
-    match xinput.get_state(0) {
-        Ok(state) => {
-            // 象征性使用 Rust 风格的方法判断按钮
-            if state.south_button() {
-                println!("Xbox A 键（South）被按下");
-            }
-            if state.east_button() {
-                println!("Xbox B 键（East）被按下");
-            }
-            if state.north_button() {
-                println!("Xbox Y 键（North）被按下");
-            }
-            if state.west_button() {
-                println!("Xbox X 键（West）被按下");
-            }
-
-            // 摇杆坐标
-            let (lx, ly) = state.left_stick_normalized();
-            println!("左摇杆 raw = ({}, {})", lx, ly);
-            // let (rx, ry) = state.right_stick_raw();
-            // println!("右摇杆 raw = ({}, {})", rx, ry);
+    match xinput.get_state_ex(0) {
+        Ok(ex_state) => {
+            _poll_xbox_controller_state(ex_state);
         }
         Err(err) => {
-            println!("手柄未连接或无法读取状态: {:?}", err);
-            // TODO: 处理异常情况
-            disconnect_device();
-            let app_handle = get_app_handle();
-            if let Err(e) = app_handle.emit("physical_connect_status", false) {
-                log::error!("发送 physical_connect_status 事件失败: {}", e);
+            match xinput.get_state(0) {
+                Ok(state) => {
+                    _poll_xbox_controller_state(state);
+                }
+                Err(_) => {
+                    println!("手柄未连接或无法读取状态: {:?}", err);
+                    // TODO: 处理异常情况
+                    disconnect_device();
+                    let app_handle = get_app_handle();
+                    if let Err(e) = app_handle.emit("physical_connect_status", false) {
+                        log::error!("发送 physical_connect_status 事件失败: {}", e);
+                    }
+                }
             }
         }
     }
 }
 
+#[cfg(target_os = "linux")]
+fn poll_xbox_controller(device: &DeviceInfo) {
+    println!("poll_xbox_controllers");
+}
+
+
 /// 轮询设备异步函数
- fn poll_controller(device: &DeviceInfo) {
+fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
         ControllerType::Xbox => {
             // log::debug!("轮询 Xbox 设备: {}", device.name);
-            // TODO: 调用你的 xbox 轮询函数
-            poll_xbox(device);
+            poll_xbox_controller(device);
         }
         _ => {
             // log::debug!("轮询其他设备: {}", device.name);
             // TODO: 调用其他设备轮询函数
-            // 例如 poll_other(device, app_handle).await;
+            poll_other_controllers(device);
         }
     }
 }
 
 pub fn listen() {
-    thread::spawn( ||  {
+    thread::spawn(|| {
         log::info!("🎧 启动设备监听任务");
 
         let mut last_device: Option<DeviceInfo> = None;
@@ -424,6 +493,7 @@ pub fn listen() {
                 }
                 (false, false) => {
                     // 无设备，不操作
+
                 }
             }
 
@@ -437,17 +507,19 @@ pub fn listen() {
     });
 }
 
-pub fn initialize(app_handle: AppHandle) {
-    let xinput = XInputHandle::load_default().unwrap();
+fn query_needed_handle(app_handle: AppHandle) {
     let mut handles = HANDLES.lock().unwrap();
-
     *handles = Some(Handles {
         app_handle: app_handle.clone(),
-        xinput,
+        gilrs_handle: Gilrs::new().unwrap(),
+
+        #[cfg(target_os = "windows")]
+        xinput_handle: XInputHandle::load_default().unwrap(),
     });
+}
 
-    _list_supported_devices();
-
+pub fn initialize(app_handle: AppHandle) {
+    query_needed_handle(app_handle);
     polling_devices();
     listen();
 }
