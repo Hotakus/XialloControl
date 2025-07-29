@@ -113,53 +113,62 @@
         </div>
 
         <div id="stickMapTab" class="tab-content" role="tabpanel">
-          <div class="tab-content-container">
-            <div class="stick-map">
-              <div class="button-map-item">
-                <div class="button-icon"><i class="fas fa-arrows-alt"></i></div>
-                <div class="key-text">左摇杆</div>
-                <div class="key-value">WASD 方向键</div>
-                <div class="item-actions">
-                  <button class="item-action-btn edit"><i class="fas fa-edit"></i></button>
-                  <button class="item-action-btn delete"><i class="fas fa-trash-alt"></i></button>
+          <div class="settings-container">
+            <div class="setting-group">
+              <h3>摇杆设置</h3>
+              <div class="setting-item">
+                <label for="deadzone">右摇杆死区:</label>
+                <div class="slider-container">
+                  <input type="range" id="deadzone" min="0" max="30" value="10">
+                  <span id="deadzone-value">10%</span>
                 </div>
               </div>
-              <div class="button-map-item">
-                <div class="button-icon"><i class="fas fa-arrows-alt"></i></div>
-                <div class="key-text">右摇杆</div>
-                <div class="key-value">鼠标移动</div>
-                <div class="item-actions">
-                  <button class="item-action-btn edit"><i class="fas fa-edit"></i></button>
-                  <button class="item-action-btn delete"><i class="fas fa-trash-alt"></i></button>
+              <div class="setting-item">
+                <label for="deadzone">左摇杆死区:</label>
+                <div class="slider-container">
+                  <input type="range" id="deadzone-left" min="0" max="30" value="10">
+                  <span id="deadzone-left-value">10%</span>
                 </div>
               </div>
-              <div class="button-map-item">
-                <div class="button-icon"><i class="fas fa-th"></i></div>
-                <div class="key-text">方向键</div>
-                <div class="key-value">键盘方向键</div>
-                <div class="item-actions">
-                  <button class="item-action-btn edit"><i class="fas fa-edit"></i></button>
-                  <button class="item-action-btn delete"><i class="fas fa-trash-alt"></i></button>
-                </div>
+              <div class="stick-buttons-row">
+<!--                <button id="response-curve-btn" class="icon-button">-->
+<!--                  <svg t="1754895424804" viewBox="0 0 24 24" width="20" height="20">-->
+<!--                    <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" fill="currentColor"/>-->
+<!--                  </svg>-->
+<!--                  响应曲线-->
+<!--                </button>-->
+                <button id="calibrate-btn" class="icon-button">
+                  <svg t="1754895524804" viewBox="0 0 24 24" width="20" height="20">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13.5v6l5.25 3.15.75-1.23-4.5-2.67v-5.25z" fill="currentColor"/>
+                  </svg>
+                  校准
+                </button>
               </div>
             </div>
+            <div class="setting-group">
+              <h3>摇杆行为</h3>
+              <div class="setting-item">
+                <label>右摇杆旋转:</label>
+              </div>
+            </div>
+
           </div>
         </div>
 
         <div id="settingTab" class="tab-content" role="tabpanel">
           <div class="settings-container">
             <!-- 摇杆设置组 -->
-            <div class="setting-group">
-              <h3><i class="fas fa-gamepad"></i> 摇杆设置</h3>
+<!--            <div class="setting-group">-->
+<!--              <h3><i class="fas fa-gamepad"></i> 摇杆设置</h3>-->
 
-              <div class="setting-item">
-                <label for="deadzone">死区范围:</label>
-                <div class="slider-container">
-                  <input type="range" id="deadzone" min="0" max="30" value="10">
-                  <span id="deadzone-value">10%</span>
-                </div>
-              </div>
-            </div>
+<!--              <div class="setting-item">-->
+<!--                <label for="deadzone">死区范围:</label>-->
+<!--                <div class="slider-container">-->
+<!--                  <input type="range" id="deadzone" min="0" max="30" value="10">-->
+<!--                  <span id="deadzone-value">10%</span>-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </div>-->
 
             <!-- 软件设置组 -->
             <div class="setting-group">
@@ -240,13 +249,14 @@
       </div>
 
       <div class="form-group key-detector">
-        <label><i class="fas fa-keyboard"></i> 映射到键盘按键</label>
+        <label><i class="fas fa-keyboard"></i> 映射到：</label>
         <div class="detector-area" id="key-detector-area">
-          点击此处并按下键盘按键或组合键
+          点击此处并按下键盘按键、鼠标按键或滚动滚轮
         </div>
         <div class="detector-hint">支持单键或组合键（如 Ctrl+C、Alt+F4）</div>
         <div class="key-display" id="key-display"></div>
       </div>
+      <div id="modal-error" class="status-message error" style="display: none; margin-top: 15px;"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" id="cancel-btn">取消</button>
@@ -254,6 +264,9 @@
     </div>
   </div>
 </div>
+
+
+
 
 <script src="main.js"></script>
 </body>
