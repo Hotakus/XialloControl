@@ -8,7 +8,6 @@ use crate::xeno_utils::get_app_root;
 use crate::adaptive_sampler::AdaptiveSampler;
 use gilrs::{Button, Event, EventType, GamepadId, Gilrs};
 use hidapi::HidApi;
-use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
 #[cfg(target_os = "windows")]
 use rusty_xinput::{XInputHandle, XInputState};
