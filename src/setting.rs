@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::xeno_utils;
 use crate::xeno_utils::get_app_root;
 use anyhow::{Context, Result};
 use log;
@@ -73,60 +74,33 @@ fn get_settings_path() -> &'static str {
 
 /// 加载应用设置
 pub fn load_settings() -> AppSettings {
-    let settings_path = get_app_root().join(get_settings_path());
-    log::debug!("尝试加载设置文件: {}", &settings_path.display());
+    let settings_path = xeno_utils::get_config_path(SETTINGS_FILE);
+    xeno_utils::ensure_config_dir();
 
-    // 如果设置文件不存在，返回默认设置
-    if !Path::new(&settings_path).exists() {
-        log::debug!("设置文件不存在，使用默认设置");
+    if !settings_path.exists() {
         save_settings(&AppSettings::default()).unwrap();
         return AppSettings::default();
     }
 
-    // 读取并解析设置文件
-    match fs::read_to_string(&settings_path) {
-        Ok(toml_str) => {
-            log::debug!("成功读取设置文件内容");
-            match toml::from_str(&toml_str) {
-                Ok(settings) => {
-                    log::debug!("成功解析设置文件");
-                    settings
-                }
-                Err(e) => {
-                    log::error!("解析设置文件失败: {}, 使用默认设置", e);
-                    AppSettings::default()
-                }
-            }
-        }
-        Err(e) => {
-            log::error!("读取设置文件失败: {}, 使用默认设置", e);
-            AppSettings::default()
-        }
-    }
+    xeno_utils::read_toml_file(&settings_path).unwrap_or_else(|e| {
+        log::error!("加载设置失败: {}, 使用默认设置", e);
+        AppSettings::default()
+    })
 }
 
 /// 保存应用设置
 pub fn save_settings(settings: &AppSettings) -> Result<()> {
-    let settings_path = get_app_root().join(get_settings_path());
-    log::debug!("尝试保存设置到文件: {:?}", &settings_path);
+    let settings_path = xeno_utils::get_config_path(SETTINGS_FILE);
+    xeno_utils::ensure_config_dir();
 
-    // 序列化设置
-    let toml_str = toml::to_string_pretty(settings)
-        .context("序列化设置失败")
+    xeno_utils::write_toml_file(&settings_path, settings)
+        .context("保存设置失败")
         .map_err(|e| {
-            log::error!("序列化设置失败: {}", e);
+            log::error!("保存设置失败: {}", e);
             e
         })?;
 
-    // 写入文件
-    fs::write(&settings_path, &toml_str)
-        .with_context(|| format!("写入设置文件失败: {:?}", &settings_path))
-        .map_err(|e| {
-            log::error!("保存设置到文件失败: {}", e);
-            e
-        })?;
-
-    log::info!("设置已成功保存到: {:?}", &settings_path);
+    log::info!("设置已保存到: {:?}", settings_path);
     Ok(())
 }
 
@@ -167,7 +141,10 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
         let _ = autostart_manager.disable();
         log::info!("已禁用开机自启动");
     }
-    log::debug!("registered for autostart? {}", autostart_manager.is_enabled().unwrap());
+    log::debug!(
+        "registered for autostart? {}",
+        autostart_manager.is_enabled().unwrap()
+    );
 
     log::info!("设置已成功更新");
     Ok(())

@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::{fs, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
+use crate::xeno_utils;
 
 // ---------------------- 常量定义 ----------------------
 /// 支持的设备配置文件名称
@@ -184,49 +185,32 @@ fn default_devices() -> Vec<DeviceInfo> {
 /// 2. 配置文件不存在 -> 创建默认配置
 /// 3. 解析失败 -> 回退到默认配置
 pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
-    let config_path = get_app_root().join(path);
+    let config_path = xeno_utils::get_config_path(path);
+    xeno_utils::ensure_config_dir();
 
-    // 配置文件存在时的处理流程
     if config_path.exists() {
-        let toml_str = match fs::read_to_string(config_path) {
-            Ok(content) => content,
-            Err(e) => {
-                log::error!("读取 TOML 配置文件失败: {}", e);
-                return default_devices();
-            }
-        };
-
-        match toml::from_str::<SupportedDevicesConfig>(&toml_str) {
+        match xeno_utils::read_toml_file::<SupportedDevicesConfig>(&config_path) {
             Ok(mut config) => {
-                // 兼容性处理：确保所有设备都有正确的控制器类型
                 for device in &mut config.devices {
                     device.controller_type = detect_controller_type(&device.vendor_id);
                 }
                 config.devices
             }
             Err(e) => {
-                log::error!("解析 TOML 配置文件失败: {}", e);
+                log::error!("读取/解析配置文件失败: {}", e);
                 default_devices()
             }
         }
-    }
-    // 配置文件不存在时的处理流程
-    else {
-        println!("🛠️ 配置文件不存在，正在生成默认 TOML 配置...");
-        println!("{:?}", config_path);
+    } else {
+        log::info!("🛠️ 配置文件不存在，正在生成默认配置: {:?}", config_path);
 
         let default = default_devices();
         let config = SupportedDevicesConfig {
             devices: default.clone(),
         };
 
-        match toml::to_string_pretty(&config) {
-            Ok(toml_str) => {
-                if let Err(e) = fs::write(config_path, toml_str) {
-                    log::error!("写入默认 TOML 配置文件失败: {}", e);
-                }
-            }
-            Err(e) => log::error!("序列化 TOML 配置文件失败: {}", e),
+        if let Err(e) = xeno_utils::write_toml_file(&config_path, &config) {
+            log::error!("写入默认配置文件失败: {}", e);
         }
 
         default
