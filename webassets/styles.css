@@ -365,6 +365,11 @@ body {
     text-align: center;
 }
 
+.key-value.mouse {
+    background: #d7e3ff;
+    color: #2a5dbf;
+}
+
 .item-actions {
     display: flex;
     gap: 5px;
@@ -394,6 +399,23 @@ body {
 
 .item-action-btn.delete {
     color: #e74c3c;
+}
+
+.item-action-btn:active {
+    transform: scale(0.85);
+    background-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3) inset;
+    transition: none;
+}
+
+/* 为编辑按钮添加特定的按下颜色 */
+.item-action-btn.edit:active {
+    background-color: rgba(42, 93, 191, 0.4);
+}
+
+/* 为删除按钮添加特定的按下颜色 */
+.item-action-btn.delete:active {
+    background-color: rgba(231, 76, 60, 0.4);
 }
 
 .window-footer {
@@ -875,6 +897,15 @@ input:checked + .slider:before {
     user-select: none;
     text-align: center;
     padding: 0 20px;
+
+    -webkit-user-select: none; /* 防止文本选中 */
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.detector-area, .key-detector {
+   -webkit-context-menu: none; /* 禁用上下文菜单 */
+   context-menu: none; /* 标准属性 */
 }
 
 .detector-area.active {
@@ -1051,4 +1082,41 @@ body.theme-dark .icon-button:hover {
 body.theme-dark .preset-controls button:hover,
 body.theme-dark .button-map-controls button:hover {
     background-color: #3a7de0;
+}
+
+.item-action-btn svg {
+    pointer-events: none; /* 允许鼠标事件穿透SVG */
+}
+
+.item-action-btn:hover svg path {
+    fill: currentColor; /* 保持SVG颜色与父级一致 */
+}
+
+/* 新增摇杆按钮行样式 */
+.stick-buttons-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    justify-content: center;
+}
+
+.stick-buttons-row .icon-button {
+    width: auto;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #4c8bf5;
+}
+
+.stick-buttons-row .icon-button:hover {
+    background: #3a7de0;
+}
+
+.stick-buttons-row .icon-button:active {
+    background: #2a5dbf;
+}
+
+.stick-buttons-row .icon-button {
+    width: 100%;
 }
