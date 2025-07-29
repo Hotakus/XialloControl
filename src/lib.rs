@@ -22,6 +22,7 @@ mod setting;
 mod tray;
 mod xeno_utils;
 mod adaptive_sampler;
+mod mapping;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -69,7 +70,9 @@ pub fn run() {
             controller::disconnect_device,
             controller::set_frequency,
             setting::get_current_settings,
-            setting::update_settings
+            setting::update_settings,
+            mapping::set_mapping,
+            mapping::get_mappings
         ])
         .setup(|app| {
             let app_handle = app.handle();
@@ -99,6 +102,7 @@ pub fn run() {
             let _ = controller::initialize(app_handle.clone());
             let _ = xeno_utils::initialize();
             let _ = setting::initialize();
+            let _ = mapping::initialize();
             Ok(())
         })
         .run(tauri::generate_context!())
