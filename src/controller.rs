@@ -1,15 +1,19 @@
 use crate::xeno_utils::get_app_root;
 // ---------------------- 外部依赖 ----------------------
+use crate::adaptive_sampler::AdaptiveSampler;
+use gilrs::{Button, Event, EventType, GamepadId, Gilrs};
 use hidapi::HidApi;
+use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
-use gilrs::Gilrs;
-use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
-use std::{fs, thread, time::Duration};
-use tauri::{AppHandle, Emitter};
-
 #[cfg(target_os = "windows")]
 use rusty_xinput::{XInputHandle, XInputState};
+use serde::{Deserialize, Serialize};
+use std::cell::OnceCell;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::{Mutex, OnceLock, RwLock};
+use std::{fs, thread, time::Duration};
+use tauri::{AppHandle, Emitter};
 // ---------------------- 设备信息结构体 ----------------------
 
 /// 设备信息，既可表示支持的设备配置，也可表示已连接设备
@@ -27,8 +31,6 @@ pub struct DeviceInfo {
 pub struct Handles {
     pub app_handle: AppHandle,
 
-    pub gilrs_handle: Gilrs,
-
     #[cfg(target_os = "windows")]
     pub xinput_handle: XInputHandle,
 }
@@ -37,6 +39,7 @@ static HANDLES: Lazy<Mutex<Option<Handles>>> = Lazy::new(|| Mutex::new(None));
 
 pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
 pub static FREQ: Lazy<Mutex<u32>> = Lazy::new(|| Mutex::new(125));
+pub static SAMPLING_RATE: Lazy<Mutex<f64>> = Lazy::new(|| Mutex::new(1000.0));
 pub static TIME_INTERVAL: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
 pub static CURRENT_DEVICE: Lazy<Mutex<DeviceInfo>> = Lazy::new(|| {
     Mutex::new(DeviceInfo {
@@ -304,19 +307,28 @@ pub fn disconnect_device() -> bool {
     true
 }
 
+pub static ADAPTER: Lazy<Mutex<AdaptiveSampler>> = Lazy::new(|| {
+    Mutex::new(AdaptiveSampler::new(200_000.0, 10.0))
+});
+
 #[tauri::command]
 pub async fn set_frequency(freq: u32) {
-    let freq = freq.clamp(1, 8000); // 限制范围
+    let freq = freq.clamp(1, 8000);
     let mut global_freq = FREQ.lock().unwrap();
     let mut time_interval = TIME_INTERVAL.lock().unwrap();
+    let mut sample_rate = SAMPLING_RATE.lock().unwrap();
+
+    // 使用全局适配器
+    let mut adapter = ADAPTER.lock().unwrap();
 
     *global_freq = freq;
+    let sr = adapter.compute_sampling_rate(freq as f64);
+    *sample_rate = sr;
     *time_interval = 1.0 / freq as f32;
 
     log::info!(
-        "轮询频率已设置为: {} Hz ({} seconds)",
-        *global_freq,
-        *time_interval
+        "轮询频率: {} Hz ({}秒), 采样率: {:.2} Hz",
+        *global_freq, *time_interval, sr
     );
 }
 
@@ -336,14 +348,57 @@ pub fn polling_devices() {
     });
 }
 
+fn pack_bools_to_u32(bools: &[bool]) -> u32 {
+    let mut result: u32 = 0;
+    for (i, &b) in bools.iter().enumerate() {
+        if i >= 32 {
+            break;
+        } // u32 只有 32 位
+        if b {
+            result |= 1 << i;
+        }
+    }
+    result
+}
+// 全局变量
+pub static GILRS_TX: OnceLock<Sender<(GamepadId, EventType)>> = OnceLock::new();
+pub static GILRS_RX: OnceLock<Mutex<Receiver<(GamepadId, EventType)>>> = OnceLock::new();
+pub static GLOBAL_GILRS: Lazy<Mutex<Option<Gilrs>>> = Lazy::new(|| Mutex::new(None));
+static LATEST_EVENT_TYPE: OnceLock<RwLock<Option<EventType>>> = OnceLock::new();
+
+fn get_latest_event_type() -> Option<EventType> {
+    LATEST_EVENT_TYPE
+        .get()
+        .and_then(|lock| lock.read().ok().and_then(|g| g.clone()))
+}
+
+fn unpack_u32_to_bools(value: u32) -> Vec<bool> {
+    (0..32).map(|i| (value & (1 << i)) != 0).collect()
+}
 
 fn poll_other_controllers(device: &DeviceInfo) {
     println!("poll_other_controllers");
+
+    let gilrs_guard = GLOBAL_GILRS.lock().unwrap();
+    let gilrs = gilrs_guard.as_ref().unwrap();
+
+    gilrs.gamepads().for_each(|(id, gamepad)| {
+        let vid = format!("{:04x}", gamepad.vendor_id().unwrap());
+        let pid = format!("{:04x}", gamepad.product_id().unwrap());
+
+        let a = &device.vendor_id;
+        let b = &device.product_id.as_deref().unwrap().to_string();
+
+        if (vid.eq_ignore_ascii_case(a)) && (pid.eq_ignore_ascii_case(b)) {
+            if (gamepad.is_pressed(Button::South)) {
+                println!("----------------- Button::South 键被按下");
+            }
+        }
+    });
 }
 
 #[cfg(target_os = "windows")]
 fn _poll_xbox_controller_state(state: XInputState) {
-    // 象征性使用 Rust 风格的方法判断按钮
     if state.south_button() {
         println!("Xbox A 键（South）被按下");
     }
@@ -410,7 +465,6 @@ fn poll_xbox_controller(device: &DeviceInfo) {
     println!("poll_xbox_controllers");
 }
 
-
 /// 轮询设备异步函数
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
@@ -424,6 +478,37 @@ fn poll_controller(device: &DeviceInfo) {
             poll_other_controllers(device);
         }
     }
+}
+
+pub fn gilrs_listen() {
+    LATEST_EVENT_TYPE.set(RwLock::new(None)).ok();
+
+    std::thread::spawn(move || {
+        let gilrs = Gilrs::new().expect("Failed to init Gilrs");
+        {
+            let mut gilrs_guard = GLOBAL_GILRS.lock().unwrap();
+            *gilrs_guard = Some(gilrs);
+        }
+
+        loop {
+            let mut gilrs_guard = GLOBAL_GILRS.lock().unwrap();
+            let mut got_event = false;
+
+            if let Some(gilrs) = gilrs_guard.as_mut() {
+                while let Some(Event { event, .. }) = gilrs.next_event() {
+                    // if let Some(lock) = LATEST_EVENT_TYPE.get() {
+                    //     let mut write_guard = lock.write().unwrap();
+                    //     *write_guard = Some(event.clone());
+                    // }
+                    // log::debug!("Gilrs event: {:?}", event);
+                }
+            }
+
+            drop(gilrs_guard);
+            let sample_rate = 1.0 / *SAMPLING_RATE.lock().unwrap();
+            std::thread::sleep(std::time::Duration::from_secs_f32(sample_rate as f32));
+        }
+    });
 }
 
 pub fn listen() {
@@ -468,7 +553,6 @@ pub fn listen() {
                 }
                 (false, false) => {
                     // 无设备，不操作
-
                 }
             }
 
@@ -486,7 +570,6 @@ fn query_needed_handle(app_handle: AppHandle) {
     let mut handles = HANDLES.lock().unwrap();
     *handles = Some(Handles {
         app_handle: app_handle.clone(),
-        gilrs_handle: Gilrs::new().unwrap(),
 
         #[cfg(target_os = "windows")]
         xinput_handle: XInputHandle::load_default().unwrap(),
@@ -495,6 +578,7 @@ fn query_needed_handle(app_handle: AppHandle) {
 
 pub fn initialize(app_handle: AppHandle) {
     query_needed_handle(app_handle);
+    gilrs_listen();
     polling_devices();
     listen();
 }
