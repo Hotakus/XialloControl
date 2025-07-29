@@ -21,6 +21,7 @@ mod controller;
 mod setting;
 mod tray;
 mod xeno_utils;
+mod adaptive_sampler;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -93,6 +94,7 @@ pub fn run() {
             .maximizable(false)
             .build()?;
 
+            let _ = adaptive_sampler::initialize();
             let _ = tray::initialize(app_handle.clone());
             let _ = controller::initialize(app_handle.clone());
             let _ = xeno_utils::initialize();

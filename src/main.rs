@@ -10,6 +10,7 @@ mod setting;
 mod tray;
 mod xeno_utils;
 mod controller_supports;
+mod adaptive_sampler;
 
 fn main() {
     simple_logger::init_with_level(log::Level::Debug).unwrap();
