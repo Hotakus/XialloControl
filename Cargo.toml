@@ -1,6 +1,6 @@
 [package]
 name = "xenocontrol"
-version = "0.2.12"
+version = "0.2.19"
 description = "XenoControl by Hotakus"
 authors = ["Hotakus"]
 edition = "2024"
