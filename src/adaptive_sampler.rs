@@ -1,4 +1,6 @@
 // adaptive_sampler.rs
+#![allow(dead_code)]
+
 pub struct AdaptiveSampler {
     max_sampling_rate: f64,
     min_sampling_rate: f64,

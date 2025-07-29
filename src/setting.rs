@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::xeno_utils::get_app_root;
 use anyhow::{Context, Result};
 use log;
@@ -156,11 +158,11 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
 
     // 获取自动启动管理器
     let autostart_manager = app.autolaunch();
-    if (new_settings.auto_start && !autostart_manager.is_enabled().unwrap()) {
+    if new_settings.auto_start && !autostart_manager.is_enabled().unwrap() {
         // 启用 autostart
         let _ = autostart_manager.enable();
         log::info!("已启用开机自启动");
-    } else if (!new_settings.auto_start && autostart_manager.is_enabled().unwrap()) {
+    } else if !new_settings.auto_start && autostart_manager.is_enabled().unwrap() {
         // 禁用 autostart
         let _ = autostart_manager.disable();
         log::info!("已禁用开机自启动");

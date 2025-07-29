@@ -3,31 +3,36 @@
 //! 提供控制器检测、配置管理、状态轮询和设备事件处理功能。
 //! 支持跨平台操作（Windows/Linux），集成 XInput 和 Gilrs 库。
 
-use crate::xeno_utils::get_app_root;
+#![allow(dead_code)]
+
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
-use gilrs::{Button, Event, EventType, GamepadId, Gilrs};
+use crate::xeno_utils::get_app_root;
+use gilrs::{Button, Event, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 #[cfg(target_os = "windows")]
 use rusty_xinput::{XInputHandle, XInputState};
 use serde::{Deserialize, Serialize};
-use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{Mutex, OnceLock, RwLock};
+use std::sync::Mutex;
 use std::{fs, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
 // ---------------------- 常量定义 ----------------------
 /// 支持的设备配置文件名称
+#[allow(dead_code)]
 pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
 
 /// 全局轮询频率 (Hz)
+#[allow(dead_code)]
 pub static FREQ: Lazy<Mutex<u32>> = Lazy::new(|| Mutex::new(125));
 
 /// 采样率缓存值
+#[allow(dead_code)]
 pub static SAMPLING_RATE: Lazy<Mutex<f64>> = Lazy::new(|| Mutex::new(1000.0));
 
 /// 轮询时间间隔 (秒)
+#[allow(dead_code)]
 pub static TIME_INTERVAL: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
 
 // ---------------------- 结构体定义 ----------------------
@@ -80,9 +85,11 @@ pub enum ControllerType {
 
 // ---------------------- 全局静态变量 ----------------------
 /// 全局应用句柄存储
+#[allow(dead_code)]
 static HANDLES: Lazy<Mutex<Option<Handles>>> = Lazy::new(|| Mutex::new(None));
 
 /// 当前选中的控制器设备
+#[allow(dead_code)]
 pub static CURRENT_DEVICE: Lazy<Mutex<DeviceInfo>> = Lazy::new(|| {
     Mutex::new(DeviceInfo {
         name: "".into(),
@@ -94,21 +101,13 @@ pub static CURRENT_DEVICE: Lazy<Mutex<DeviceInfo>> = Lazy::new(|| {
 });
 
 /// 自适应采样器实例
-pub static ADAPTER: Lazy<Mutex<AdaptiveSampler>> = Lazy::new(|| {
-    Mutex::new(AdaptiveSampler::new(200_000.0, 10.0))
-});
-
-/// Gilrs 事件发送通道
-pub static GILRS_TX: OnceLock<Sender<(GamepadId, EventType)>> = OnceLock::new();
-
-/// Gilrs 事件接收通道
-pub static GILRS_RX: OnceLock<Mutex<Receiver<(GamepadId, EventType)>>> = OnceLock::new();
+#[allow(dead_code)]
+pub static ADAPTER: Lazy<Mutex<AdaptiveSampler>> =
+    Lazy::new(|| Mutex::new(AdaptiveSampler::new(200_000.0, 10.0)));
 
 /// 全局 Gilrs 实例
+#[allow(dead_code)]
 pub static GLOBAL_GILRS: Lazy<Mutex<Option<Gilrs>>> = Lazy::new(|| Mutex::new(None));
-
-/// 最近一次控制器事件缓存
-static LATEST_EVENT_TYPE: OnceLock<RwLock<Option<EventType>>> = OnceLock::new();
 
 // ---------------------- 控制器类型检测 ----------------------
 /// 根据厂商ID识别控制器类型
@@ -120,10 +119,10 @@ static LATEST_EVENT_TYPE: OnceLock<RwLock<Option<EventType>>> = OnceLock::new();
 /// 对应的 `ControllerType` 枚举值
 pub fn detect_controller_type(vid: &str) -> ControllerType {
     match vid.to_ascii_lowercase().as_str() {
-        "045e" => ControllerType::Xbox,     // Microsoft
+        "045e" => ControllerType::Xbox,        // Microsoft
         "054c" => ControllerType::PlayStation, // Sony
-        "057e" => ControllerType::Switch,   // Nintendo
-        "20bc" => ControllerType::BETOP,    // BETOP
+        "057e" => ControllerType::Switch,      // Nintendo
+        "20bc" => ControllerType::BETOP,       // BETOP
         _ => ControllerType::Other,
     }
 }
@@ -262,12 +261,12 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
         let matched = config.iter().find(|d| {
             d.vendor_id.eq_ignore_ascii_case(&vid)
                 && match &d.product_id {
-                Some(pid_cfg) => pid_cfg.eq_ignore_ascii_case(&pid),
-                None => true,
-            }
+                    Some(pid_cfg) => pid_cfg.eq_ignore_ascii_case(&pid),
+                    None => true,
+                }
         });
 
-        if let Some(supported) = matched {
+        if let Some(_supported) = matched {
             // 构建完整的设备信息
             let device_info = DeviceInfo {
                 name: device.product_string().unwrap_or("未知设备").to_string(),
@@ -390,7 +389,9 @@ pub async fn set_frequency(freq: u32) {
 
     log::info!(
         "轮询频率: {} Hz ({}秒), 采样率: {:.2} Hz",
-        *global_freq, *time_interval, *sample_rate
+        *global_freq,
+        *time_interval,
+        *sample_rate
     );
 }
 
@@ -453,7 +454,7 @@ fn _poll_xbox_controller_state(state: XInputState) {
 
 /// Xbox控制器轮询入口 (Windows)
 #[cfg(target_os = "windows")]
-fn poll_xbox_controller(device: &DeviceInfo) {
+fn poll_xbox_controller(_device: &DeviceInfo) {
     let xinput = get_xinput();
     match xinput.get_state_ex(0).or_else(|_| xinput.get_state(0)) {
         Ok(state) => _poll_xbox_controller_state(state),
@@ -519,7 +520,9 @@ pub fn listen() {
                     log::info!("🔌 连接新设备: {}", current_device.name);
                     last_device = Some(current_device.clone());
                 }
-                (true, true) if last_device.as_ref().unwrap().device_path != current_device.device_path => {
+                (true, true)
+                    if last_device.as_ref().unwrap().device_path != current_device.device_path =>
+                {
                     log::info!(
                         "🔄 设备切换: {} → {}",
                         last_device.as_ref().unwrap().name,
@@ -559,10 +562,11 @@ pub fn gilrs_listen() {
                 // 清空事件队列但不处理
                 while let Some(Event { event, .. }) = gilrs.next_event() {
                     // 事件处理占位 (当前仅消费事件)
+                    let _ = event;
                 }
             }
             std::thread::sleep(Duration::from_secs_f32(
-                1.0 / *SAMPLING_RATE.lock().unwrap() as f32
+                1.0 / *SAMPLING_RATE.lock().unwrap() as f32,
             ));
         }
     });
