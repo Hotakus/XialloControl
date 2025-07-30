@@ -1,36 +1,21 @@
-
 #![allow(dead_code)]
 
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
+use crate::controller::controller_datas::{ControllerButtons, ControllerDatas};
+use crate::xeno_utils;
 use crate::xeno_utils::get_app_root;
 use gilrs::{Button, Event, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
-#[cfg(target_os = "windows")]
-use rusty_xinput::{XInputHandle, XInputState};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use std::{fs, thread, time::Duration};
 use tauri::{AppHandle, Emitter};
-use crate::xeno_utils;
 
-// ---------------------- 常量定义 ----------------------
-/// 支持的设备配置文件名称
-#[allow(dead_code)]
-pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
-
-/// 全局轮询频率 (Hz)
-#[allow(dead_code)]
-pub static FREQ: Lazy<Mutex<u32>> = Lazy::new(|| Mutex::new(125));
-
-/// 采样率缓存值
-#[allow(dead_code)]
-pub static SAMPLING_RATE: Lazy<Mutex<f64>> = Lazy::new(|| Mutex::new(1000.0));
-
-/// 轮询时间间隔 (秒)
-#[allow(dead_code)]
-pub static TIME_INTERVAL: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
+#[cfg(target_os = "windows")]
+use rusty_xinput::{XInputHandle, XInputState};
+use crate::controller::controller_xbox;
 
 // ---------------------- 结构体定义 ----------------------
 /// 游戏控制器设备信息
@@ -97,6 +82,9 @@ pub static CURRENT_DEVICE: Lazy<Mutex<DeviceInfo>> = Lazy::new(|| {
     })
 });
 
+pub static CONTROLLER_DATA: Lazy<Mutex<ControllerDatas>> =
+    Lazy::new(|| Mutex::new(ControllerDatas::new()));
+
 /// 自适应采样器实例
 #[allow(dead_code)]
 pub static ADAPTER: Lazy<Mutex<AdaptiveSampler>> =
@@ -105,6 +93,22 @@ pub static ADAPTER: Lazy<Mutex<AdaptiveSampler>> =
 /// 全局 Gilrs 实例
 #[allow(dead_code)]
 pub static GLOBAL_GILRS: Lazy<Mutex<Option<Gilrs>>> = Lazy::new(|| Mutex::new(None));
+
+/// 支持的设备配置文件名称
+#[allow(dead_code)]
+pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
+
+/// 全局轮询频率 (Hz)
+#[allow(dead_code)]
+pub static FREQ: Lazy<Mutex<u32>> = Lazy::new(|| Mutex::new(125));
+
+/// 采样率缓存值
+#[allow(dead_code)]
+pub static SAMPLING_RATE: Lazy<Mutex<f64>> = Lazy::new(|| Mutex::new(1000.0));
+
+/// 轮询时间间隔 (秒)
+#[allow(dead_code)]
+pub static TIME_INTERVAL: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
 
 // ---------------------- 控制器类型检测 ----------------------
 /// 根据厂商ID识别控制器类型
@@ -308,6 +312,14 @@ fn _find_device_by_name(name: &str) -> Option<DeviceInfo> {
 }
 
 // ---------------------- Tauri 命令接口 ----------------------
+
+#[tauri::command]
+pub async fn get_controller_data() -> ControllerDatas {
+    let controller_data = CONTROLLER_DATA.lock().unwrap().clone();
+
+    controller_data
+}
+
 /// 查询可用设备命令 (Tauri 前端调用)
 ///
 /// 触发 "update_devices" 事件通知前端
@@ -398,67 +410,11 @@ fn poll_other_controllers(device: &DeviceInfo) {
     }
 }
 
-/// Xbox控制器状态轮询处理 (Windows)
-#[cfg(target_os = "windows")]
-fn _poll_xbox_controller_state(state: XInputState) {
-    // 按钮状态检测
-    if state.south_button() {
-        println!("Xbox A 键（South）被按下");
-    }
-    if state.east_button() {
-        println!("Xbox B 键（East）被按下");
-    }
-    if state.north_button() {
-        println!("Xbox Y 键（North）被按下");
-    }
-    if state.west_button() {
-        println!("Xbox X 键（West）被按下");
-    }
-    if state.guide_button() {
-        println!("Xbox Guide 键被按下");
-    }
-    if state.start_button() {
-        println!("Xbox Start 键被按下");
-    }
-    if state.left_thumb_button() {
-        println!("Xbox 左摇杆按下");
-    }
-    if state.right_thumb_button() {
-        println!("Xbox 右摇杆按下");
-    }
-
-    // 摇杆状态读取
-    let (lx, ly) = state.left_stick_normalized();
-    println!("左摇杆 raw = ({}, {})", lx, ly);
-}
-
-/// Xbox控制器轮询入口 (Windows)
-#[cfg(target_os = "windows")]
-fn poll_xbox_controller(_device: &DeviceInfo) {
-    let xinput = get_xinput();
-    match xinput.get_state_ex(0).or_else(|_| xinput.get_state(0)) {
-        Ok(state) => _poll_xbox_controller_state(state),
-        Err(_) => {
-            // 控制器断开处理
-            disconnect_device();
-            let app_handle = get_app_handle();
-            if let Err(e) = app_handle.emit("physical_connect_status", false) {
-                log::error!("发送 physical_connect_status 事件失败: {}", e);
-            }
-        }
-    }
-}
-
-/// Xbox控制器轮询入口 (Linux)
-#[cfg(target_os = "linux")]
-fn poll_xbox_controller(_device: &DeviceInfo) {
-    println!("poll_xbox_controllers");
-}
 
 /// 根据控制器类型分发轮询任务
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
-        ControllerType::Xbox => poll_xbox_controller(device),
+        ControllerType::Xbox => controller_xbox::poll_xbox_controller(device),
         _ => poll_other_controllers(device),
     }
 }
