@@ -25,11 +25,6 @@ mod adaptive_sampler;
 mod mapping;
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[tauri::command]
 fn close_current_window(window: Window) -> Result<(), String> {
     window.close().map_err(|e| format!("关闭窗口失败: {}", e))
 }
@@ -60,15 +55,15 @@ pub fn run() {
             Some(vec!["--flag1", "--flag2"]),
         ))
         .invoke_handler(tauri::generate_handler![
-            greet,
             close_current_window,
             minimize_current_window,
             open_url,
             get_platform,
-            controller::query_devices,
-            controller::use_device,
-            controller::disconnect_device,
-            controller::set_frequency,
+            controller::controller::query_devices,
+            controller::controller::use_device,
+            controller::controller::disconnect_device,
+            controller::controller::set_frequency,
+            controller::controller::get_controller_data,
             setting::get_current_settings,
             setting::update_settings,
             mapping::set_mapping,
@@ -100,6 +95,7 @@ pub fn run() {
             let _ = adaptive_sampler::initialize();
             let _ = tray::initialize(app_handle.clone());
             let _ = controller::initialize(app_handle.clone());
+            // let _ = controller_datas::initialize();
             let _ = xeno_utils::initialize();
             let _ = setting::initialize();
             let _ = mapping::initialize();
