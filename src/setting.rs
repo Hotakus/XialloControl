@@ -36,9 +36,13 @@ pub struct AppSettings {
     #[serde(default = "default_polling_frequency")]
     pub polling_frequency: u32,
 
-    /// 摇杆死区范围 (%)
+    /// 右摇杆死区范围 (%)
     #[serde(default = "default_deadzone")]
     pub deadzone: u8,
+
+    /// 左摇杆死区范围 (%)
+    #[serde(default = "default_deadzone")]
+    pub deadzone_left: u8,
 }
 
 impl Default for AppSettings {
@@ -49,6 +53,7 @@ impl Default for AppSettings {
             theme: "light".to_string(),
             polling_frequency: DEFAULT_POLLING_FREQUENCY,
             deadzone: DEFAULT_DEADZONE,
+            deadzone_left: DEFAULT_DEADZONE,
         }
     }
 }
@@ -58,7 +63,7 @@ fn bool_true() -> bool {
     true
 }
 fn default_theme() -> String {
-    "system".to_string()
+    "light".to_string()
 }
 fn default_polling_frequency() -> u32 {
     DEFAULT_POLLING_FREQUENCY
