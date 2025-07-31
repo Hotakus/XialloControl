@@ -7,7 +7,6 @@ mod controller;
 mod setting;
 mod tray;
 mod xeno_utils;
-mod controller_supports;
 mod adaptive_sampler;
 mod mapping;
 
