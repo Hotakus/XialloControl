@@ -1231,13 +1231,13 @@ body.theme-dark .button-map-controls button:hover {
 }
 
 .joystick-handle {
-    width: 30px;
-    height: 30px;
+    width: 10px;
+    height: 10px;
     background: #4c8bf5;
     border-radius: 50%;
     position: absolute;
-    top: 60px; /* 初始位置居中 */
-    left: 60px; /* 初始位置居中 */
+    top: 70px; /* 初始位置居中 */
+    left: 70px; /* 初始位置居中 */
     cursor: grab; /* 拖拽手势 */
     z-index: 2;
     transition: transform 0.05s linear; /* 更快的响应 */
