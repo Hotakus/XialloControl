@@ -50,6 +50,9 @@ pub struct ControllerDatas {
 
     pub left_trigger: ControllerTrigger,
     pub right_trigger: ControllerTrigger,
+
+    pub left_stick_center: (f32, f32),
+    pub right_stick_center: (f32, f32),
 }
 
 impl ControllerDatas {
@@ -76,6 +79,8 @@ impl ControllerDatas {
                 has_pressure: false,
                 is_pressed: false,
             },
+            left_stick_center: (0.0, 0.0),
+            right_stick_center: (0.0, 0.0),
         }
     }
 
@@ -103,6 +108,7 @@ impl ControllerDatas {
     pub fn button_is_pressed(&self, button: ControllerButtons) -> bool {
         self.get_button(button)
     }
+
 }
 
 pub fn initialize() {
