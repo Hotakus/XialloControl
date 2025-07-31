@@ -25,6 +25,11 @@ mod adaptive_sampler;
 mod mapping;
 
 #[tauri::command]
+fn hide_current_window(window: Window) -> Result<(), String> {
+    window.hide().map_err(|e| format!("隐藏窗口失败: {}", e))
+}
+
+#[tauri::command]
 fn close_current_window(window: Window) -> Result<(), String> {
     window.close().map_err(|e| format!("关闭窗口失败: {}", e))
 }
@@ -55,15 +60,19 @@ pub fn run() {
             Some(vec!["--flag1", "--flag2"]),
         ))
         .invoke_handler(tauri::generate_handler![
+            hide_current_window,
             close_current_window,
             minimize_current_window,
             open_url,
             get_platform,
+
             controller::controller::query_devices,
             controller::controller::use_device,
             controller::controller::disconnect_device,
             controller::controller::set_frequency,
             controller::controller::get_controller_data,
+            controller::logic::controller_stick_drift_sampling,
+
             setting::get_current_settings,
             setting::update_settings,
             mapping::set_mapping,
