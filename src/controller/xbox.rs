@@ -1,10 +1,13 @@
-use tauri::Emitter;
+#[cfg(target_os = "windows")]
 use crate::controller::controller::{disconnect_device, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
+#[cfg(target_os = "linux")]
+use crate::controller::controller::{disconnect_device, DeviceInfo, CONTROLLER_DATA};
 use crate::controller::datas::ControllerButtons;
 use crate::controller::logic;
+use tauri::Emitter;
 
 #[cfg(target_os = "windows")]
-use rusty_xinput::{XInputHandle, XInputState};
+use rusty_xinput::XInputState;
 
 /// Xbox控制器状态轮询处理 (Windows)
 #[cfg(target_os = "windows")]

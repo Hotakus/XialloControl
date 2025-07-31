@@ -13,9 +13,10 @@
 //     ],
 
 use std::env;
-use tauri::{Window}; // 👈 引入 Manager 以启用 create_window
+use tauri::Window;
+// 👈 引入 Manager 以启用 create_window
 use tauri::{WebviewUrl, WebviewWindowBuilder};
-use tauri_plugin_autostart::{MacosLauncher};
+use tauri_plugin_autostart::MacosLauncher;
 
 mod controller;
 mod setting;

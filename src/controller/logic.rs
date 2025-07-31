@@ -1,8 +1,8 @@
 use crate::controller::controller::{ADAPTER, CONTROLLER_DATA, TIME_INTERVAL};
 use crate::controller::datas::{ControllerDatas, ControllerLimits, ControllerStick, ControllerTrigger};
+use num_traits::ToPrimitive;
 use std::time::{Duration, Instant};
 use tokio::time::interval;
-use num_traits::{ToPrimitive, FromPrimitive};
 
 pub fn normalize<T>(
     value: T,
