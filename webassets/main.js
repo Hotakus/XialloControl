@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 uiElements.connectButton.innerHTML = icons.connected;
                 toggleIndicator(true);
                 updateMappingsForDevice(controllerType);
-                invoke("controller_stick_drift_sampling");
+                // invoke("controller_stick_drift_sampling");
             } else {
                 updateStatusMessage(`连接失败`, true);
                 uiElements.connectButton.classList.remove('connected');
@@ -846,71 +846,114 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 
 
-    // 打开模态窗口按钮事件绑定
-    document.getElementById('open-joystick-cali-modal').addEventListener('click', () => {
-        document.getElementById('joystick-cali-modal').classList.add('active');
-    });
-
-    // 关闭模态窗口按钮
-    document.getElementById('close-joystick-cali-modal').addEventListener('click', () => {
-        document.getElementById('joystick-cali-modal').classList.remove('active');
-    });
-    document.getElementById('cancel-joystick-cali-btn').addEventListener('click', () => {
-        document.getElementById('joystick-cali-modal').classList.remove('active');
-    });
-
-
-
-
-// 你的 initJoystick 函数改进如下，新增参数 deadzoneOutputId
-    function initJoystick(areaId, handleId, xId, yId, deadzoneId) {
-        const area = document.getElementById(areaId);
-        const handle = document.getElementById(handleId);
-        const outputX = document.getElementById(xId);
-        const outputY = document.getElementById(yId);
-        const deadzoneOutput = document.getElementById(deadzoneId);
-        const size = 150;
-        const center = size / 2;
-        const radius = center - 15;
-        let dragging = false;
-
-        // 采样摇杆静止时漂移距离样本，用于死区计算
-        let distanceSamples = [];
-        let lastCalcDeadzone = 0;
-
-        function calcRecommendedDeadzone() {
-            if (distanceSamples.length === 0) return 0;
-            const avgDistance = distanceSamples.reduce((a, b) => a + b, 0) / distanceSamples.length;
-            const deadzone = Math.min(20, Math.round(avgDistance * 1.1));
-            return deadzone;
-        }
-
-        function resetHandle() {
-            handle.style.left = `${center - 15}px`;
-            handle.style.top = `${center - 15}px`;
-            outputX.textContent = 0;
-            outputY.textContent = 0;
-        }
-
-        resetHandle();
-    }
-
-// 初始化左右摇杆
-    initJoystick('joystick-left', 'handle-left', 'x-left', 'y-left', 'deadzone-cali-left');
-    initJoystick('joystick-right', 'handle-right', 'x-right', 'y-right', 'deadzone-cali-right');
-
-
-    let controller_datas = {
+    let current_controller_datas = {
         buttons: 0,
         left_stick: {x: 0, y: 0, is_pressed: false},
         right_stick: {x: 0, y: 0, is_pressed: false},
         left_trigger: {value: 0, has_pressure: false, is_pressed: false},
         right_trigger: {value: 0, has_pressure: false, is_pressed: false},
+        left_stick_center: [0, 0],
+        right_stick_center: [0, 0],
+        limits: {
+            sticks_value_min: -0.0,
+            sticks_value_max: 0.0,
+            triggers_value_min: 0.0,
+            triggers_value_max: 0.0,
+        }
     };
 
+    let leftStick = document.querySelector('#handle-left');
+    let rightStick = document.querySelector('#handle-right');
+    let leftStickArea = document.querySelector('#joystick-left');
+    let rightStickArea = document.querySelector('#joystick-right');
+    let leftStickCenter = parseFloat(window.getComputedStyle(leftStick).width) / 2;
+    let rightStickCenter = parseFloat(window.getComputedStyle(rightStick).width) / 2;
+    let leftStickAreaCenter = parseFloat(window.getComputedStyle(leftStickArea).width) / 2 - leftStickCenter;
+    let rightStickAreaCenter = parseFloat(window.getComputedStyle(rightStickArea).width) / 2 - rightStickCenter;
+    let cali_ui_is_show = false;
+
+    // 添加进度条更新函数
+    function updateProgressBar(value, progressId, valueId, axis) {
+        const progressFill = document.getElementById(progressId);
+        const progressValue = document.getElementById(valueId);
+
+        // 计算填充高度（0-100%）
+        const fillHeight = Math.abs(value) * 100;
+
+        // 关键点：根据正负值调整 transform-origin 和 scaleY 实现正值向上填充，负值向下填充
+        if (value >= 0) {
+            progressFill.style.transformOrigin = 'bottom';
+            progressFill.style.transform = `scaleY(${fillHeight / 100})`;
+        } else {
+            progressFill.style.transformOrigin = 'top';
+            progressFill.style.transform = `scaleY(${fillHeight / 100})`;
+        }
+
+        // 高度固定100%，用 scaleY 控制填充比例
+        progressFill.style.height = '100%';
+
+        // 更新数值显示
+        progressValue.textContent = `${axis}: ${value.toFixed(2)}`;
+    }
+
+
     appWindow.listen('update_controller_data', (event) => {
-        let controller_datas = event.payload;
-        // console.log("get_controller_data", controller_datas);
+        current_controller_datas = event.payload;
+
+        if (cali_ui_is_show) {
+            leftStick.style.left = (leftStickAreaCenter + current_controller_datas.left_stick.x * leftStickAreaCenter) + 'px';
+            leftStick.style.top = (leftStickAreaCenter - current_controller_datas.left_stick.y * leftStickAreaCenter) + 'px';
+            rightStick.style.left = (rightStickAreaCenter + current_controller_datas.right_stick.x * rightStickAreaCenter) + 'px';
+            rightStick.style.top = (rightStickAreaCenter - current_controller_datas.right_stick.y * rightStickAreaCenter) + 'px';
+
+
+            // 更新左摇杆进度条
+            updateProgressBar(
+                current_controller_datas.left_stick.x,
+                'progress-x-left',
+                'progress-x-left-value',
+                'X'
+            );
+            updateProgressBar(
+                current_controller_datas.left_stick.y,
+                'progress-y-left',
+                'progress-y-left-value',
+                'Y'
+            );
+
+            // 更新右摇杆进度条
+            updateProgressBar(
+                current_controller_datas.right_stick.x,
+                'progress-x-right',
+                'progress-x-right-value',
+                'X'
+            );
+            updateProgressBar(
+                current_controller_datas.right_stick.y,
+                'progress-y-right',
+                'progress-y-right-value',
+                'Y'
+            );
+
+            // console.log(current_controller_datas);
+            // console.log("---", leftStickCenterPX, rightStickCenterPX);
+        }
     });
+
+    // 打开模态窗口按钮事件绑定
+    document.getElementById('open-joystick-cali-modal').addEventListener('click', () => {
+        document.getElementById('joystick-cali-modal').classList.add('active');
+        cali_ui_is_show = true;
+    });
+    // 关闭模态窗口按钮
+    document.getElementById('close-joystick-cali-modal').addEventListener('click', () => {
+        document.getElementById('joystick-cali-modal').classList.remove('active');
+        cali_ui_is_show = false;
+    });
+    document.getElementById('cancel-joystick-cali-btn').addEventListener('click', () => {
+        document.getElementById('joystick-cali-modal').classList.remove('active');
+        cali_ui_is_show = false;
+    });
+
 
 });
