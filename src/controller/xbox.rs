@@ -1,7 +1,7 @@
 use rusty_xinput::XInputState;
 use tauri::Emitter;
 use crate::controller::controller::{disconnect_device, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
-use crate::controller::controller_datas::ControllerButtons;
+use crate::controller::datas::ControllerButtons;
 
 /// Xbox控制器状态轮询处理 (Windows)
 #[cfg(target_os = "windows")]
@@ -72,21 +72,24 @@ fn _poll_xbox_controller_state(state: XInputState) {
         controller_data.right_stick.is_pressed = false;
     }
 
-    // 摇杆状态读取
-    let (lx, ly) = state.left_stick_normalized();
-    let (rx, ry) = state.right_stick_normalized();
 
-    controller_data.left_stick.x = lx;
-    controller_data.left_stick.y = ly;
-    controller_data.right_stick.x = rx;
-    controller_data.right_stick.y = ry;
+
+
+    // 摇杆状态读取
+    let (lx, ly) = state.left_stick_raw();
+    let (rx, ry) = state.right_stick_raw();
+
+    controller_data.left_stick.x = lx as f32;
+    controller_data.left_stick.y = ly as f32;
+    controller_data.right_stick.x = rx as f32;
+    controller_data.right_stick.y = ry as f32;
 
     let app_handle = get_app_handle();
     app_handle
-        .emit("test_event", *controller_data)
+        .emit("update_controller_data", *controller_data)
         .expect("TODO: panic message");
 
-    println!("({lx}, {ly}) - ({rx}, {ry})");
+    println!("({lx}, {ly}) - ({rx}, {ry}) {}, {}", state.left_trigger(), state.left_trigger_bool());
 }
 
 /// Xbox控制器轮询入口 (Windows)
