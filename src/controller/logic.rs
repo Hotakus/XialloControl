@@ -1,7 +1,36 @@
 use crate::controller::controller::{ADAPTER, CONTROLLER_DATA, TIME_INTERVAL};
-use crate::controller::datas::{ControllerDatas, ControllerStick, ControllerTrigger};
+use crate::controller::datas::{ControllerDatas, ControllerLimits, ControllerStick, ControllerTrigger};
 use std::time::{Duration, Instant};
 use tokio::time::interval;
+use num_traits::{ToPrimitive, FromPrimitive};
+
+pub fn normalize<T>(
+    value: T,
+    source_min: T,
+    source_max: T,
+    target_min: f64,
+    target_max: f64,
+) -> Option<f64>
+where
+    T: ToPrimitive + Copy,
+{
+    let value_f = value.to_f64()?;
+    let source_min_f = source_min.to_f64()?;
+    let source_max_f = source_max.to_f64()?;
+    let target_min_f = target_min.to_f64()?;
+    let target_max_f = target_max.to_f64()?;
+
+    if (source_max_f - source_min_f).abs() < f64::EPSILON {
+        return None; // 防止除以零喵
+    }
+
+    let normalized = (value_f - source_min_f) / (source_max_f - source_min_f);
+    let scaled = normalized * (target_max_f - target_min_f) + target_min_f;
+
+    Some(scaled)
+}
+
+
 
 const SAMPLING_TIME_INTERVAL_FACTOR: f32 = 1000.0;
 const TEMP_INTERVAL: f32 = 1.0 / SAMPLING_TIME_INTERVAL_FACTOR;
@@ -30,7 +59,7 @@ fn average_controller_datas(data_slice: &[ControllerDatas]) -> ControllerDatas {
         sum_left_trigger += data.left_trigger.value;
         sum_right_trigger += data.right_trigger.value;
     }
-    
+
     let left_stick_center = ((sum_left_x / count).round(), (sum_left_y / count).round());
     let right_stick_center = ((sum_right_x / count).round(), (sum_right_y / count).round());
 
@@ -60,6 +89,8 @@ fn average_controller_datas(data_slice: &[ControllerDatas]) -> ControllerDatas {
 
         left_stick_center,
         right_stick_center,
+        
+        limits: ControllerLimits::default(),
     }
 }
 
