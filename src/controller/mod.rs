@@ -1,12 +1,12 @@
 use tauri::AppHandle;
 
 pub mod controller;
-pub mod controller_datas;
-pub mod controller_xbox;
-
+pub mod datas;
+pub mod xbox;
+pub mod logic;
 
 pub fn initialize(app_handle: AppHandle) {
     controller::initialize(app_handle);
-    controller_datas::initialize();
+    datas::initialize();
     // controller_xbox::initialize();
 }
