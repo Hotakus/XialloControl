@@ -426,6 +426,10 @@ document.addEventListener('DOMContentLoaded', () => {
             uiElements.deadzoneLeftValue.textContent = (settings.deadzone_left || 10) + '%';
 
             state.minimizeToTray = settings.minimize_to_tray;
+            if (state.minimizeToTray) {
+                appWindow?.hide();
+            }
+
             invoke("set_frequency", {freq: settings.polling_frequency});
             applyTheme(settings.theme);
         } catch (error) {
@@ -544,6 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 uiElements.connectButton.innerHTML = icons.connected;
                 toggleIndicator(true);
                 updateMappingsForDevice(controllerType);
+                invoke("controller_stick_drift_sampling");
             } else {
                 updateStatusMessage(`连接失败`, true);
                 uiElements.connectButton.classList.remove('connected');
@@ -614,7 +619,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // 窗口控制按钮
         uiElements.minimizeButton?.addEventListener('click', () => appWindow?.minimize());
         uiElements.closeButton?.addEventListener('click', () => {
-            state.minimizeToTray ? appWindow?.hide() : appWindow?.close();
+            if (state.minimizeToTray) {
+                appWindow?.hide();
+                // invoke("hide_current_window");
+            } else {
+                appWindow?.close()
+            }
         });
 
         // 设备选择
@@ -824,9 +834,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8. 初始化应用
     // ======================
     function initApp() {
+        loadSettings();
         toggleIndicator(false);
         updateStatusMessage("请选择一个设备并点击连接按钮");
-        loadSettings();
         updateControllerButtons();
         loadMappings();
         titlebarLogic();
@@ -834,4 +844,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initApp();
+
+
+    // 打开模态窗口按钮事件绑定
+    document.getElementById('open-joystick-cali-modal').addEventListener('click', () => {
+        document.getElementById('joystick-cali-modal').classList.add('active');
+    });
+
+    // 关闭模态窗口按钮
+    document.getElementById('close-joystick-cali-modal').addEventListener('click', () => {
+        document.getElementById('joystick-cali-modal').classList.remove('active');
+    });
+    document.getElementById('cancel-joystick-cali-btn').addEventListener('click', () => {
+        document.getElementById('joystick-cali-modal').classList.remove('active');
+    });
+
+
+
+
+// 你的 initJoystick 函数改进如下，新增参数 deadzoneOutputId
+    function initJoystick(areaId, handleId, xId, yId, deadzoneId) {
+        const area = document.getElementById(areaId);
+        const handle = document.getElementById(handleId);
+        const outputX = document.getElementById(xId);
+        const outputY = document.getElementById(yId);
+        const deadzoneOutput = document.getElementById(deadzoneId);
+        const size = 150;
+        const center = size / 2;
+        const radius = center - 15;
+        let dragging = false;
+
+        // 采样摇杆静止时漂移距离样本，用于死区计算
+        let distanceSamples = [];
+        let lastCalcDeadzone = 0;
+
+        function calcRecommendedDeadzone() {
+            if (distanceSamples.length === 0) return 0;
+            const avgDistance = distanceSamples.reduce((a, b) => a + b, 0) / distanceSamples.length;
+            const deadzone = Math.min(20, Math.round(avgDistance * 1.1));
+            return deadzone;
+        }
+
+        function resetHandle() {
+            handle.style.left = `${center - 15}px`;
+            handle.style.top = `${center - 15}px`;
+            outputX.textContent = 0;
+            outputY.textContent = 0;
+        }
+
+        resetHandle();
+    }
+
+// 初始化左右摇杆
+    initJoystick('joystick-left', 'handle-left', 'x-left', 'y-left', 'deadzone-cali-left');
+    initJoystick('joystick-right', 'handle-right', 'x-right', 'y-right', 'deadzone-cali-right');
+
+
+    let controller_datas = {
+        buttons: 0,
+        left_stick: {x: 0, y: 0, is_pressed: false},
+        right_stick: {x: 0, y: 0, is_pressed: false},
+        left_trigger: {value: 0, has_pressure: false, is_pressed: false},
+        right_trigger: {value: 0, has_pressure: false, is_pressed: false},
+    };
+
+    appWindow.listen('update_controller_data', (event) => {
+        let controller_datas = event.payload;
+        // console.log("get_controller_data", controller_datas);
+    });
+
 });
