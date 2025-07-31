@@ -1120,3 +1120,243 @@ body.theme-dark .button-map-controls button:hover {
 .stick-buttons-row .icon-button {
     width: 100%;
 }
+
+
+/* 摇杆校准窗口样式 - 开始 */
+.joystick-cali-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--overlay-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    /* 确保初始状态隐藏 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.joystick-cali-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.joystick-cali-modal {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 0;
+    position: relative;
+    /*width: 63%;*/
+    max-width: 700px;
+    max-height: 720px;
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.joystick-cali-overlay.active .joystick-cali-modal {
+    transform: translateY(0);
+}
+
+.joystick-cali-modal .modal-header {
+    background: var(--primary-bg);
+    color: var(--primary-text);
+    padding: 15px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.joystick-cali-modal .modal-header .modal-close {
+    background: none;
+    border: none;
+    color: var(--primary-text);
+    font-size: 20px;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.joystick-cali-modal .modal-header .modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.joystick-cali-modal .modal-body {
+    padding: 20px 40px;
+    display: flex;
+    /* 改变flex方向为行，允许两个摇杆并排 */
+    flex-direction: row;
+    /* 缩小间距，使摇杆更近 */
+    gap: 60px; /* 调整此值以控制摇杆间距 */
+    justify-content: center; /* 水平居中 */
+    align-items: flex-start; /* 顶部对齐 */
+    flex-wrap: wrap; /* 允许换行，以防小屏幕下溢出 */
+}
+
+/* 新增：摇杆显示组容器，包含摇杆区域和进度条 */
+.joystick-display-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 25px;
+    padding: 10px;
+    border: 1px solid #e0e4eb;
+    border-radius: var(--border-radius);
+    background: #fdfdfd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.joystick-area {
+    width: 150px;
+    height: 150px;
+    background: #f8f9fa;
+    border-radius: 50%;
+    /* margin: 10px auto; /* 移除自动margin，由flex布局控制 */
+    position: relative;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0; /* 防止摇杆区域缩小 */
+}
+
+.joystick-handle {
+    width: 30px;
+    height: 30px;
+    background: #4c8bf5;
+    border-radius: 50%;
+    position: absolute;
+    top: 60px; /* 初始位置居中 */
+    left: 60px; /* 初始位置居中 */
+    cursor: grab; /* 拖拽手势 */
+    z-index: 2;
+    transition: transform 0.05s linear; /* 更快的响应 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.joystick-handle:active {
+    cursor: grabbing; /* 拖拽中手势 */
+}
+
+.crosshair {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background:
+            linear-gradient(to right, transparent 49.5%, #dce2eb 50%, transparent 50.5%),
+            linear-gradient(to bottom, transparent 49.5%, #dce2eb 50%, transparent 50.5%);
+    z-index: 1;
+    pointer-events: none;
+    border-radius: 50%;
+}
+
+/* 删除 stick-readout 样式，因为XY值将通过进度条显示 */
+/* .stick-readout {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #2f3542;
+    text-align: center;
+} */
+
+/* 新增：进度条容器 */
+.progress-bars-container {
+    display: flex;
+    flex-direction: column; /* 垂直排列X和Y进度条 */
+    gap: 10px; /* 两个进度条之间的间距 */
+    height: 150px; /* 与摇杆区域高度保持一致 */
+    justify-content: center; /* 垂直居中 */
+    padding-left: 10px; /* 与摇杆区域的视觉间距 */
+    border-left: 1px solid #e0e4eb; /* 分隔线 */
+}
+
+/* 新增：单个垂直进度条样式 */
+.progress-bar-vertical {
+    width: 20px; /* 进度条宽度 */
+    height: 65px; /* 进度条高度 */
+    background-color: #e0e4eb;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: flex-end; /* 填充从底部开始 */
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-fill {
+    width: 100%;
+    height: 0%; /* 初始高度为0 */
+    background-color: #4c8bf5; /* 进度条填充颜色 */
+    transition: height 0.1s ease-out; /* 平滑过渡 */
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+
+/* 进度条值显示 */
+.progress-value {
+    position: absolute;
+    top: -20px; /* 放在进度条上方 */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: #555;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+/* 进度条标签 */
+.progress-label {
+    font-size: 12px;
+    text-align: center;
+    color: #7a859e;
+    margin-top: 5px;
+}
+
+.joystick-cali-modal .modal-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    display: flex;
+    /* 校准按钮合为一个，居中显示 */
+    justify-content: center; /* 居中按钮 */
+    gap: 15px; /* 按钮之间的间距 */
+    border-top: 1px solid #e0e4eb;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+/* 移除 .joystick-cali-modal .btn-small 样式，因为校准按钮会合并 */
+/* .joystick-cali-modal .btn-small {
+    padding: 8px 12px;
+    font-size: 14px;
+    margin-top: 10px;
+    width: 100%;
+    background: #4c8bf5;
+    color: white;
+} */
+
+/* 新增合并后的校准按钮样式 */
+.cali-btn-group {
+    display: flex;
+    flex-direction: column; /* 垂直排列 */
+    gap: 8px; /* 按钮之间间距 */
+    align-items: center; /* 水平居中 */
+    margin-top: 10px; /* 与上方摇杆区域的间距 */
+    width: 100%; /* 占据可用宽度 */
+}
+
+.cali-btn-group .btn {
+    width: 150px; /* 固定按钮宽度 */
+}
+
+/* 摇杆校准窗口样式 - 结束 */
+
+

@@ -29,11 +29,7 @@
         <div class="device-select-row">
           <select id="device">
             <option value="null">请选择设备</option>
-            <!--            <option value="0">Xbox 控制器 (COM3)</option>-->
-            <!--            <option value="1">PS5 DualSense 控制器</option>-->
-            <!--            <option value="2">Switch Pro 控制器</option>-->
           </select>
-          <!-- 新的连接按钮 -->
           <button id="connect-button" title="连接设备" class="icon-button">
             <svg t="1753595424804" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19662" width="200" height="200">
               <path
@@ -41,7 +37,6 @@
                   fill="#ffffff" p-id="19663"></path>
             </svg>
           </button>
-          <!-- 修改后的扫描按钮（图标化） -->
           <button id="scan-button" title="扫描设备" class="icon-button">
             <svg t="1753598068869" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23500" width="200" height="200">
               <path
@@ -131,13 +126,7 @@
                 </div>
               </div>
               <div class="stick-buttons-row">
-<!--                <button id="response-curve-btn" class="icon-button">-->
-<!--                  <svg t="1754895424804" viewBox="0 0 24 24" width="20" height="20">-->
-<!--                    <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z" fill="currentColor"/>-->
-<!--                  </svg>-->
-<!--                  响应曲线-->
-<!--                </button>-->
-                <button id="calibrate-btn" class="icon-button">
+                <button id="open-joystick-cali-modal" class="icon-button">
                   <svg t="1754895524804" viewBox="0 0 24 24" width="20" height="20">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13.5v6l5.25 3.15.75-1.23-4.5-2.67v-5.25z" fill="currentColor"/>
                   </svg>
@@ -157,20 +146,6 @@
 
         <div id="settingTab" class="tab-content" role="tabpanel">
           <div class="settings-container">
-            <!-- 摇杆设置组 -->
-<!--            <div class="setting-group">-->
-<!--              <h3><i class="fas fa-gamepad"></i> 摇杆设置</h3>-->
-
-<!--              <div class="setting-item">-->
-<!--                <label for="deadzone">死区范围:</label>-->
-<!--                <div class="slider-container">-->
-<!--                  <input type="range" id="deadzone" min="0" max="30" value="10">-->
-<!--                  <span id="deadzone-value">10%</span>-->
-<!--                </div>-->
-<!--              </div>-->
-<!--            </div>-->
-
-            <!-- 软件设置组 -->
             <div class="setting-group">
               <h3><i class="fas fa-cog"></i> 软件设置</h3>
 
@@ -190,7 +165,6 @@
                 </label>
               </div>
 
-              <!-- 新增轮询频率设置项 -->
               <div class="setting-item">
                 <label for="polling-frequency">轮询频率:</label>
                 <div class="polling-container">
@@ -227,7 +201,6 @@
   </div>
 </div>
 
-<!-- 添加映射模态窗口 -->
 <div class="modal-overlay" id="mapping-modal">
   <div class="modal">
     <div class="modal-header">
@@ -266,7 +239,79 @@
 </div>
 
 
+<div class="joystick-cali-overlay" id="joystick-cali-modal">
+  <div class="joystick-cali-modal">
+    <div class="modal-header">
+      摇杆校准
+      <button class="modal-close" id="close-joystick-cali-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="joystick-display-group">
+        <div style="text-align:center;">
+          <label>左摇杆</label>
+          <div class="joystick-area" id="joystick-left">
+            <div class="crosshair"></div>
+            <div class="joystick-handle" id="handle-left"></div>
+          </div>
+          <div class="cali-btn-group">
+            <button class="btn btn-primary" id="calibrate-left-stick">校准左摇杆</button>
+            <div>推荐死区: <span id="deadzone-cali-left">0</span>%</div>
+          </div>
+        </div>
+        <div class="progress-bars-container">
+          <div class="progress-item">
+            <div class="progress-bar-vertical">
+              <div class="progress-fill" id="progress-x-left"></div>
+            </div>
+            <span class="progress-value" id="progress-x-left-value">X: 0</span>
+            <span class="progress-label">X轴</span>
+          </div>
+          <div class="progress-item">
+            <div class="progress-bar-vertical">
+              <div class="progress-fill" id="progress-y-left"></div>
+            </div>
+            <span class="progress-value" id="progress-y-left-value">Y: 0</span>
+            <span class="progress-label">Y轴</span>
+          </div>
+        </div>
+      </div>
 
+      <div class="joystick-display-group">
+        <div style="text-align:center;">
+          <label>右摇杆</label>
+          <div class="joystick-area" id="joystick-right">
+            <div class="crosshair"></div>
+            <div class="joystick-handle" id="handle-right"></div>
+          </div>
+          <div class="cali-btn-group">
+            <button class="btn btn-primary" id="calibrate-right-stick">校准右摇杆</button>
+            <div>推荐死区: <span id="deadzone-cali-right">0</span>%</div>
+          </div>
+        </div>
+        <div class="progress-bars-container">
+          <div class="progress-item">
+            <div class="progress-bar-vertical">
+              <div class="progress-fill" id="progress-x-right"></div>
+            </div>
+            <span class="progress-value" id="progress-x-right-value">X: 0</span>
+            <span class="progress-label">X轴</span>
+          </div>
+          <div class="progress-item">
+            <div class="progress-bar-vertical">
+              <div class="progress-fill" id="progress-y-right"></div>
+            </div>
+            <span class="progress-value" id="progress-y-right-value">Y: 0</span>
+            <span class="progress-label">Y轴</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="cancel-joystick-cali-btn">取消</button>
+      <button class="btn btn-primary" id="save-joystick-cali-btn">保存</button>
+    </div>
+  </div>
+</div>
 
 <script src="main.js"></script>
 </body>
