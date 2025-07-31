@@ -61,7 +61,7 @@ serde_json = "1"
 toml = "0.8.12"   # 更新版本
 
 # 异步
-tokio = { version = "1", features = ["rt", "macros"] }
+tokio = { version = "1", features = ["full"] }
 
 # 错误处理
 anyhow = "1.0.86" # 更新版本
