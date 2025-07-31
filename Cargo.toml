@@ -1,6 +1,6 @@
 [package]
 name = "xenocontrol"
-version = "0.12.15"
+version = "0.12.16"
 description = "XenoControl by Hotakus"
 authors = ["Hotakus"]
 edition = "2024"
@@ -58,7 +58,7 @@ rusty-xinput = "1"
 # 数据处理
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "0.8.12"   # 更新版本
+toml = "0.8"   # 更新版本
 
 # 异步
 tokio = { version = "1", features = ["full"] }
