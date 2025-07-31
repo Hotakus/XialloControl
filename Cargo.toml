@@ -1,12 +1,12 @@
 [package]
 name = "xenocontrol"
-version = "0.2.19"
+version = "0.12.15"
 description = "XenoControl by Hotakus"
 authors = ["Hotakus"]
 edition = "2024"
-license = "MIT"  # 添加许可证
-repository = ""  # 添加仓库URL
-homepage = ""    # 添加项目主页
+license = "MPL-2.0"  # 添加许可证
+repository = "https://github.com/Hotakus/XenoControl"  # 添加仓库URL
+homepage = "https://github.com/Hotakus/XenoControl"    # 添加项目主页
 
 [lib]
 name = "xenocontrol_lib"
@@ -72,3 +72,4 @@ simple_logger = "4"  # 仅使用simple_logger
 
 # 实用工具
 once_cell = "1"
+num-traits = "0.2.19"
