@@ -9,7 +9,7 @@ pub fn get_app_root() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("."))
 }
 
-pub static GLOBAL_CONFIG_DIR: &str = "xc_config";
+pub static GLOBAL_CONFIG_DIR: &str = "xc_datas";
 
 pub fn create_config_dir() {
     let app_root = get_app_root();
