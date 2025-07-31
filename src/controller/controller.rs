@@ -2,20 +2,19 @@
 
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
-use crate::controller::controller_datas::{ControllerButtons, ControllerDatas};
+use crate::controller::datas::ControllerDatas;
 use crate::xeno_utils;
-use crate::xeno_utils::get_app_root;
 use gilrs::{Button, Event, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
-use std::{fs, thread, time::Duration};
+use std::sync::{Mutex, RwLock};
+use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
+use crate::controller::xbox;
 #[cfg(target_os = "windows")]
-use rusty_xinput::{XInputHandle, XInputState};
-use crate::controller::controller_xbox;
+use rusty_xinput::XInputHandle;
 
 // ---------------------- 结构体定义 ----------------------
 /// 游戏控制器设备信息
@@ -60,7 +59,7 @@ pub enum ControllerType {
     /// Nintendo Switch 控制器
     Switch,
     /// 北通(BETOP)系列控制器
-    BETOP,
+    Betop,
     /// 其他未分类控制器
     Other,
 }
@@ -70,10 +69,10 @@ pub enum ControllerType {
 #[allow(dead_code)]
 static HANDLES: Lazy<Mutex<Option<Handles>>> = Lazy::new(|| Mutex::new(None));
 
-/// 当前选中的控制器设备
+/// 当前选中的控制器设备（多线程读多，写少）
 #[allow(dead_code)]
-pub static CURRENT_DEVICE: Lazy<Mutex<DeviceInfo>> = Lazy::new(|| {
-    Mutex::new(DeviceInfo {
+pub static CURRENT_DEVICE: Lazy<RwLock<DeviceInfo>> = Lazy::new(|| {
+    RwLock::new(DeviceInfo {
         name: "".into(),
         vendor_id: "".into(),
         product_id: None,
@@ -82,33 +81,34 @@ pub static CURRENT_DEVICE: Lazy<Mutex<DeviceInfo>> = Lazy::new(|| {
     })
 });
 
-pub static CONTROLLER_DATA: Lazy<Mutex<ControllerDatas>> =
-    Lazy::new(|| Mutex::new(ControllerDatas::new()));
+/// 当前控制器采样数据（高频读取，偶尔写入）
+pub static CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
+    Lazy::new(|| RwLock::new(ControllerDatas::new()));
 
-/// 自适应采样器实例
+/// 自适应采样器实例（结构复杂，保持 Mutex）
 #[allow(dead_code)]
 pub static ADAPTER: Lazy<Mutex<AdaptiveSampler>> =
     Lazy::new(|| Mutex::new(AdaptiveSampler::new(200_000.0, 10.0)));
 
-/// 全局 Gilrs 实例
+/// 全局 Gilrs 实例（外部库状态可能频繁修改，保守用 Mutex）
 #[allow(dead_code)]
 pub static GLOBAL_GILRS: Lazy<Mutex<Option<Gilrs>>> = Lazy::new(|| Mutex::new(None));
 
-/// 支持的设备配置文件名称
+/// 支持的设备配置文件名称（常量，不变）
 #[allow(dead_code)]
 pub static SUPPORTED_DEVICES_FILE: &str = "supported_devices.toml";
 
-/// 全局轮询频率 (Hz)
+/// 全局轮询频率 (Hz)（只读居多）
 #[allow(dead_code)]
-pub static FREQ: Lazy<Mutex<u32>> = Lazy::new(|| Mutex::new(125));
+pub static FREQ: Lazy<RwLock<u32>> = Lazy::new(|| RwLock::new(125));
 
-/// 采样率缓存值
+/// 采样率缓存值（只读居多）
 #[allow(dead_code)]
-pub static SAMPLING_RATE: Lazy<Mutex<f64>> = Lazy::new(|| Mutex::new(1000.0));
+pub static SAMPLING_RATE: Lazy<RwLock<f64>> = Lazy::new(|| RwLock::new(1000.0));
 
-/// 轮询时间间隔 (秒)
+/// 轮询时间间隔 (秒)（频繁读，偶尔写）
 #[allow(dead_code)]
-pub static TIME_INTERVAL: Lazy<Mutex<f32>> = Lazy::new(|| Mutex::new(1.0));
+pub static TIME_INTERVAL: Lazy<RwLock<f32>> = Lazy::new(|| RwLock::new(1.0));
 
 // ---------------------- 控制器类型检测 ----------------------
 /// 根据厂商ID识别控制器类型
@@ -123,7 +123,7 @@ pub fn detect_controller_type(vid: &str) -> ControllerType {
         "045e" => ControllerType::Xbox,        // Microsoft
         "054c" => ControllerType::PlayStation, // Sony
         "057e" => ControllerType::Switch,      // Nintendo
-        "20bc" => ControllerType::BETOP,       // BETOP
+        "20bc" => ControllerType::Betop,       // BETOP
         _ => ControllerType::Other,
     }
 }
@@ -197,12 +197,12 @@ pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
                 config.devices
             }
             Err(e) => {
-                log::error!("读取/解析配置文件失败: {}", e);
+                log::error!("读取/解析配置文件失败: {e}");
                 default_devices()
             }
         }
     } else {
-        log::info!("🛠️ 配置文件不存在，正在生成默认配置: {:?}", config_path);
+        log::info!("🛠️ 配置文件不存在，正在生成默认配置: {:#?}", config_path);
 
         let default = default_devices();
         let config = SupportedDevicesConfig {
@@ -210,7 +210,7 @@ pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
         };
 
         if let Err(e) = xeno_utils::write_toml_file(&config_path, &config) {
-            log::error!("写入默认配置文件失败: {}", e);
+            log::error!("写入默认配置文件失败: {e}");
         }
 
         default
@@ -229,7 +229,7 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
     let api = match HidApi::new() {
         Ok(api) => api,
         Err(e) => {
-            log::error!("初始化 hidapi 失败: {}", e);
+            log::error!("初始化 hidapi 失败: {e}");
             return Vec::new();
         }
     };
@@ -314,8 +314,8 @@ fn _find_device_by_name(name: &str) -> Option<DeviceInfo> {
 // ---------------------- Tauri 命令接口 ----------------------
 
 #[tauri::command]
-pub async fn get_controller_data() -> ControllerDatas {
-    let controller_data = CONTROLLER_DATA.lock().unwrap().clone();
+pub fn get_controller_data() -> ControllerDatas {
+    let controller_data = CONTROLLER_DATA.read().unwrap().clone();
 
     controller_data
 }
@@ -327,7 +327,7 @@ pub async fn get_controller_data() -> ControllerDatas {
 pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
     let devices = _query_devices();
     if let Err(e) = app.emit("update_devices", devices.clone()) {
-        log::error!("发送 update_devices 事件失败: {}", e);
+        log::error!("发送 update_devices 事件失败: {e}");
     }
     log::debug!("执行了 query_devices 命令");
     devices
@@ -335,17 +335,17 @@ pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
 
 /// 选择使用指定设备命令 (Tauri 前端调用)
 #[tauri::command]
-pub async fn use_device(device_name: String) -> bool {
-    log::debug!("尝试使用设备: {}", device_name);
+pub fn use_device(device_name: String) -> bool {
+    log::debug!("尝试使用设备: {device_name}");
     match _find_device_by_name(&device_name) {
         Some(device) => {
-            let mut current_device = CURRENT_DEVICE.lock().unwrap();
+            let mut current_device = CURRENT_DEVICE.write().unwrap();
             *current_device = device;
             log::info!("✅ 使用设备: {}", current_device.name);
             true
         }
         None => {
-            log::error!("❌ 未找到名为 '{}' 的设备", device_name);
+            log::error!("❌ 未找到名为 '{device_name}' 的设备");
             false
         }
     }
@@ -355,7 +355,7 @@ pub async fn use_device(device_name: String) -> bool {
 #[tauri::command]
 pub fn disconnect_device() -> bool {
     log::debug!("尝试断开设备连接");
-    let mut current_device = CURRENT_DEVICE.lock().unwrap();
+    let mut current_device = CURRENT_DEVICE.write().unwrap();
     *current_device = default_devices()[0].clone();
     log::info!("✅ 已断开当前设备");
     true
@@ -368,11 +368,11 @@ pub fn disconnect_device() -> bool {
 /// - 采样率
 /// - 时间间隔
 #[tauri::command]
-pub async fn set_frequency(freq: u32) {
+pub fn set_frequency(freq: u32) {
     let freq = freq.clamp(1, 8000);
-    let mut global_freq = FREQ.lock().unwrap();
-    let mut time_interval = TIME_INTERVAL.lock().unwrap();
-    let mut sample_rate = SAMPLING_RATE.lock().unwrap();
+    let mut global_freq = FREQ.write().unwrap();
+    let mut time_interval = TIME_INTERVAL.write().unwrap();
+    let mut sample_rate = SAMPLING_RATE.write().unwrap();
     let adapter = ADAPTER.lock().unwrap();
 
     *global_freq = freq;
@@ -400,7 +400,7 @@ fn poll_other_controllers(device: &DeviceInfo) {
 
         // 匹配当前设备
         if vid.eq_ignore_ascii_case(&device.vendor_id)
-            && pid.eq_ignore_ascii_case(&device.product_id.as_deref().unwrap())
+            && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap())
         {
             // 检测按键状态
             if gamepad.is_pressed(Button::South) {
@@ -410,11 +410,10 @@ fn poll_other_controllers(device: &DeviceInfo) {
     }
 }
 
-
 /// 根据控制器类型分发轮询任务
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
-        ControllerType::Xbox => controller_xbox::poll_xbox_controller(device),
+        ControllerType::Xbox => xbox::poll_xbox_controller(device),
         _ => poll_other_controllers(device),
     }
 }
@@ -430,7 +429,7 @@ pub fn polling_devices() {
         loop {
             let devices = _query_devices();
             if let Err(e) = app_handle.emit("update_devices", devices.clone()) {
-                log::error!("发送 update_devices 事件失败: {}", e);
+                log::error!("发送 update_devices 事件失败: {e}");
             }
             tokio::time::sleep(Duration::from_millis(500)).await;
         }
@@ -444,8 +443,8 @@ pub fn listen() {
         let mut last_device: Option<DeviceInfo> = None;
 
         loop {
-            let time_interval = *TIME_INTERVAL.lock().unwrap();
-            let current_device = CURRENT_DEVICE.lock().unwrap().clone();
+            let time_interval = *TIME_INTERVAL.read().unwrap();
+            let current_device = CURRENT_DEVICE.read().unwrap().clone();
 
             // 设备连接状态跟踪
             let last_has_device = last_device.is_some();
@@ -487,7 +486,7 @@ pub fn listen() {
 
 /// 初始化 Gilrs 事件监听线程
 pub fn gilrs_listen() {
-    std::thread::spawn(move || {
+    thread::spawn(move || {
         let gilrs = Gilrs::new().expect("Failed to init Gilrs");
         {
             *GLOBAL_GILRS.lock().unwrap() = Some(gilrs);
@@ -501,8 +500,8 @@ pub fn gilrs_listen() {
                     let _ = event;
                 }
             }
-            std::thread::sleep(Duration::from_secs_f32(
-                1.0 / *SAMPLING_RATE.lock().unwrap() as f32,
+            thread::sleep(Duration::from_secs_f32(
+                1.0 / *SAMPLING_RATE.read().unwrap() as f32,
             ));
         }
     });
@@ -526,7 +525,11 @@ fn query_needed_handle(app_handle: AppHandle) {
 /// 3. 主设备状态监听
 pub fn initialize(app_handle: AppHandle) {
     query_needed_handle(app_handle);
+
     gilrs_listen();
-    polling_devices();
     listen();
+
+    polling_devices();
 }
+
+
