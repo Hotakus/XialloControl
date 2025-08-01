@@ -1,13 +1,17 @@
-#[cfg(target_os = "windows")]
-use crate::controller::controller::{disconnect_device, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
-#[cfg(target_os = "linux")]
-use crate::controller::controller::{disconnect_device, DeviceInfo, CONTROLLER_DATA};
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "windows")] {
+        use crate::controller::controller::{disconnect_device, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
+    } else if #[cfg(target_os = "linux")] {
+        use crate::controller::controller::{disconnect_device, DeviceInfo, CONTROLLER_DATA};
+    }
+}
 use crate::controller::datas::ControllerButtons;
 use crate::controller::logic;
 use tauri::Emitter;
 
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputState;
+use crate::controller::controller::_disconnect_device;
 
 /// Xbox控制器状态轮询处理 (Windows)
 #[cfg(target_os = "windows")]
@@ -15,68 +19,36 @@ fn _poll_xbox_controller_state(state: XInputState) {
     let mut controller_data = CONTROLLER_DATA.write().unwrap();
 
     // 按钮状态检测
-    if state.south_button() {
-        println!("Xbox A 键（South）被按下");
-        controller_data.set_button(ControllerButtons::A, true);
-    } else {
-        controller_data.set_button(ControllerButtons::A, false);
+    let buttons = [
+        (state.south_button(), ControllerButtons::A, "Xbox A 键（South）"),
+        (state.east_button(), ControllerButtons::B, "Xbox B 键（East）"),
+        (state.north_button(), ControllerButtons::Y, "Xbox Y 键（North）"),
+        (state.west_button(), ControllerButtons::X, "Xbox X 键（West）"),
+        (state.guide_button(), ControllerButtons::Guide, "Xbox Guide 键"),
+        (state.start_button(), ControllerButtons::Start, "Xbox Start 键"),
+        (state.select_button(), ControllerButtons::Back, "Xbox Select 键"),
+
+        (state.arrow_down(), ControllerButtons::Down, "Xbox 方向键（Down）"),
+        (state.arrow_left(), ControllerButtons::Left, "Xbox 方向键（Left）"),
+        (state.arrow_right(), ControllerButtons::Right, "Xbox 方向键（Right）"),
+        (state.arrow_up(), ControllerButtons::Up, "Xbox 方向键（Up）"),
+
+        (state.left_shoulder(), ControllerButtons::LB, "Xbox LB 键"),
+        (state.right_shoulder(), ControllerButtons::RB, "Xbox RB 键"),
+
+        (state.left_thumb_button(), ControllerButtons::LStick, "Xbox 左摇杆按键"),
+        (state.right_thumb_button(), ControllerButtons::RStick, "Xbox 右摇杆按键"),
+    ];
+
+    for (pressed, button, label) in buttons {
+        if pressed {
+            log::info!("{label} 被按下");
+        }
+        controller_data.set_button(button, pressed);
     }
 
-    if state.east_button() {
-        println!("Xbox B 键（East）被按下");
-        controller_data.set_button(ControllerButtons::B, true);
-    } else {
-        controller_data.set_button(ControllerButtons::B, false);
-    }
-
-    if state.north_button() {
-        println!("Xbox Y 键（North）被按下");
-        controller_data.set_button(ControllerButtons::Y, true);
-    } else {
-        controller_data.set_button(ControllerButtons::Y, false);
-    }
-
-    if state.west_button() {
-        println!("Xbox X 键（West）被按下");
-        controller_data.set_button(ControllerButtons::X, true);
-    } else {
-        controller_data.set_button(ControllerButtons::X, false);
-    }
-
-    if state.guide_button() {
-        println!("Xbox Guide 键被按下");
-        controller_data.set_button(ControllerButtons::Guide, true);
-    } else {
-        controller_data.set_button(ControllerButtons::Guide, false);
-    }
-
-    if state.start_button() {
-        println!("Xbox Start 键被按下");
-        controller_data.set_button(ControllerButtons::Start, true);
-    } else {
-        controller_data.set_button(ControllerButtons::Start, false);
-    }
-
-    if state.select_button() {
-        println!("Xbox Select 键被按下");
-        controller_data.set_button(ControllerButtons::Back, true);
-    } else {
-        controller_data.set_button(ControllerButtons::Back, false);
-    }
-
-    if state.left_thumb_button() {
-        println!("Xbox 左摇杆按下");
-        controller_data.left_stick.is_pressed = true;
-    } else {
-        controller_data.left_stick.is_pressed = false;
-    }
-
-    if state.right_thumb_button() {
-        println!("Xbox 右摇杆按下");
-        controller_data.right_stick.is_pressed = true;
-    } else {
-        controller_data.right_stick.is_pressed = false;
-    }
+    controller_data.left_stick.is_pressed = state.left_thumb_button();
+    controller_data.right_stick.is_pressed = state.right_thumb_button();
 
     // 摇杆状态读取
     let (lx, ly) = state.left_stick_raw();
@@ -117,11 +89,7 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
         Ok(state) => _poll_xbox_controller_state(state),
         Err(_) => {
             // 控制器断开处理
-            disconnect_device();
-            let app_handle = get_app_handle();
-            if let Err(e) = app_handle.emit("physical_connect_status", false) {
-                log::error!("发送 physical_connect_status 事件失败: {e}");
-            }
+            _disconnect_device();
         }
     }
 }
