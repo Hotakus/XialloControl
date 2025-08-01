@@ -57,6 +57,10 @@ pub enum ControllerButtons {
     LB,
     RB,
 
+    // Thumb buttons
+    LStick,
+    RStick,
+
     // Back button
     Back,
 
