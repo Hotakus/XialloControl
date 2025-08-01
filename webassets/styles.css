@@ -1359,4 +1359,14 @@ body.theme-dark .button-map-controls button:hover {
 
 /* 摇杆校准窗口样式 - 结束 */
 
+/* 添加在文件末尾 */
+.icon-button.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
 
+.icon-button.disabled:hover {
+    background-color: initial;
+    transform: none;
+}

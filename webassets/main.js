@@ -531,8 +531,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 切换设备连接状态
     async function toggleDeviceConnection() {
+        uiElements.connectButton.disabled = true;
+        uiElements.connectButton.classList.add('disabled');
+
         if (!state.deviceSelected || uiElements.deviceSelect.value === "null") {
             updateStatusMessage("请先选择一个设备", true);
+            // 恢复按钮状态
+            uiElements.connectButton.disabled = false;
+            uiElements.connectButton.classList.remove('disabled');
             return;
         }
 
@@ -540,36 +546,44 @@ document.addEventListener('DOMContentLoaded', () => {
         const deviceName = stripDevicePrefix(state.deviceSelected.name);
         const controllerType = state.deviceSelected.controller_type;
 
-        if (state.isConnected) {
-            updateStatusMessage(`正在连接设备: ${deviceName}...`);
-            if (await invoke("use_device", {deviceName})) {
-                updateStatusMessage(`设备 ${deviceName} 已成功连接`);
-                uiElements.connectButton.classList.add('connected');
-                uiElements.connectButton.innerHTML = icons.connected;
-                toggleIndicator(true);
-                updateMappingsForDevice(controllerType);
-                // invoke("controller_stick_drift_sampling");
+        try {
+            if (state.isConnected) {
+                updateStatusMessage(`正在连接设备: ${deviceName}...`);
+                if (await invoke("use_device", {deviceName})) {
+                    updateStatusMessage(`设备 ${deviceName} 已成功连接`);
+                    uiElements.connectButton.classList.add('connected');
+                    uiElements.connectButton.innerHTML = icons.connected;
+                    toggleIndicator(true);
+                    updateMappingsForDevice(controllerType);
+                } else {
+                    updateStatusMessage(`连接失败`, true);
+                    uiElements.connectButton.classList.remove('connected');
+                    uiElements.connectButton.innerHTML = icons.disconnected;
+                    toggleIndicator(false);
+                    state.isConnected = false;
+                }
             } else {
-                updateStatusMessage(`连接失败`, true);
-                uiElements.connectButton.classList.remove('connected');
-                uiElements.connectButton.innerHTML = icons.disconnected;
-                toggleIndicator(false);
-                state.isConnected = false;
+                updateStatusMessage(`正在断开设备: ${deviceName}...`);
+                if (await invoke("disconnect_device", {deviceName})) {
+                    updateStatusMessage(`设备已断开`);
+                    uiElements.connectButton.classList.remove('connected');
+                    uiElements.connectButton.innerHTML = icons.disconnected;
+                    toggleIndicator(false);
+                } else {
+                    updateStatusMessage(`断开失败`, true);
+                    uiElements.connectButton.classList.add('connected');
+                    uiElements.connectButton.innerHTML = icons.disconnected;
+                    toggleIndicator(false);
+                    state.isConnected = true;
+                }
             }
-        } else {
-            updateStatusMessage(`正在断开设备: ${deviceName}...`);
-            if (await invoke("disconnect_device", {deviceName})) {
-                updateStatusMessage(`设备已断开`);
-                uiElements.connectButton.classList.remove('connected');
-                uiElements.connectButton.innerHTML = icons.disconnected;
-                toggleIndicator(false);
-            } else {
-                updateStatusMessage(`断开失败`, true);
-                uiElements.connectButton.classList.add('connected');
-                uiElements.connectButton.innerHTML = icons.disconnected;
-                toggleIndicator(false);
-                state.isConnected = true;
-            }
+        } catch (error) {
+            console.error("连接操作出错:", error);
+            updateStatusMessage(`操作失败: ${error.message}`, true);
+        } finally {
+            // 无论成功失败都恢复按钮状态
+            uiElements.connectButton.disabled = false;
+            uiElements.connectButton.classList.remove('disabled');
         }
     }
 
@@ -862,6 +876,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    let leftStickDeadzone = document.querySelector('#deadzone-cali-left');
+    let rightStickDeadzone = document.querySelector('#deadzone-cali-right');
     let leftStick = document.querySelector('#handle-left');
     let rightStick = document.querySelector('#handle-right');
     let leftStickArea = document.querySelector('#joystick-left');
@@ -897,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
-    appWindow.listen('update_controller_data', (event) => {
+    appWindow.listen('update_controller_data', async (event) => {
         current_controller_datas = event.payload;
 
         if (cali_ui_is_show) {
@@ -905,7 +921,6 @@ document.addEventListener('DOMContentLoaded', () => {
             leftStick.style.top = (leftStickAreaCenter - current_controller_datas.left_stick.y * leftStickAreaCenter) + 'px';
             rightStick.style.left = (rightStickAreaCenter + current_controller_datas.right_stick.x * rightStickAreaCenter) + 'px';
             rightStick.style.top = (rightStickAreaCenter - current_controller_datas.right_stick.y * rightStickAreaCenter) + 'px';
-
 
             // 更新左摇杆进度条
             updateProgressBar(
@@ -937,6 +952,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // console.log(current_controller_datas);
             // console.log("---", leftStickCenterPX, rightStickCenterPX);
+            let controller_deadzone = await invoke("check_controller_deadzone");
+            leftStickDeadzone.textContent = (controller_deadzone[0] * 100).toFixed(1);
+            rightStickDeadzone.textContent = (controller_deadzone[1] * 100).toFixed(1);
+            // console.log("---", a);
         }
     });
 
