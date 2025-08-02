@@ -2,9 +2,9 @@
 
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
-use crate::controller::datas::ControllerDatas;
+use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::xeno_utils;
-use gilrs::{Button, Event, Gilrs};
+use gilrs::{Axis, Button, Event, EventType, Gamepad, GamepadId, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -335,9 +335,10 @@ pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
 
 /// 选择使用指定设备命令 (Tauri 前端调用)
 #[tauri::command]
-pub fn use_device(device_name: String) -> bool {
+pub async fn use_device(device_name: String) -> bool {
     log::debug!("尝试使用设备: {device_name}");
-    match _find_device_by_name(&device_name) {
+    let device = _find_device_by_name(&device_name);
+    match device {
         Some(device) => {
             let mut current_device = CURRENT_DEVICE.write().unwrap();
             *current_device = device;
@@ -348,12 +349,16 @@ pub fn use_device(device_name: String) -> bool {
             log::error!("❌ 未找到名为 '{device_name}' 的设备");
             false
         }
+        _ => {
+            log::error!("❌ 未知错误");
+            false
+        } // 无状态变化
     }
 }
 
 /// 断开当前设备命令 (Tauri 前端调用)
 #[tauri::command]
-pub fn disconnect_device() -> bool {
+pub async fn disconnect_device() -> bool {
     log::debug!("尝试断开设备连接");
     let mut current_device = CURRENT_DEVICE.write().unwrap();
     *current_device = default_devices()[0].clone();
@@ -368,7 +373,7 @@ pub fn disconnect_device() -> bool {
 /// - 采样率
 /// - 时间间隔
 #[tauri::command]
-pub fn set_frequency(freq: u32) {
+pub async fn set_frequency(freq: u32) {
     let freq = freq.clamp(1, 8000);
     let mut global_freq = FREQ.write().unwrap();
     let mut time_interval = TIME_INTERVAL.write().unwrap();
@@ -388,6 +393,55 @@ pub fn set_frequency(freq: u32) {
 }
 
 // ---------------------- 设备轮询 ----------------------
+
+fn _poll_other_controllers(gamepad: Gamepad) {
+    // 检测按键状态
+    if gamepad.is_pressed(Button::South) {
+        println!("----------------- Button::South 键被按下");
+    }
+
+    let buttons = [
+        (gamepad.is_pressed(Button::South), ControllerButtons::South, "South"),
+        (gamepad.is_pressed(Button::East), ControllerButtons::East, "East"),
+        (gamepad.is_pressed(Button::West), ControllerButtons::West, "West"),
+        (gamepad.is_pressed(Button::North), ControllerButtons::North, "North"),
+
+        (gamepad.is_pressed(Button::DPadDown), ControllerButtons::Down, "DPadDown"),
+        (gamepad.is_pressed(Button::DPadLeft), ControllerButtons::Left, "DPadLeft"),
+        (gamepad.is_pressed(Button::DPadRight), ControllerButtons::Right, "DPadRight"),
+        (gamepad.is_pressed(Button::DPadUp), ControllerButtons::Up, "DPadUp"),
+
+        (gamepad.is_pressed(Button::LeftTrigger), ControllerButtons::LB, "LB"),
+        (gamepad.is_pressed(Button::RightTrigger), ControllerButtons::RB, "RB"),
+
+        (gamepad.is_pressed(Button::LeftThumb), ControllerButtons::LStick, "LStick"),
+        (gamepad.is_pressed(Button::RightThumb), ControllerButtons::RStick, "RStick"),
+
+        (gamepad.is_pressed(Button::Select), ControllerButtons::Back, "Select"),
+        (gamepad.is_pressed(Button::Start), ControllerButtons::Start, "Start"),
+    ];
+
+    for (pressed, button, name) in buttons {
+        if pressed {
+            log::debug!("{} 键被按下", name);
+        }
+        let mut controller_data = CONTROLLER_DATA.write().unwrap();
+        controller_data.set_button(button, pressed);
+    }
+
+    println!("---------------- {:#?}", gamepad.id());
+    let left_stick_x = gamepad.axis_data(Axis::LeftStickX).unwrap().value();
+    let left_stick_y = gamepad.axis_data(Axis::LeftStickY).unwrap().value();
+    println!("Left Stick X: {:#?}, Left Stick Y: {:#?}", left_stick_x, left_stick_y);
+
+    let right_stick_x = gamepad.axis_data(Axis::RightStickX).unwrap().value();
+    let right_stick_y = gamepad.axis_data(Axis::RightStickY).unwrap().value();
+    println!("Right Stick X: {:#?}, Right Stick Y: {:#?}", right_stick_x, right_stick_y);
+    println!("----------------");
+
+
+}
+
 /// 轮询非Xbox控制器状态
 fn poll_other_controllers(device: &DeviceInfo) {
     let gilrs_guard = GLOBAL_GILRS.lock().unwrap();
@@ -400,12 +454,9 @@ fn poll_other_controllers(device: &DeviceInfo) {
 
         // 匹配当前设备
         if vid.eq_ignore_ascii_case(&device.vendor_id)
-            && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap())
+            && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap() )
         {
-            // 检测按键状态
-            if gamepad.is_pressed(Button::South) {
-                println!("----------------- Button::South 键被按下");
-            }
+            _poll_other_controllers(gamepad);
         }
     }
 }
@@ -413,6 +464,7 @@ fn poll_other_controllers(device: &DeviceInfo) {
 /// 根据控制器类型分发轮询任务
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
+        // ControllerType::Xbox => poll_other_controllers(device),
         ControllerType::Xbox => xbox::poll_xbox_controller(device),
         _ => poll_other_controllers(device),
     }
@@ -423,17 +475,17 @@ fn poll_controller(device: &DeviceInfo) {
 ///
 /// 每500ms扫描一次设备并发送更新事件
 pub fn polling_devices() {
-    tauri::async_runtime::spawn(async move {
-        log::info!("🛠️ 控制器监听已启动...");
-        let app_handle = get_app_handle();
-        loop {
-            let devices = _query_devices();
-            if let Err(e) = app_handle.emit("update_devices", devices.clone()) {
-                log::error!("发送 update_devices 事件失败: {e}");
-            }
-            tokio::time::sleep(Duration::from_millis(500)).await;
-        }
-    });
+    // tauri::async_runtime::spawn(async move {
+    //     log::info!("🛠️ 控制器监听已启动...");
+    //     let app_handle = get_app_handle();
+    //     loop {
+    //         let devices = _query_devices();
+    //         if let Err(e) = app_handle.emit("update_devices", devices.clone()) {
+    //             log::error!("发送 update_devices 事件失败: {e}");
+    //         }
+    //         tokio::time::sleep(Duration::from_millis(500)).await;
+    //     }
+    // });
 }
 
 /// 主设备状态监听循环
@@ -484,6 +536,14 @@ pub fn listen() {
     });
 }
 
+pub fn _disconnect_device() {
+    disconnect_device();
+    let app_handle = get_app_handle();
+    if let Err(e) = app_handle.emit("physical_connect_status", false) {
+        log::error!("发送 physical_connect_status 事件失败: {e}");
+    }
+}
+
 /// 初始化 Gilrs 事件监听线程
 pub fn gilrs_listen() {
     thread::spawn(move || {
@@ -493,13 +553,26 @@ pub fn gilrs_listen() {
         }
 
         loop {
+            // let mut disconnect_event = false;
+
             if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap().as_mut() {
                 // 清空事件队列但不处理
-                while let Some(Event { event, .. }) = gilrs.next_event() {
-                    // 事件处理占位 (当前仅消费事件)
-                    let _ = event;
+                while let Some(Event { event, id, .. }) = gilrs.next_event() {
+                    if event == EventType::Disconnected {
+                        #[cfg(target_os = "windows")]
+                        {
+                            let device = CURRENT_DEVICE.read().unwrap();
+                            if device.controller_type != ControllerType::Xbox {
+                                _disconnect_device();
+                            }
+                        }
+
+                        #[cfg(not(target_os = "windows"))]
+                        _disconnect_device();
+                    }
                 }
             }
+
             thread::sleep(Duration::from_secs_f32(
                 1.0 / *SAMPLING_RATE.read().unwrap() as f32,
             ));
@@ -531,5 +604,3 @@ pub fn initialize(app_handle: AppHandle) {
 
     polling_devices();
 }
-
-
