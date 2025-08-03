@@ -1,3 +1,0 @@
-[submodule "third-party/gilrs"]
-	path = third-party/gilrs
-	url = git@gitlab.com:Hotakus1/gilrs.git
