@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: true
 
       - name: Verify Icon Paths
         shell: bash
@@ -56,15 +57,16 @@ jobs:
             pkg-config \
             libayatana-appindicator3-dev
 
-      - name: Install WiX Toolset for Windows
-        if: matrix.platform == 'windows-latest'
-        run: |
-          $ProgressPreference = 'SilentlyContinue'
-          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip" -OutFile "wix.zip"
-          Expand-Archive -Path "wix.zip" -DestinationPath "wix"
-          $wixPath = "$pwd\wix"
-          echo "WIX_PATH=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      # 💡 建议: 对于 Tauri v2, 此步骤可能不再需要。可以尝试移除。
+#      - name: Install WiX Toolset for Windows
+#        if: matrix.platform == 'windows-latest'
+#        run: |
+#          $ProgressPreference = 'SilentlyContinue'
+#          Invoke-WebRequest -Uri "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip" -OutFile "wix.zip"
+#          Expand-Archive -Path "wix.zip" -DestinationPath "wix"
+#          $wixPath = "$pwd\wix"
+#          echo "WIX_PATH=$wixPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+#          echo "$wixPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Check Windows Dependencies
         if: matrix.platform == 'windows-latest'
@@ -111,7 +113,7 @@ jobs:
         shell: bash
         run: |
           echo "构建前目录结构:"
-          ls -l
+          ls -lR third-party # 添加这行来调试，确认子模块内容已拉取
           cargo tauri build --verbose
           # 仅针对 Windows 平台重命名安装包
           if [ "${{ matrix.platform }}" = "windows-latest" ]; then
@@ -139,7 +141,7 @@ jobs:
             target/**/*.AppImage
             target/**/*.deb
           retention-days: 7
-          if-no-files-found: error  # 改为 error 确保文件存在
+          if-no-files-found: error
 
       - name: Show Build Results
         shell: bash
@@ -214,11 +216,6 @@ jobs:
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
-          # 已移除 overwrite 参数
 
       - name: Show Release URL
         run: echo "✅ Release created at https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
-
-
-
-
