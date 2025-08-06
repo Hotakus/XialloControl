@@ -3,7 +3,7 @@
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
-use crate::xeno_utils;
+use crate::{mapping, xeno_utils};
 use gilrs::{Axis, Button, Event, EventType, Gamepad, GamepadId, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
@@ -529,6 +529,7 @@ pub fn listen() {
             // 执行设备状态轮询
             if let Some(device) = &last_device {
                 poll_controller(device);
+                mapping::map(*CONTROLLER_DATA.read().unwrap());
             }
 
             thread::sleep(Duration::from_secs_f32(time_interval));
