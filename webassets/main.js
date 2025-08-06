@@ -424,10 +424,13 @@ document.addEventListener('DOMContentLoaded', () => {
             uiElements.minimizeToTray.checked = settings.minimize_to_tray;
             uiElements.theme.value = settings.theme;
             uiElements.pollingFrequency.value = settings.polling_frequency;
-            uiElements.deadzone.value = settings.deadzone;
-            uiElements.deadzoneValue.textContent = settings.deadzone + '%';
-            uiElements.deadzoneLeft.value = settings.deadzone_left || 10;
-            uiElements.deadzoneLeftValue.textContent = (settings.deadzone_left || 10) + '%';
+
+
+            // uiElements.deadzone.value = settings.deadzone;
+            // uiElements.deadzoneValue.textContent = settings.deadzone + '%';
+
+            // uiElements.deadzoneLeft.value = settings.deadzone_left || 10;
+            // uiElements.deadzoneLeftValue.textContent = (settings.deadzone_left || 10) + '%';
 
             state.minimizeToTray = settings.minimize_to_tray;
             if (state.minimizeToTray) {
@@ -449,8 +452,9 @@ document.addEventListener('DOMContentLoaded', () => {
             minimize_to_tray: uiElements.minimizeToTray.checked,
             theme: uiElements.theme.value,
             polling_frequency: parseInt(uiElements.pollingFrequency.value),
-            deadzone: parseInt(uiElements.deadzone.value),
-            deadzone_left: parseInt(uiElements.deadzoneLeft.value)
+            // deadzone: parseInt(uiElements.deadzone.value),
+            // deadzone_left: parseInt(uiElements.deadzoneLeft.value)
+            previous_preset: previous_preset_name
         };
         try {
             await invoke("update_settings", {newSettings});
@@ -703,21 +707,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         uiElements.savePreset?.addEventListener('click', function () {
             updateStatusMessage('预设方案已保存');
+            invoke("preset_test");
         });
         uiElements.importPreset?.addEventListener('click', function () {
             updateStatusMessage('预设方案导入成功');
+            invoke("preset_test2");
         });
 
         // 死区设置
         uiElements.deadzone?.addEventListener('input', function () {
             uiElements.deadzoneValue.textContent = this.value + '%';
         });
-        uiElements.deadzone?.addEventListener('mouseup', saveSettings);
+        uiElements.deadzone?.addEventListener('mouseup', {
+            // TODO: 保存死区在预设方案中
+        });
 
         uiElements.deadzoneLeft?.addEventListener('input', function () {
             uiElements.deadzoneLeftValue.textContent = this.value + '%';
         });
-        uiElements.deadzoneLeft?.addEventListener('mouseup', saveSettings);
+        uiElements.deadzoneLeft?.addEventListener('mouseup', {
+            // TODO: 保存死区在预设方案中
+        });
 
         // 设置变更
         uiElements.pollingFrequency?.addEventListener('change', handlePollingFrequencyChange);
@@ -925,7 +935,8 @@ document.addEventListener('DOMContentLoaded', () => {
             sticks_value_max: 0.0,
             triggers_value_min: 0.0,
             triggers_value_max: 0.0,
-        }
+        },
+        is_acting: false
     };
 
     let leftStickDeadzone = document.querySelector('#deadzone-cali-left');
