@@ -1,7 +1,8 @@
 use crate::xeno_utils;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
+use std::sync::{RwLock};
+use crate::controller::datas::ControllerDatas;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -57,9 +58,9 @@ struct MappingFile {
     mappings: Vec<Mapping>,
 }
 
-pub static GLOBAL_MAPPING_CACHE: Lazy<Mutex<Vec<Mapping>>> = Lazy::new(|| {
+pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| {
     let mappings = vec![];
-    Mutex::new(mappings)
+    RwLock::new(mappings)
 });
 
 const MAPPINGS_FILE: &str = "mappings.toml";
@@ -75,7 +76,7 @@ pub fn load_mappings() {
 
     match xeno_utils::read_toml_file::<MappingFile>(&mappings_path) {
         Ok(mapping_file) => {
-            let mut cache = GLOBAL_MAPPING_CACHE.lock().unwrap();
+            let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
             *cache = mapping_file.mappings;
             log::info!("成功加载 {} 条映射配置", cache.len());
         }
@@ -91,7 +92,7 @@ pub fn save_mappings() {
 
     // 克隆数据时限制锁的作用域
     let mappings = {
-        let cache = GLOBAL_MAPPING_CACHE.lock().unwrap();
+        let cache = GLOBAL_MAPPING_CACHE.read().unwrap();
         cache.clone()
     };
 
@@ -113,7 +114,7 @@ pub fn set_mapping(mapping: Vec<Mapping>) {
     log::debug!("更新映射配置: {:#?}", mapping);
     {
         // 限制锁的作用域
-        let mut mappings = GLOBAL_MAPPING_CACHE.lock().unwrap();
+        let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
         *mappings = mapping;
     } // 锁在这里自动释放
     log::debug!("映射缓存已更新");
@@ -131,11 +132,17 @@ pub fn save_mapping_config() {
 #[tauri::command]
 pub fn get_mappings() -> Vec<Mapping> {
     load_mappings();
-    let mappings = GLOBAL_MAPPING_CACHE.lock().unwrap();
+    let mappings = GLOBAL_MAPPING_CACHE.read().unwrap();
     mappings.clone()
 }
 
 pub fn initialize() {
     log::debug!("初始化映射模块");
     load_mappings(); // 启动时加载映射配置
+}
+
+
+
+pub fn map(controller_datas: ControllerDatas) {
+    
 }
