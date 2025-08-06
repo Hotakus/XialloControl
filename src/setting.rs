@@ -1,12 +1,8 @@
 #![allow(dead_code)]
 
 use crate::xeno_utils;
-use crate::xeno_utils::get_app_root;
 use anyhow::{Context, Result};
-use log;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
 use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
 
@@ -36,13 +32,15 @@ pub struct AppSettings {
     #[serde(default = "default_polling_frequency")]
     pub polling_frequency: u32,
 
-    /// 右摇杆死区范围 (%)
-    #[serde(default = "default_deadzone")]
-    pub deadzone: u8,
+    pub previous_preset: String,
 
-    /// 左摇杆死区范围 (%)
-    #[serde(default = "default_deadzone")]
-    pub deadzone_left: u8,
+    // /// 右摇杆死区范围 (%)
+    // #[serde(default = "default_deadzone")]
+    // pub deadzone: u8,
+    //
+    // /// 左摇杆死区范围 (%)
+    // #[serde(default = "default_deadzone")]
+    // pub deadzone_left: u8,
 }
 
 impl Default for AppSettings {
@@ -52,8 +50,9 @@ impl Default for AppSettings {
             minimize_to_tray: true,
             theme: "light".to_string(),
             polling_frequency: DEFAULT_POLLING_FREQUENCY,
-            deadzone: DEFAULT_DEADZONE,
-            deadzone_left: DEFAULT_DEADZONE,
+            // deadzone: DEFAULT_DEADZONE,
+            // deadzone_left: DEFAULT_DEADZONE,
+            previous_preset: "default".to_string(),
         }
     }
 }
@@ -121,12 +120,12 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
         return Err(msg);
     }
 
-    // 验证死区范围
-    if new_settings.deadzone > 30 {
-        let msg = "死区范围不能超过30%".to_string();
-        log::error!("{}", msg);
-        return Err(msg);
-    }
+    // // 验证死区范围
+    // if new_settings.deadzone > 30 {
+    //     let msg = "死区范围不能超过30%".to_string();
+    //     log::error!("{}", msg);
+    //     return Err(msg);
+    // }
 
     // 保存设置
     save_settings(&new_settings).map_err(|e| {
