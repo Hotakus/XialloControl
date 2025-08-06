@@ -1,5 +1,7 @@
-use crate::controller::controller::{ADAPTER, CONTROLLER_DATA, TIME_INTERVAL};
-use crate::controller::datas::{ControllerDatas, ControllerLimits, ControllerStick, ControllerTrigger};
+use crate::controller::controller::{ADAPTER, CONTROLLER_DATA, CURRENT_DEVICE, TIME_INTERVAL};
+use crate::controller::datas::{
+    ControllerDatas, ControllerLimits, ControllerStick, ControllerTrigger,
+};
 use num_traits::ToPrimitive;
 use std::time::{Duration, Instant};
 use tokio::time::interval;
@@ -29,8 +31,6 @@ where
 
     Some(scaled)
 }
-
-
 
 const SAMPLING_TIME_INTERVAL_FACTOR: f32 = 1000.0;
 const TEMP_INTERVAL: f32 = 1.0 / SAMPLING_TIME_INTERVAL_FACTOR;
@@ -89,7 +89,7 @@ fn average_controller_datas(data_slice: &[ControllerDatas]) -> ControllerDatas {
 
         left_stick_center,
         right_stick_center,
-        
+
         limits: ControllerLimits::default(),
     }
 }
@@ -134,5 +134,22 @@ pub async fn controller_stick_drift_sampling() {
     }
 
     let avg = average_controller_datas(&collected_data);
-    log::info!("avg stick & trigger: {:#?} , count: {}", avg, collected_data.len());
+    log::info!(
+        "avg stick & trigger: {:#?} , count: {}",
+        avg,
+        collected_data.len()
+    );
 }
+
+#[tauri::command]
+pub fn check_controller_deadzone() -> (f32, f32) {
+    let device = CURRENT_DEVICE.read().unwrap();
+    let datas = CONTROLLER_DATA.read().unwrap();
+    let mut deadzone: (f32, f32) = (0.0, 0.0);
+
+    let left_stick_max = datas.left_stick.x.abs().max(datas.left_stick.y.abs());
+    let right_stick_max = datas.right_stick.x.abs().max(datas.right_stick.y.abs());
+
+    (left_stick_max, right_stick_max)
+}
+
