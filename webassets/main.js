@@ -844,11 +844,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
+    let previous_preset_name = "default";
+    let current_preset = {
+        name: "",
+        items: {
+            deadzone: 0,
+            deadzone_left: 0,
+            mappings: []
+        }
+    }
+
+    async function loadPreset() {
+        let preset = await invoke("get_preset", {name: previous_preset_name});
+        if (preset) {
+            current_preset = preset;
+        }
+        console.log("current_preset", current_preset);
+    }
+
     // ======================
     // 8. 初始化应用
     // ======================
     function initApp() {
         loadSettings();
+        loadPreset();
         toggleIndicator(false);
         updateStatusMessage("请选择一个设备并点击连接按钮");
         updateControllerButtons();
