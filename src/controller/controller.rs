@@ -529,7 +529,7 @@ pub fn listen() {
             // 执行设备状态轮询
             if let Some(device) = &last_device {
                 poll_controller(device);
-                mapping::map(*CONTROLLER_DATA.read().unwrap());
+                mapping::map(device.clone(), *CONTROLLER_DATA.read().unwrap());
             }
 
             thread::sleep(Duration::from_secs_f32(time_interval));
