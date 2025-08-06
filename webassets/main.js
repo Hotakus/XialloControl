@@ -375,10 +375,14 @@ document.addEventListener('DOMContentLoaded', () => {
         state.mappings.forEach(mapping => {
             const item = document.createElement('div');
             item.className = 'button-map-item';
+
+            const raw_key = mapping.composed_shortcut_key;
+            const display_key = raw_key.split(' + ').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+
             item.innerHTML = `
                 <div class="button-icon">${mapping.composed_button}</div>
                 <div class="key-text">映射到</div>
-                <div class="key-value">${mapping.composed_shortcut_key}</div>
+                <div class="key-value">${display_key}</div>
                 <div class="item-actions">
                     <button class="item-action-btn edit" data-id="${mapping.id}">
                         <svg t="1753769162786" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3801" width="200" height="200"><path d="M869.62198 290.936185c-17.316387 0-31.355125 14.039761-31.355125 31.355125l0 501.688143c0 40.342824-32.8205 73.163323-73.163323 73.163323L252.963339 897.142777c-40.342824 0-73.163323-32.8205-73.163323-73.163323l0-606.206592c0-40.342824 32.8205-73.163323 73.163323-73.163323l407.621744 0c17.316387 0 31.355125-14.039761 31.355125-31.355125s-14.039761-31.355125-31.355125-31.355125L252.963339 81.899288c-74.92341 0-135.873574 60.950164-135.873574 135.873574l0 606.206592c0 74.92341 60.950164 135.873574 135.873574 135.873574l512.140193 0c74.92341 0 135.873574-60.950164 135.873574-135.873574L900.977106 322.292334C900.978129 304.975946 886.938368 290.936185 869.62198 290.936185z" fill="#707070" p-id="3802"></path><path d="M535.946388 467.382826c6.01704 5.496178 13.59053 8.205892 21.143553 8.205892 8.502651 0 16.97358-3.434216 23.159466-10.201339L898.602012 116.986411c11.682064-12.779048 10.783601-32.615838-1.995447-44.297902-12.784164-11.676947-32.615838-10.783601-44.303019 2.000564L533.950941 423.084924C522.269901 435.863972 523.167341 455.700763 535.946388 467.382826z" fill="#707070" p-id="3803"></path><path d="M355.315448 594.978876l0 30.589692c0 17.316387 14.039761 31.355125 31.355125 31.355125 17.316387 0 31.355125-14.039761 31.355125-31.355125l0-30.589692c0-17.316387-14.039761-31.355125-31.355125-31.355125C369.355209 563.623751 355.315448 577.663512 355.315448 594.978876z" fill="#707070" p-id="3804"></path><path d="M631.396297 656.924717c17.316387 0 31.355125-14.039761 31.355125-31.355125l0-30.589692c0-17.316387-14.039761-31.355125-31.355125-31.355125-17.316387 0-31.355125 14.039761-31.355125 31.355125l0 30.589692C600.041172 642.884956 614.07991 656.924717 631.396297 656.924717z" fill="#707070" p-id="3805"></path></svg>
@@ -758,7 +762,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // 确认映射按钮
         document.getElementById('confirm-btn')?.addEventListener('click', function () {
             const composed_button = uiElements.controllerButtonSelect.value;
-            const composed_shortcut_key = uiElements.keyDisplay.textContent;
+
+            // 从 state.currentKeys 构建用于后端的原始快捷键字符串
+            const shortcut_parts = [];
+            if (state.currentKeys.ctrl) shortcut_parts.push('Control');
+            if (state.currentKeys.shift) shortcut_parts.push('Shift');
+            if (state.currentKeys.alt) shortcut_parts.push('Alt');
+            if (state.currentKeys.meta) shortcut_parts.push('Meta');
+            if (state.currentKeys.key) shortcut_parts.push(state.currentKeys.key);
+            const raw_shortcut_key = shortcut_parts.join(' + '); // 这就是后端需要的英文值
 
             stopKeyDetection();
             uiElements.modalError.style.display = 'none';
@@ -770,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (!composed_shortcut_key) {
+            if (!raw_shortcut_key) { // 使用新生成的原始值进行校验
                 uiElements.modalError.textContent = '请设置键盘映射按键';
                 uiElements.modalError.style.display = 'block';
                 return;
@@ -780,18 +792,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mapping = state.mappings.find(m => m.id === state.editingMappingId);
                 if (mapping) {
                     mapping.composed_button = composed_button;
-                    mapping.composed_shortcut_key = composed_shortcut_key;
+                    mapping.composed_shortcut_key = raw_shortcut_key; // 保存英文原始值
                 }
             } else {
                 state.mappings.push({
                     id: Date.now(),
                     composed_button: composed_button,
-                    composed_shortcut_key: composed_shortcut_key,
+                    composed_shortcut_key: raw_shortcut_key, // 保存英文原始值
                     mapping_type: 'keyboard'
                 });
             }
 
-            if (invoke) invoke('set_mapping', {mapping: state.mappings});
+            if (invoke) invoke('set_mapping', {mapping: state.mappings}); // 发送给后端的就是包含英文值的 state.mappings
             renderMappings();
             closeModalFunc();
         });
@@ -818,7 +830,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const mappingId = parseInt(btn.dataset.id);
             if (btn.classList.contains('edit')) {
                 const mapping = state.mappings.find(m => m.id === mappingId);
-                if (mapping) openModal("编辑按键映射", mapping.composed_button, mapping.composed_shortcut_key, mapping.id);
+                if (mapping) {
+                    // --- 新增转换和状态恢复逻辑 ---
+                    const raw_key = mapping.composed_shortcut_key; // 获取英文原始值
+
+                    // 1. 转换为中文显示值，用于弹窗UI
+                    const display_key = raw_key.split(' + ').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+
+                    // 2. 反向解析原始值，恢复 state.currentKeys 状态
+                    const parts = raw_key.split(' + ');
+                    state.currentKeys = {ctrl: false, shift: false, alt: false, meta: false, key: null}; // 重置
+                    state.currentKeys.ctrl = parts.includes('Control');
+                    state.currentKeys.shift = parts.includes('Shift');
+                    state.currentKeys.alt = parts.includes('Alt');
+                    state.currentKeys.meta = parts.includes('Meta');
+                    // 查找不是修饰键的部分作为主键
+                    state.currentKeys.key = parts.find(p => !['Control', 'Shift', 'Alt', 'Meta'].includes(p)) || null;
+
+                    // 使用转换后的中文值和恢复的状态打开模态窗口
+                    openModal("编辑按键映射", mapping.composed_button, display_key, mapping.id);
+                    // --- 逻辑结束 ---
+                }
             } else if (btn.classList.contains('delete')) {
                 state.mappings = state.mappings.filter(m => m.id !== mappingId);
                 if (invoke) invoke('set_mapping', {mapping: state.mappings});
