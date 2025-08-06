@@ -21,7 +21,7 @@ pub struct Mapping {
 }
 
 impl Mapping {
-    fn new(
+    pub fn new(
         id: u64,
         composed_button: String,
         composed_shortcut_key: String,
@@ -35,19 +35,19 @@ impl Mapping {
         }
     }
 
-    fn get_id(&self) -> u64 {
+    pub fn get_id(&self) -> u64 {
         self.id
     }
 
-    fn get_controller_button(&self) -> &str {
+    pub fn get_controller_button(&self) -> &str {
         &self.composed_button
     }
 
-    fn get_composed_key(&self) -> &str {
+    pub fn get_composed_key(&self) -> &str {
         &self.composed_shortcut_key
     }
 
-    fn get_mapping_type(&self) -> MappingType {
+    pub fn get_mapping_type(&self) -> MappingType {
         self.mapping_type.clone()
     }
 }
@@ -65,60 +65,70 @@ pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| {
 
 const MAPPINGS_FILE: &str = "mappings.toml";
 
-pub fn load_mappings() {
+/// 内部加载映射实现
+fn load_mappings_internal() -> Vec<Mapping> {
     let mappings_path = xeno_utils::get_config_path(MAPPINGS_FILE);
 
     if !mappings_path.exists() {
         log::warn!("映射配置文件不存在，将创建空文件");
-        save_mappings(); // 创建空文件
-        return;
+        // 创建空映射文件
+        let mapping_file = MappingFile { mappings: vec![] };
+        if let Err(e) = xeno_utils::write_toml_file(&mappings_path, &mapping_file) {
+            log::error!("创建空映射文件失败: {}", e);
+        }
+        return vec![];
     }
 
     match xeno_utils::read_toml_file::<MappingFile>(&mappings_path) {
         Ok(mapping_file) => {
-            let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
-            *cache = mapping_file.mappings;
-            log::info!("成功加载 {} 条映射配置", cache.len());
+            log::info!("成功加载 {} 条映射配置", mapping_file.mappings.len());
+            mapping_file.mappings
         }
         Err(e) => {
             log::error!("加载映射配置失败: {}", e);
+            vec![]
         }
     }
 }
 
+/// 加载应用到全局映射缓存
+pub fn load_mappings() {
+    let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+    *cache = load_mappings_internal();
+}
+
+/// 保存全局映射缓存到文件
 pub fn save_mappings() {
     // 确保配置目录存在
     xeno_utils::ensure_config_dir();
 
-    // 克隆数据时限制锁的作用域
-    let mappings = {
-        let cache = GLOBAL_MAPPING_CACHE.read().unwrap();
-        cache.clone()
-    };
-
+    let mappings = get_mappings_internal();
     let mappings_path = xeno_utils::get_config_path(MAPPINGS_FILE);
 
-    // 使用包装结构体
     let mapping_file = MappingFile {
         mappings: mappings.clone(),
     };
 
     match xeno_utils::write_toml_file(&mappings_path, &mapping_file) {
         Ok(_) => log::info!("映射配置已保存到: {:?}", mappings_path),
-        Err(e) => log::error!("保存映射配置失败: {:#?}", e), // 增强错误日志
+        Err(e) => log::error!("保存映射配置失败: {:#?}", e),
     }
+}
+
+/// 获取当前映射（线程安全）
+pub fn get_mappings_internal() -> Vec<Mapping> {
+    GLOBAL_MAPPING_CACHE.read().unwrap().clone()
 }
 
 #[tauri::command]
 pub fn set_mapping(mapping: Vec<Mapping>) {
     log::debug!("更新映射配置: {:#?}", mapping);
     {
-        // 限制锁的作用域
-        let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
-        *mappings = mapping;
-    } // 锁在这里自动释放
-    log::debug!("映射缓存已更新");
-    save_mappings();
+        let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+        *cache = mapping;
+    }
+    save_mappings(); // 更新后立即保存
+    log::debug!("映射缓存已更新并保存");
 }
 
 // 显式保存映射命令
@@ -131,9 +141,7 @@ pub fn save_mapping_config() {
 // 获取当前映射配置
 #[tauri::command]
 pub fn get_mappings() -> Vec<Mapping> {
-    load_mappings();
-    let mappings = GLOBAL_MAPPING_CACHE.read().unwrap();
-    mappings.clone()
+    get_mappings_internal()
 }
 
 pub fn initialize() {
