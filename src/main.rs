@@ -2,15 +2,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod controller;
+mod mapping;
 mod setting;
 mod tray;
 mod xeno_utils;
-mod adaptive_sampler;
-mod mapping;
+mod preset;
+mod setup;
+
 
 fn main() {
     simple_logger::init_with_level(log::Level::Debug).unwrap();
-    xeno_utils::create_config_dir();
+    setup::setup();
     xenocontrol_lib::run();
 }
 
