@@ -43,5 +43,5 @@ pub fn ensure_config_dir() {
 }
 
 pub fn initialize() {
-    println!("Initializing Xeno Utils...");
+    log::debug!("初始化实用工具");
 }

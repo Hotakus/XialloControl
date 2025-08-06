@@ -155,5 +155,5 @@ impl ControllerDatas {
 }
 
 pub fn initialize() {
-    println!("Controller datas initialized");
+    log::debug!("初始化控制器数据");
 }

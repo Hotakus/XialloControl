@@ -81,5 +81,5 @@ impl AdaptiveSampler {
 }
 
 pub fn initialize() {
-    println!("Starting adaptive_sampler");
+    log::debug!("初始化自适应采样器");
 }

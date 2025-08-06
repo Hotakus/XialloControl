@@ -598,6 +598,8 @@ fn query_needed_handle(app_handle: AppHandle) {
 /// 2. 设备发现轮询
 /// 3. 主设备状态监听
 pub fn initialize(app_handle: AppHandle) {
+    log::debug!("初始化控制器模块");
+    
     query_needed_handle(app_handle);
 
     gilrs_listen();

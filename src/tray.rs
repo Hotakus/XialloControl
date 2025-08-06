@@ -6,6 +6,8 @@ use tauri::tray::{MouseButton, TrayIconBuilder, TrayIconEvent};
 use tauri::{AppHandle, Manager};
 
 pub fn initialize(app: AppHandle) -> Result<(), Box<dyn Error>> {
+    log::debug!("初始化 tray icon");
+
     let quit_i = MenuItem::with_id(&app, "quit", "Quit", true, None::<&str>)?;
     let menu = Menu::with_items(&app, &[&quit_i])?;
 
