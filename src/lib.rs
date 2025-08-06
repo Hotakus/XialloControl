@@ -111,7 +111,6 @@ pub fn run() {
             let _ = adaptive_sampler::initialize();
             let _ = tray::initialize(app_handle.clone());
             let _ = controller::initialize(app_handle.clone());
-            // let _ = controller_datas::initialize();
             let _ = xeno_utils::initialize();
             let _ = setting::initialize();
             let _ = mapping::initialize();
