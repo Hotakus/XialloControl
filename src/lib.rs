@@ -24,6 +24,7 @@ mod tray;
 mod xeno_utils;
 mod adaptive_sampler;
 mod mapping;
+mod preset;
 
 #[tauri::command]
 fn hide_current_window(window: Window) -> Result<(), String> {
@@ -73,11 +74,16 @@ pub fn run() {
             controller::controller::set_frequency,
             controller::controller::get_controller_data,
             controller::logic::controller_stick_drift_sampling,
+            controller::logic::check_controller_deadzone,
 
             setting::get_current_settings,
             setting::update_settings,
             mapping::set_mapping,
-            mapping::get_mappings
+            mapping::get_mappings,
+
+            preset::preset_test,
+            preset::preset_test2,
+            preset::get_preset
         ])
         .setup(|app| {
             let app_handle = app.handle();
