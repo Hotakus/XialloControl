@@ -438,7 +438,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             invoke("set_frequency", {freq: settings.polling_frequency});
-            applyTheme(settings.theme);
         } catch (error) {
             console.error("加载设置失败:", error);
         }
@@ -937,11 +936,12 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSettings();
         loadPreset();
         toggleIndicator(false);
-        updateStatusMessage("请选择一个设备并点击连接按钮");
         updateControllerButtons();
         loadMappings();
         titlebarLogic();
         setupEventListeners();
+        queryDevice();
+        updateStatusMessage("请选择一个设备并点击连接按钮");
     }
 
     initApp();
