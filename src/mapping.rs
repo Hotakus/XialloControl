@@ -5,7 +5,9 @@ use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{RwLock, RwLockReadGuard};
+use std::thread;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -214,55 +216,50 @@ fn get_xbox_layout_map() -> RwLockReadGuard<'static, HashMap<&'static str, Contr
     XBOX_LAYOUT_MAP.read().unwrap()
 }
 
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
-
-// 🧠 长按状态缓存
-#[derive(Clone)]
-struct RepeatState {
-    press_start: Instant,
-    last_fire: Instant,
-    interval: Duration,
+#[derive(Debug)]
+pub enum EnigoCommand {
+    PressComposedKeys(Vec<enigo::Key>),
+    // 可扩展更多命令：MouseClick、MouseMove 等
 }
 
-static REPEAT_STATES: Lazy<Mutex<HashMap<ControllerButtons, RepeatState>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
+    let (tx, rx): (Sender<EnigoCommand>, Receiver<EnigoCommand>) = channel();
+    thread::spawn(move || enigo_worker(rx)); // 启动工作线程
+    tx
+});
 
-// 🔧 调整参数：初始延迟、起始间隔、最小间隔、递减倍率
-const INITIAL_DELAY: Duration = Duration::from_millis(400);
-const START_INTERVAL: Duration = Duration::from_millis(300);
-const MIN_INTERVAL: Duration = Duration::from_millis(50);
-const INTERVAL_DECAY: f32 = 0.85;
+fn enigo_worker(rx: Receiver<EnigoCommand>) {
+    let mut enigo = Enigo::new(&enigo::Settings::default()).unwrap();
 
-pub fn map(device: DeviceInfo, controller_datas: ControllerDatas) {
-    let mut enigo = GLOBAL_ENIGO.write().unwrap();
-    let mappings = get_mappings_internal();
-    let mut layout_map: HashMap<&'static str, ControllerButtons>;
-
-    let mut repeat_states = REPEAT_STATES.lock().unwrap();
-    let now = Instant::now();
-
-
-    for mapping in mappings {
-        match device.controller_type {
-            ControllerType::Xbox => {
-                layout_map = get_xbox_layout_map().clone();
+    while let Ok(cmd) = rx.recv() {
+        match cmd {
+            EnigoCommand::PressComposedKeys(keys) => {
+                press_composed_keys(&mut enigo, &keys);
             }
-            _ => {
-                layout_map = get_xbox_layout_map().clone();
-            }
+            // TODO: MouseClick、 MouseScroll
         }
+    }
+}
 
+/// 映射主逻辑
+pub fn map(device: &DeviceInfo, controller_datas: &ControllerDatas) {
+    let mappings = GLOBAL_MAPPING_CACHE.read().unwrap();
+
+    // ✅ layout_map 只获取一次
+    let  layout_map = match device.controller_type {
+        ControllerType::Xbox => get_xbox_layout_map(),
+        _ => get_xbox_layout_map(),
+    };
+
+    for mapping in mappings.iter() {
         if let Some(button) = layout_map.get(mapping.get_controller_button()) {
-
-
             match mapping.get_mapping_type() {
                 MappingType::Keyboard => {
-                    // TODO: Keyboard
+                    // TODO: trigger gaps
                     let is_pressed = controller_datas.get_button(*button);
                     if is_pressed {
-                        let res = parse_composed_key(mapping.get_composed_key());
-                        press_composed_keys(&mut enigo, &res);
+                        let keys = parse_composed_key(mapping.get_composed_key());
+                        ENIGO_SENDER.send(EnigoCommand::PressComposedKeys(keys)).unwrap();
                     }
                 }
                 MappingType::MouseButton => {
@@ -275,36 +272,3 @@ pub fn map(device: DeviceInfo, controller_datas: ControllerDatas) {
         }
     }
 }
-
-
-// if is_pressed {
-// if let Some(state) = repeat_states.get_mut(button) {
-// // 是否超过初始延迟？
-// if now.duration_since(state.press_start) < INITIAL_DELAY {
-// continue;
-// }
-//
-// // 是否到了触发时间？
-// if now.duration_since(state.last_fire) >= state.interval {
-// let composed = parse_composed_key(mapping.get_composed_key());
-// press_composed_keys(&mut enigo, &composed);
-//
-// // 更新状态
-// state.last_fire = now;
-// state.interval = (state.interval.mul_f32(INTERVAL_DECAY)).max(MIN_INTERVAL);
-// }
-// } else {
-// // 初次按下立即触发
-// let composed = parse_composed_key(mapping.get_composed_key());
-// press_composed_keys(&mut enigo, &composed);
-//
-// repeat_states.insert(*button, RepeatState {
-// press_start: now,
-// last_fire: now,
-// interval: START_INTERVAL,
-// });
-// }
-// } else {
-// // 如果释放就清除
-// repeat_states.remove(button);
-// }
