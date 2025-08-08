@@ -13,6 +13,8 @@ if ($isChinese)
     $msg_input_name = "`n请输入标签名（小写）"
     $msg_empty_name = "标签名不能为空！"
     $msg_input_msg = "请输入标签说明"
+    $msg_tag_not_exist = "该标签不存在。是否创建？（y/n）"
+    $msg_cancel = "操作已取消。"
     $msg_local_deleted = "正在删除本地标签"
     $msg_local_not_found = "本地标签未找到。"
     $msg_remote_deleted = "正在删除远程标签"
@@ -27,6 +29,8 @@ else
     $msg_input_name = "`nenter tag name (lowercase)"
     $msg_empty_name = "tag name cannot be empty!"
     $msg_input_msg = "enter tag message"
+    $msg_tag_not_exist = "Tag does not exist. Create it? (y/n)"
+    $msg_cancel = "Operation cancelled."
     $msg_local_deleted = "deleting local tag"
     $msg_local_not_found = "local tag not found."
     $msg_remote_deleted = "deleting remote tag"
@@ -60,12 +64,25 @@ if ($null -eq $tag_name -or $tag_name.Trim() -eq "")
     exit 1
 }
 
+# Check if tag exists
+$tag_exists = git tag | Select-String -Pattern "^$tag_name$"
+
+if (-not $tag_exists)
+{
+    $confirmCreate = Read-Host $msg_tag_not_exist
+    if ($confirmCreate -ne "y" -and $confirmCreate -ne "Y")
+    {
+        Write-Host $msg_cancel -ForegroundColor DarkGray
+        exit 0
+    }
+}
+
 # Ask for tag message
 $tag_msg = Read-Host $msg_input_msg
 $remote_name = "origin"
 
 # Delete local tag if exists
-if (git tag | Select-String -Pattern "^$tag_name$")
+if ($tag_exists)
 {
     Write-Host "$msg_local_deleted $tag_name ..." -ForegroundColor Yellow
     git tag -d $tag_name | Out-Null
