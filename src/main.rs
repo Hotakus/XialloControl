@@ -12,7 +12,7 @@ pub mod setup;
 
 
 fn main() {
-    simple_logger::init_with_level(log::Level::Debug).unwrap();
+    simple_logger::init_with_level(log::Level::Info).unwrap();
     setup::setup();
     xenocontrol_lib::run();
 }
