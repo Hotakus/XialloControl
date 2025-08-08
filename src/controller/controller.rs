@@ -429,15 +429,15 @@ fn _poll_other_controllers(gamepad: Gamepad) {
         controller_data.set_button(button, pressed);
     }
 
-    println!("---------------- {:#?}", gamepad.id());
+    log::debug!("---------------- {:#?}", gamepad.id());
     let left_stick_x = gamepad.axis_data(Axis::LeftStickX).unwrap().value();
     let left_stick_y = gamepad.axis_data(Axis::LeftStickY).unwrap().value();
-    println!("Left Stick X: {:#?}, Left Stick Y: {:#?}", left_stick_x, left_stick_y);
+    log::debug!("Left Stick X: {:#?}, Left Stick Y: {:#?}", left_stick_x, left_stick_y);
 
     let right_stick_x = gamepad.axis_data(Axis::RightStickX).unwrap().value();
     let right_stick_y = gamepad.axis_data(Axis::RightStickY).unwrap().value();
-    println!("Right Stick X: {:#?}, Right Stick Y: {:#?}", right_stick_x, right_stick_y);
-    println!("----------------");
+    log::debug!("Right Stick X: {:#?}, Right Stick Y: {:#?}", right_stick_x, right_stick_y);
+    log::debug!("----------------");
 
 
 }
