@@ -515,6 +515,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function queryDevice() {
+        const devices = await invoke("query_devices");
+        updateDeviceList(devices);
+    }
+
     // 断开设备并查询新设备
     async function closeAndQueryDevice() {
         await disconnectCurrentDevice();
@@ -523,8 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         uiElements.deviceSelect.selectedIndex = 0;
 
         try {
-            const devices = await invoke("query_devices");
-            updateDeviceList(devices);
+            await queryDevice();
         } catch (error) {
             console.error("查询设备失败:", error);
             updateStatusMessage("设备查询失败", true);
