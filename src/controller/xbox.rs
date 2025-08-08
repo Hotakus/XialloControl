@@ -5,7 +5,7 @@ cfg_if::cfg_if! {
         use crate::controller::controller::{disconnect_device, DeviceInfo, CONTROLLER_DATA};
     }
 }
-use crate::controller::datas::ControllerButtons;
+use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::controller::logic;
 use tauri::Emitter;
 
@@ -18,7 +18,7 @@ const MAX_XINPUT_DEVICES: usize = 4;
 /// Xbox控制器状态轮询处理 (Windows)
 #[cfg(target_os = "windows")]
 fn _poll_xbox_controller_state(state: XInputState) {
-    let mut controller_data = CONTROLLER_DATA.write().unwrap();
+    let mut controller_data = ControllerDatas::new();
 
     // 按钮状态检测
     let buttons = [
@@ -39,10 +39,9 @@ fn _poll_xbox_controller_state(state: XInputState) {
         (state.right_thumb_button(), ControllerButtons::RStick, "Xbox 右摇杆按键")
     ];
 
-
     for (pressed, button, label) in buttons {
         if pressed {
-            log::info!("{label} 被按下");
+            log::debug!("{label} 被按下");
         }
         controller_data.set_button(button, pressed);
     }
@@ -73,11 +72,15 @@ fn _poll_xbox_controller_state(state: XInputState) {
 
     controller_data.left_trigger.has_pressure = true;
 
-    let app_handle = get_app_handle();
-    app_handle
-        .emit("update_controller_data", *controller_data)
-        .expect("TODO: panic message");
+    let mut global_controller_data = CONTROLLER_DATA.write().unwrap();
+    if *global_controller_data != controller_data{
+        *global_controller_data = controller_data;
 
+        let app_handle = get_app_handle();
+        app_handle
+            .emit("update_controller_data", controller_data)
+            .expect("TODO: panic message");
+    }
     // println!("({lx}, {ly}) - ({rx}, {ry}) {}, {}", state.left_trigger(), state.left_trigger_bool());
 }
 
@@ -85,7 +88,6 @@ fn _poll_xbox_controller_state(state: XInputState) {
 #[cfg(target_os = "windows")]
 pub fn poll_xbox_controller(_device: &DeviceInfo) {
     let xinput = get_xinput();
-
     let mut got_device = false;
 
     for i in 0..MAX_XINPUT_DEVICES {
