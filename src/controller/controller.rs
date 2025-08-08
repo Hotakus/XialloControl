@@ -396,9 +396,7 @@ pub async fn set_frequency(freq: u32) {
 
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
-    if gamepad.is_pressed(Button::South) {
-        println!("----------------- Button::South 键被按下");
-    }
+
 
     let buttons = [
         (gamepad.is_pressed(Button::South), ControllerButtons::South, "South"),
