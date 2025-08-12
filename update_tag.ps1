@@ -55,7 +55,7 @@ else
 }
 
 # Ask for tag name
-$tag_name = Read-Host $msg_input_name
+$tag_name = (Read-Host $msg_input_name).Trim()
 
 # Check empty input
 if ($null -eq $tag_name -or $tag_name.Trim() -eq "")
