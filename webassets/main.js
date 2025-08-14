@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
             item.className = 'button-map-item';
 
             const raw_key = mapping.composed_shortcut_key;
-            const display_key = raw_key.split(' + ').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+            const display_key = raw_key.split('+').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
 
             item.innerHTML = `
                 <div class="button-icon">${mapping.composed_button}</div>
@@ -773,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cancel-btn')?.addEventListener('click', closeModalFunc);
 
         // 确认映射按钮
-        document.getElementById('confirm-btn')?.addEventListener('click', function () {
+        document.getElementById('confirm-btn')?.addEventListener('click', async function () {
             const composed_button = uiElements.controllerButtonSelect.value;
 
             // 从 state.currentKeys 构建用于后端的原始快捷键字符串
@@ -783,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.currentKeys.alt) shortcut_parts.push('Alt');
             if (state.currentKeys.meta) shortcut_parts.push('Meta');
             if (state.currentKeys.key) shortcut_parts.push(state.currentKeys.key);
-            const raw_shortcut_key = shortcut_parts.join(' + '); // 这就是后端需要的英文值
+            const raw_shortcut_key = shortcut_parts.join('+'); // 这就是后端需要的英文值
 
             stopKeyDetection();
             uiElements.modalError.style.display = 'none';
