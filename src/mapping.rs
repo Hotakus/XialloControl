@@ -93,7 +93,7 @@ impl Mapping {
         self.id
     }
 
-    pub fn get_controller_button(&self) -> &str {
+    pub fn get_composed_button(&self) -> &str {
         &self.composed_button
     }
 
