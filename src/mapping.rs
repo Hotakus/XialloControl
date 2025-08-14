@@ -1,4 +1,6 @@
-use crate::controller::controller::{ControllerType, DeviceInfo};
+#![allow(dead_code)]
+
+use crate::controller::controller::{DeviceInfo};
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
@@ -8,6 +10,54 @@ use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{RwLock, RwLockReadGuard};
 use std::thread;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct TriggerState {
+    interval: u64,
+    initial_interval: u64,
+    min_interval: u64,
+    acceleration: f64,
+
+    #[serde(skip)] // 跳过序列化和反序列化
+    #[serde(default = "TriggerState::default_instant")] // 反序列化时自动调用
+    last_trigger: Instant,
+}
+
+impl TriggerState {
+    fn default_instant() -> Instant {
+        Instant::now()
+    }
+    pub fn default() -> Self {
+        Self::new(300, 100, 0.8)
+    }
+    pub fn new(initial_interval: u64, min_interval: u64, acceleration: f64) -> Self {
+        Self {
+            interval: initial_interval,
+            initial_interval,
+            min_interval,
+            acceleration,
+            last_trigger: Instant::now(),
+        }
+    }
+
+    pub fn should_trigger(&mut self) -> bool {
+        if self.last_trigger.elapsed().as_millis() as u64 >= self.interval {
+            // 触发后加速
+            self.interval =
+                ((self.interval as f64) * self.acceleration).max(self.min_interval as f64) as u64;
+            self.last_trigger = Instant::now();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn reset(&mut self) {
+        self.interval = self.initial_interval;
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
