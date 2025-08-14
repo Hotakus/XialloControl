@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 
 use crate::mapping::{get_mappings, Mapping};
+use crate::setting::load_settings;
 use crate::xeno_utils;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::sync::RwLock;
-use once_cell::sync::Lazy;
-use crate::setting::load_settings;
 
 const PRESET_DIR: &str = "presets";
 

@@ -9,6 +9,7 @@ use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::sync::{Mutex, RwLock};
+use std::time::Instant;
 use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 

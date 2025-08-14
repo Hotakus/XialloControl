@@ -13,18 +13,18 @@
 //     ],
 
 use std::env;
-use tauri::Window;
+use tauri::{AppHandle, Manager, WebviewWindow, Window, WindowEvent};
 // 👈 引入 Manager 以启用 create_window
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 
+mod adaptive_sampler;
 mod controller;
+mod mapping;
+mod preset;
 mod setting;
 mod tray;
 mod xeno_utils;
-mod adaptive_sampler;
-mod mapping;
-mod preset;
 
 #[tauri::command]
 fn hide_current_window(window: Window) -> Result<(), String> {
