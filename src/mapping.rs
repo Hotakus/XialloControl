@@ -61,19 +61,17 @@ impl TriggerState {
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
-pub enum MappingType {
-    Keyboard,
-    MouseButton,
-    MouseWheel
-}
-
-#[derive(Clone, Serialize, Deserialize, Debug)]
-#[serde(rename_all = "snake_case")]
 pub struct Mapping {
     id: u64,
     composed_button: String,
     composed_shortcut_key: String,
-    mapping_type: MappingType,
+
+    #[serde(flatten)]
+    action: Action,
+
+    // 触发选项
+    #[serde(flatten)]
+    trigger_state: TriggerState,
 }
 
 impl Mapping {
@@ -81,13 +79,13 @@ impl Mapping {
         id: u64,
         composed_button: String,
         composed_shortcut_key: String,
-        mapping_type: MappingType,
     ) -> Self {
         Self {
             id,
             composed_button,
             composed_shortcut_key,
-            mapping_type,
+            action: Action::default(),
+            trigger_state: TriggerState::default(),
         }
     }
 
@@ -101,10 +99,6 @@ impl Mapping {
 
     pub fn get_composed_key(&self) -> &str {
         &self.composed_shortcut_key
-    }
-
-    pub fn get_mapping_type(&self) -> MappingType {
-        self.mapping_type.clone()
     }
 }
 
