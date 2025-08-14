@@ -494,7 +494,9 @@ pub fn listen() {
         let mut last_device: Option<DeviceInfo> = None;
 
         loop {
-            let time_interval = *TIME_INTERVAL.read().unwrap();
+
+            let time_start = Instant::now();
+
             let current_device = CURRENT_DEVICE.read().unwrap().clone();
 
             // 设备连接状态跟踪
@@ -531,6 +533,10 @@ pub fn listen() {
                 mapping::map(device, &CONTROLLER_DATA.read().unwrap());
             }
 
+
+            let elapsed = time_start.elapsed();
+            // log::info!("elapsed time: {:#?}", elapsed);
+            let time_interval = *TIME_INTERVAL.read().unwrap();
             thread::sleep(Duration::from_secs_f32(time_interval));
         }
     });
