@@ -116,9 +116,6 @@ pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| {
     RwLock::new(mappings)
 });
 
-pub static GLOBAL_ENIGO: Lazy<RwLock<Enigo>> =
-    Lazy::new(|| RwLock::from(Enigo::new(&enigo::Settings::default()).unwrap()));
-
 const MAPPINGS_FILE: &str = "mappings.toml";
 
 /// 内部加载映射实现
@@ -151,6 +148,7 @@ fn load_mappings_internal() -> Vec<Mapping> {
 pub fn load_mappings() {
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
     *cache = load_mappings_internal();
+    log::info!("映射缓存已加载 {:#?}", cache);
 }
 
 /// 保存全局映射缓存到文件
@@ -343,10 +341,142 @@ fn get_xbox_layout_map() -> RwLockReadGuard<'static, HashMap<&'static str, Contr
     XBOX_LAYOUT_MAP.read().unwrap()
 }
 
+// --- 新增：定义主操作 ---
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "snake_case", untagged)]
+pub enum PrimaryAction {
+    KeyPress {
+        #[serde(flatten)]
+        key: enigo::Key
+    },
+    MouseClick { button: enigo::Button },
+    MouseWheel { amount: i32 },
+}
+
+// --- 新增：定义完整的操作指令 ---
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct Action {
+    pub modifiers: Vec<enigo::Key>, // 需要按下的修饰键，如 [Key::Shift, Key::Control]
+
+    #[serde(flatten)]
+    pub primary: PrimaryAction, // 最终执行的核心动作
+}
+
+impl Action {
+    pub fn default() -> Action {
+        Action {
+            modifiers: vec![],
+            primary: PrimaryAction::KeyPress { key: enigo::Key::Space },
+        }
+    }
+}
+
+// 定义一个简单的错误类型
+#[derive(Debug)]
+pub enum ParseError {
+    NoPrimaryAction,
+    MultiplePrimaryActions,
+    UnknownKey(String),
+}
+
+/// 解析按键组合字符串，生成结构化的 Action
+fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
+    let mut modifiers = Vec::new();
+    let mut primary_action = None;
+
+    for part in composed.split('+').map(|s| s.trim()) {
+        match part.to_lowercase().as_str() {
+            // 修饰键
+            "ctrl" | "control" => modifiers.push(enigo::Key::Control),
+            "shift" => modifiers.push(enigo::Key::Shift),
+            "alt" => modifiers.push(enigo::Key::Alt),
+            "meta" | "cmd" | "win" => modifiers.push(enigo::Key::Meta),
+
+            // 主操作 - 鼠标按钮
+            "mouseleft" => set_primary(
+                &mut primary_action,
+                PrimaryAction::MouseClick {
+                    button: enigo::Button::Left,
+                },
+            )?,
+            "mouseright" => set_primary(
+                &mut primary_action,
+                PrimaryAction::MouseClick {
+                    button: (enigo::Button::Right),
+                },
+            )?,
+            "mousemiddle" => set_primary(
+                &mut primary_action,
+                PrimaryAction::MouseClick {
+                    button: (enigo::Button::Middle),
+                },
+            )?,
+            "mousex1" => set_primary(
+                &mut primary_action,
+                PrimaryAction::MouseClick {
+                    button: enigo::Button::Forward,
+                },
+            )?,
+            "mousex2" => set_primary(
+                &mut primary_action,
+                PrimaryAction::MouseClick {
+                    button: (enigo::Button::Back),
+                },
+            )?,
+
+            // 主操作 - 鼠标滚轮
+            "mousewheelup" => set_primary(
+                &mut primary_action,
+                PrimaryAction::MouseWheel { amount: -1 },
+            )?,
+            "mousewheeldown" => {
+                set_primary(&mut primary_action, PrimaryAction::MouseWheel { amount: 1 })?
+            }
+
+            // 主操作 - 其他键盘按键 (简化处理)
+            key_str => {
+                // 这里可以用更复杂的逻辑来映射所有 enigo::Key
+                // 例如 F1-F12, Space, Enter 等
+                let key = match key_str {
+                    "space" => enigo::Key::Space,
+                    "enter" => enigo::Key::Return,
+                    // ... 添加更多特殊键
+                    s if s.len() == 1 => enigo::Key::Unicode(s.chars().next().unwrap()),
+                    _ => return Err(ParseError::UnknownKey(key_str.to_string())),
+                };
+                set_primary(
+                    &mut primary_action,
+                    PrimaryAction::KeyPress {
+                        key,
+                    },
+                )?;
+            }
+        }
+    }
+
+    if let Some(primary) = primary_action {
+        Ok(Action { modifiers, primary })
+    } else {
+        Err(ParseError::NoPrimaryAction)
+    }
+}
+
+// 辅助函数，确保只有一个主操作被设置
+fn set_primary(
+    primary_field: &mut Option<PrimaryAction>,
+    action: PrimaryAction,
+) -> Result<(), ParseError> {
+    if primary_field.is_some() {
+        Err(ParseError::MultiplePrimaryActions)
+    } else {
+        *primary_field = Some(action);
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 pub enum EnigoCommand {
-    PressComposedKeys(Vec<enigo::Key>),
-    // 可扩展更多命令：MouseClick、MouseMove 等
+    Execute(Action),
 }
 
 pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
@@ -360,41 +490,78 @@ fn enigo_worker(rx: Receiver<EnigoCommand>) {
 
     while let Ok(cmd) = rx.recv() {
         match cmd {
-            EnigoCommand::PressComposedKeys(keys) => {
-                press_composed_keys(&mut enigo, &keys);
+            EnigoCommand::Execute(action) => {
+                // 1. 按下所有修饰键
+                for modifier in &action.modifiers {
+                    enigo
+                        .key(*modifier, enigo::Direction::Press)
+                        .expect("Failed to press modifier key");
+                }
+
+                // 2. 执行主操作
+                match action.primary {
+                    PrimaryAction::KeyPress { key } => {
+                        enigo
+                            .key(
+                                key,
+                                enigo::Direction::Click,
+                            )
+                            .expect("Failed to press key"); // 按下并释放
+                    }
+                    PrimaryAction::MouseClick { button } => {
+                        enigo
+                            .button(button, enigo::Direction::Click)
+                            .expect("Failed to clicked mouse button");
+                    }
+                    PrimaryAction::MouseWheel { amount } => {
+                        enigo
+                            .scroll(amount, enigo::Axis::Vertical)
+                            .expect("Failed to scroll mouse weight");
+                    }
+                }
+
+                // 3. 释放所有修饰键 (以相反顺序)
+                for modifier in action.modifiers.iter().rev() {
+                    enigo.key(*modifier, enigo::Direction::Release)
+                        .expect("Failed to release modifier key");
+                }
             }
-            // TODO: MouseClick、 MouseScroll
         }
     }
 }
 
-/// 映射主逻辑
+pub static KEYBOARD_TRIGGER_STATES_MAP: Lazy<RwLock<HashMap<ControllerButtons, TriggerState>>> =
+    Lazy::new(|| RwLock::from(HashMap::new()));
+
+pub static KEYBOARD_TRIGGER_STATES: Lazy<RwLock<TriggerState>> =
+    Lazy::new(|| RwLock::from(TriggerState::new(300, 50, 0.9)));
+
+
+pub static DYNAMIC_TRIGGER_STATES: Lazy<RwLock<HashMap<u64, TriggerState>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+
 pub fn map(device: &DeviceInfo, controller_datas: &ControllerDatas) {
-    let mappings = GLOBAL_MAPPING_CACHE.read().unwrap();
+    let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
+    let layout_map = get_xbox_layout_map(); // 假设
+    let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
 
-    // ✅ layout_map 只获取一次
-    let  layout_map = match device.controller_type {
-        ControllerType::Xbox => get_xbox_layout_map(),
-        _ => get_xbox_layout_map(),
-    };
+    for mapping in mappings.iter_mut() {
+        // 改为 iter_mut() 以便修改 trigger_state
+        if let Some(button) = layout_map.get(mapping.get_composed_button()) {
+            if controller_datas.get_button(*button) {
+                let trigger_state = trigger_states
+                    .entry(mapping.get_id())
+                    .or_insert_with(|| mapping.trigger_state.clone());
 
-    for mapping in mappings.iter() {
-        if let Some(button) = layout_map.get(mapping.get_controller_button()) {
-            match mapping.get_mapping_type() {
-                MappingType::Keyboard => {
-                    // TODO: trigger gaps
-                    let is_pressed = controller_datas.get_button(*button);
-                    if is_pressed {
-                        let keys = parse_composed_key(mapping.get_composed_key());
-                        ENIGO_SENDER.send(EnigoCommand::PressComposedKeys(keys)).unwrap();
-                    }
+                if trigger_state.should_trigger() {
+                    // 只需发送解析好的 Action 即可！
+                    ENIGO_SENDER
+                        .send(EnigoCommand::Execute(mapping.action.clone()))
+                        .unwrap();
                 }
-                MappingType::MouseButton => {
-                    // TODO: MouseButton
-                }
-                MappingType::MouseWheel => {
-                    // TODO: MouseWheel
-                }
+            } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
+                state.reset();
             }
         }
     }
