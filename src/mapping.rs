@@ -1,23 +1,32 @@
 #![allow(dead_code)]
 
-use crate::controller::controller::{DeviceInfo};
+// --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
+use crate::controller::controller::DeviceInfo;
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{RwLock, RwLockReadGuard};
 use std::thread;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
+// --- 数据结构定义 (•̀ω•́)✧ ---
+
+/// 触发状态，用于控制按键的重复触发和加速。
+/// 当按键被持续按下时，它会以一定的间隔重复触发，并且间隔会逐渐减小（加速）。
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct TriggerState {
+    /// 当前触发间隔（毫秒）。
     interval: u64,
+    /// 初始触发间隔（毫秒），用于重置。
     initial_interval: u64,
+    /// 最小触发间隔（毫秒），用于限制加速后的最小间隔。
     min_interval: u64,
+    /// 加速因子，每次触发后，间隔会乘以这个值。
     acceleration: f64,
 
     #[serde(skip)] // 跳过序列化和反序列化
@@ -26,12 +35,17 @@ pub struct TriggerState {
 }
 
 impl TriggerState {
+    /// 默认的 `Instant::now()` 函数，用于反序列化时初始化。
     fn default_instant() -> Instant {
         Instant::now()
     }
+
+    /// 创建一个带有默认参数的 `TriggerState`。
     pub fn default() -> Self {
         Self::new(300, 100, 0.8)
     }
+
+    /// 使用指定的参数创建一个新的 `TriggerState`。
     pub fn new(initial_interval: u64, min_interval: u64, acceleration: f64) -> Self {
         Self {
             interval: initial_interval,
@@ -42,9 +56,11 @@ impl TriggerState {
         }
     }
 
+    /// 检查是否应该触发。如果自上次触发以来经过的时间超过了当前间隔，则返回 `true`。
+    /// 触发后，会自动更新下一次的触发间隔（加速）。
     pub fn should_trigger(&mut self) -> bool {
         if self.last_trigger.elapsed().as_millis() as u64 >= self.interval {
-            // 触发后加速
+            // 触发后加速，更新间隔时间
             self.interval =
                 ((self.interval as f64) * self.acceleration).max(self.min_interval as f64) as u64;
             self.last_trigger = Instant::now();
@@ -54,32 +70,35 @@ impl TriggerState {
         }
     }
 
+    /// 重置触发状态到初始间隔。
     pub fn reset(&mut self) {
         self.interval = self.initial_interval;
     }
 }
 
+/// 映射配置，将一个手柄按钮组合映射到一个键盘或鼠标操作。
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct Mapping {
+    /// 映射的唯一标识符。
     id: u64,
+    /// 组合后的手柄按钮字符串，例如 "A+B"。
     composed_button: String,
+    /// 组合后的快捷键字符串，例如 "Ctrl+C"。
     composed_shortcut_key: String,
 
     #[serde(flatten)]
+    /// 解析后的实际操作指令。
     action: Action,
 
-    // 触发选项
+    /// 触发选项，用于控制按键的重复触发行为。
     #[serde(flatten)]
     trigger_state: TriggerState,
 }
 
 impl Mapping {
-    pub fn new(
-        id: u64,
-        composed_button: String,
-        composed_shortcut_key: String,
-    ) -> Self {
+    /// 创建一个带有默认 `Action` 和 `TriggerState` 的新 `Mapping`。
+    pub fn new(id: u64, composed_button: String, composed_shortcut_key: String) -> Self {
         Self {
             id,
             composed_button,
@@ -89,36 +108,118 @@ impl Mapping {
         }
     }
 
+    /// 获取映射的唯一 ID。
     pub fn get_id(&self) -> u64 {
         self.id
     }
 
+    /// 获取映射的手柄按钮组合字符串。
     pub fn get_composed_button(&self) -> &str {
         &self.composed_button
     }
 
+    /// 获取映射的快捷键组合字符串。
     pub fn get_composed_key(&self) -> &str {
         &self.composed_shortcut_key
     }
 }
 
-// 包装结构体用于文件序列化
+/// 包装结构体，用于文件序列化和反序列化。
 #[derive(Serialize, Deserialize)]
 struct MappingFile {
     mappings: Vec<Mapping>,
 }
 
-// pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> =
-//     Lazy::new(|| RwLock::new(load_mappings_internal()));
+// --- 操作指令相关定义 (๑>؂<๑)۶ ---
 
+/// 主要操作类型，代表一个具体的键盘按键、鼠标点击或滚轮事件。
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "snake_case", untagged)]
+pub enum PrimaryAction {
+    /// 按下一个键盘按键。
+    KeyPress {
+        #[serde(flatten)]
+        key: enigo::Key,
+    },
+    /// 点击一个鼠标按钮。
+    MouseClick { button: enigo::Button },
+    /// 滚动鼠标滚轮。
+    MouseWheel { amount: i32 },
+}
+
+/// 完整的操作指令，包含修饰键和主要操作。
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub struct Action {
+    /// 需要按下的修饰键列表，如 `[Key::Shift, Key::Control]`。
+    pub modifiers: Vec<enigo::Key>,
+
+    #[serde(flatten)]
+    /// 最终执行的核心动作。
+    pub primary: PrimaryAction,
+}
+
+impl Action {
+    /// 创建一个默认的 `Action`，其主要操作为按下空格键。
+    pub fn default() -> Action {
+        Action {
+            modifiers: vec![],
+            primary: PrimaryAction::KeyPress {
+                key: enigo::Key::Space,
+            },
+        }
+    }
+}
+
+// --- 错误处理和辅助类型 (•ω•) ---
+
+/// 解析错误类型。
+#[derive(Debug)]
+pub enum ParseError {
+    /// 没有找到主操作。
+    NoPrimaryAction,
+    /// 找到了多个主操作。
+    MultiplePrimaryActions,
+    /// 无法识别的按键字符串。
+    UnknownKey(String),
+}
+
+/// Enigo 命令类型，用于工作线程间通信。
+#[derive(Debug)]
+pub enum EnigoCommand {
+    /// 执行一个 `Action`。
+    Execute(Action),
+}
+
+// --- 全局静态变量 (づ￣ 3￣)づ ---
+
+/// 全局映射配置缓存，使用 `RwLock` 确保线程安全。
 pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| {
     let mappings = vec![];
     RwLock::new(mappings)
 });
 
+/// TOML 配置文件名。
 const MAPPINGS_FILE: &str = "mappings.toml";
 
-/// 内部加载映射实现
+/// 全局手柄按键布局映射，例如将 "Y" 映射到 `ControllerButtons::North`。
+pub static XBOX_LAYOUT_MAP: Lazy<RwLock<HashMap<&'static str, ControllerButtons>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+/// 动态触发状态，存储每个映射的触发状态。
+pub static DYNAMIC_TRIGGER_STATES: Lazy<RwLock<HashMap<u64, TriggerState>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+/// Enigo 工作线程的发送器，用于向其发送执行命令。
+pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
+    let (tx, rx): (Sender<EnigoCommand>, Receiver<EnigoCommand>) = channel();
+    // 启动工作线程来处理 Enigo 命令
+    thread::spawn(move || enigo_worker(rx));
+    tx
+});
+
+// --- 核心逻辑函数 (ﾉ>ω<)ﾉ ---
+
+/// 内部加载映射配置的实现，从文件读取。
 fn load_mappings_internal() -> Vec<Mapping> {
     let mappings_path = xeno_utils::get_config_path(MAPPINGS_FILE);
 
@@ -144,14 +245,14 @@ fn load_mappings_internal() -> Vec<Mapping> {
     }
 }
 
-/// 加载应用到全局映射缓存
+/// 将映射配置加载到全局缓存中。
 pub fn load_mappings() {
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
     *cache = load_mappings_internal();
     log::info!("映射缓存已加载 {:#?}", cache);
 }
 
-/// 保存全局映射缓存到文件
+/// 将全局映射缓存保存到文件中。
 pub fn save_mappings() {
     // 确保配置目录存在
     xeno_utils::ensure_config_dir();
@@ -165,15 +266,16 @@ pub fn save_mappings() {
 
     match xeno_utils::write_toml_file(&mappings_path, &mapping_file) {
         Ok(_) => log::info!("映射配置已保存到: {:?}", mappings_path),
-        Err(e) => log::error!("保存映射配置失败: {:#?}", e),
+        Err(e) => log::error!("保存映射配置失败: {:#?} {:#?}", e, mappings),
     }
 }
 
-/// 获取当前映射（线程安全）
+/// 获取当前映射配置的内部实现（线程安全）。
 pub fn get_mappings_internal() -> Vec<Mapping> {
     GLOBAL_MAPPING_CACHE.read().unwrap().clone()
 }
 
+/// Tauri 命令：设置所有映射配置。
 #[tauri::command]
 pub fn set_mapping(mapping: Vec<Mapping>) {
     log::debug!("更新映射配置: {:#?}", mapping);
@@ -181,10 +283,12 @@ pub fn set_mapping(mapping: Vec<Mapping>) {
         let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
         *cache = mapping;
     }
-    save_mappings(); // 更新后立即保存
+    // 更新后立即保存
+    save_mappings();
     log::debug!("映射缓存已更新并保存");
 }
 
+/// Tauri 命令：更新一个已存在的映射配置。
 #[tauri::command]
 pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: String) -> bool {
     match parse_composed_key_to_action(&composed_shortcut_key) {
@@ -209,10 +313,15 @@ pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: S
     }
 }
 
+/// Tauri 命令：添加一个新的映射配置。
 #[tauri::command]
 pub fn add_mapping(composed_button: String, composed_shortcut_key: String) -> bool {
-    log::debug!("请求添加映射配置: '{}', '{}'", composed_button, composed_shortcut_key);
-    // 调用解析器
+    log::debug!(
+        "请求添加映射配置: '{}', '{}'",
+        composed_button,
+        composed_shortcut_key
+    );
+    // 调用解析器来生成 Action
     match parse_composed_key_to_action(&composed_shortcut_key) {
         Ok(action) => {
             let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
@@ -242,6 +351,7 @@ pub fn add_mapping(composed_button: String, composed_shortcut_key: String) -> bo
     }
 }
 
+/// Tauri 命令：根据 ID 删除一个映射配置。
 #[tauri::command]
 pub fn delete_mapping(id: u64) -> bool {
     log::debug!("请求删除 id {} 的映射配置", id);
@@ -251,12 +361,9 @@ pub fn delete_mapping(id: u64) -> bool {
     // 使用 retain 方法高效地移除指定 id 的项
     cache.retain(|m| m.get_id() != id);
 
-    // 检查是否有元素被真的删除了
     let deleted = cache.len() < initial_len;
 
     if deleted {
-        // 因为状态已改变，所以需要保存
-        // 在调用 save_mappings 之前释放锁，避免死锁
         drop(cache);
         save_mappings();
         log::info!("已成功删除 id {} 的映射", id);
@@ -264,66 +371,25 @@ pub fn delete_mapping(id: u64) -> bool {
         log::warn!("尝试删除一个不存在的映射 id: {}", id);
     }
 
-    // 返回操作是否成功
     deleted
 }
 
-// 显式保存映射命令
+/// Tauri 命令：显式请求保存映射配置。
 #[tauri::command]
 pub fn save_mapping_config() {
     log::debug!("前端请求保存映射配置");
     save_mappings();
 }
 
-// 获取当前映射配置
+/// Tauri 命令：获取当前所有映射配置。
 #[tauri::command]
 pub fn get_mappings() -> Vec<Mapping> {
     get_mappings_internal()
 }
 
-pub fn initialize() {
-    log::debug!("初始化映射模块");
-    // 确保全局映射缓存已加载
-    load_mappings();
-}
+// --- 按键解析和执行 (ง •_•)ง ---
 
-
-fn press_composed_keys(enigo: &mut Enigo, keys: &[enigo::Key]) {
-    // 按下组合键
-    for key in keys {
-        enigo.key(key.clone(), enigo::Direction::Press);
-    }
-
-    // 松开组合键（逆序）
-    for key in keys.iter().rev() {
-        enigo.key(key.clone(), enigo::Direction::Release);
-    }
-}
-
-
-fn parse_composed_key(composed: &str) -> Vec<enigo::Key> {
-    composed
-        .split('+')
-        .map(|k| k.trim())
-        .filter_map(|k| match k.to_lowercase().as_str() {
-            "ctrl" | "control" => Some(enigo::Key::Control),
-            "shift" => Some(enigo::Key::Shift),
-            "alt" => Some(enigo::Key::Alt),
-            "meta" | "cmd" | "win" => Some(enigo::Key::Meta),
-            "space" | " " => Some(enigo::Key::Unicode(' ')),
-            // "MouseLeft" => Some(enigo::Button::),
-            s if s.len() == 1 => {
-                let c = s.chars().next().unwrap();
-                Some(enigo::Key::Unicode(c))
-            }
-            _ => None,
-        })
-        .collect()
-}
-
-pub static XBOX_LAYOUT_MAP: Lazy<RwLock<HashMap<&'static str, ControllerButtons>>> =
-    Lazy::new(|| RwLock::new(HashMap::new()));
-
+/// 初始化 Xbox 手柄按键布局映射。
 fn init_if_needed() {
     let mut map = XBOX_LAYOUT_MAP.write().unwrap();
     if map.is_empty() {
@@ -336,50 +402,27 @@ fn init_if_needed() {
     }
 }
 
+/// 获取 Xbox 手柄按键布局映射的只读锁。
 fn get_xbox_layout_map() -> RwLockReadGuard<'static, HashMap<&'static str, ControllerButtons>> {
     init_if_needed();
     XBOX_LAYOUT_MAP.read().unwrap()
 }
 
-// --- 新增：定义主操作 ---
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "snake_case", untagged)]
-pub enum PrimaryAction {
-    KeyPress {
-        #[serde(flatten)]
-        key: enigo::Key
-    },
-    MouseClick { button: enigo::Button },
-    MouseWheel { amount: i32 },
-}
-
-// --- 新增：定义完整的操作指令 ---
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-pub struct Action {
-    pub modifiers: Vec<enigo::Key>, // 需要按下的修饰键，如 [Key::Shift, Key::Control]
-
-    #[serde(flatten)]
-    pub primary: PrimaryAction, // 最终执行的核心动作
-}
-
-impl Action {
-    pub fn default() -> Action {
-        Action {
-            modifiers: vec![],
-            primary: PrimaryAction::KeyPress { key: enigo::Key::Space },
-        }
+/// 辅助函数，确保只有一个主操作被设置，防止按键组合解析错误。
+fn set_primary(
+    primary_field: &mut Option<PrimaryAction>,
+    action: PrimaryAction,
+) -> Result<(), ParseError> {
+    if primary_field.is_some() {
+        Err(ParseError::MultiplePrimaryActions)
+    } else {
+        *primary_field = Some(action);
+        Ok(())
     }
 }
 
-// 定义一个简单的错误类型
-#[derive(Debug)]
-pub enum ParseError {
-    NoPrimaryAction,
-    MultiplePrimaryActions,
-    UnknownKey(String),
-}
-
-/// 解析按键组合字符串，生成结构化的 Action
+/// 解析按键组合字符串，生成结构化的 `Action`。
+/// 例如 "Ctrl+Alt+A" 会被解析成一个带有 `[Control, Alt]` 修饰键和 `KeyPress { key: 'A' }` 主操作的 `Action`。
 fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
     let mut modifiers = Vec::new();
     let mut primary_action = None;
@@ -439,10 +482,8 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                 set_primary(&mut primary_action, PrimaryAction::MouseWheel { amount: 1 })?
             }
 
-            // 主操作 - 其他键盘按键 (简化处理)
+            // 主操作 - 其他键盘按键
             key_str => {
-                // 这里可以用更复杂的逻辑来映射所有 enigo::Key
-                // 例如 F1-F12, Space, Enter 等
                 let key = match key_str {
                     "space" => enigo::Key::Space,
                     "enter" => enigo::Key::Unicode('\r'),
@@ -450,12 +491,8 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                     s if s.len() == 1 => enigo::Key::Unicode(s.chars().next().unwrap()),
                     _ => return Err(ParseError::UnknownKey(key_str.to_string())),
                 };
-                set_primary(
-                    &mut primary_action,
-                    PrimaryAction::KeyPress {
-                        key,
-                    },
-                )?;
+                log::debug!("-----------------{:#?}", key);
+                set_primary(&mut primary_action, PrimaryAction::KeyPress { key })?;
             }
         }
     }
@@ -467,31 +504,12 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
     }
 }
 
-// 辅助函数，确保只有一个主操作被设置
-fn set_primary(
-    primary_field: &mut Option<PrimaryAction>,
-    action: PrimaryAction,
-) -> Result<(), ParseError> {
-    if primary_field.is_some() {
-        Err(ParseError::MultiplePrimaryActions)
-    } else {
-        *primary_field = Some(action);
-        Ok(())
-    }
-}
+// --- 工作线程和初始化 (ﾉ´▽｀)ﾉ♪ ---
 
-#[derive(Debug)]
-pub enum EnigoCommand {
-    Execute(Action),
-}
-
-pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
-    let (tx, rx): (Sender<EnigoCommand>, Receiver<EnigoCommand>) = channel();
-    thread::spawn(move || enigo_worker(rx)); // 启动工作线程
-    tx
-});
-
+/// Enigo 工作线程，接收命令并执行实际的键盘/鼠标操作。
+/// 所有 Enigo 的操作都在这个线程中完成，以避免与主线程的阻塞和冲突。
 fn enigo_worker(rx: Receiver<EnigoCommand>) {
+    // 创建 Enigo 实例
     let mut enigo = Enigo::new(&enigo::Settings::default()).unwrap();
 
     while let Ok(cmd) = rx.recv() {
@@ -508,10 +526,7 @@ fn enigo_worker(rx: Receiver<EnigoCommand>) {
                 match action.primary {
                     PrimaryAction::KeyPress { key } => {
                         enigo
-                            .key(
-                                key,
-                                enigo::Direction::Click,
-                            )
+                            .key(key, enigo::Direction::Click)
                             .expect("Failed to press key"); // 按下并释放
                     }
                     PrimaryAction::MouseClick { button } => {
@@ -528,7 +543,8 @@ fn enigo_worker(rx: Receiver<EnigoCommand>) {
 
                 // 3. 释放所有修饰键 (以相反顺序)
                 for modifier in action.modifiers.iter().rev() {
-                    enigo.key(*modifier, enigo::Direction::Release)
+                    enigo
+                        .key(*modifier, enigo::Direction::Release)
                         .expect("Failed to release modifier key");
                 }
             }
@@ -536,30 +552,34 @@ fn enigo_worker(rx: Receiver<EnigoCommand>) {
     }
 }
 
-pub static KEYBOARD_TRIGGER_STATES_MAP: Lazy<RwLock<HashMap<ControllerButtons, TriggerState>>> =
-    Lazy::new(|| RwLock::from(HashMap::new()));
+/// 初始化函数，在程序启动时调用。
+/// 主要用于加载映射配置，确保程序可以正常运行。
+pub fn initialize() {
+    log::debug!("初始化映射模块");
+    // 确保全局映射缓存已加载
+    load_mappings();
+}
 
-pub static KEYBOARD_TRIGGER_STATES: Lazy<RwLock<TriggerState>> =
-    Lazy::new(|| RwLock::from(TriggerState::new(300, 50, 0.9)));
-
-
-pub static DYNAMIC_TRIGGER_STATES: Lazy<RwLock<HashMap<u64, TriggerState>>> =
-    Lazy::new(|| RwLock::new(HashMap::new()));
-
-
+/// 核心映射函数，将手柄输入映射到相应的操作。
+/// 遍历所有映射配置，检查手柄状态，并触发相应的操作。
 pub fn map(device: &DeviceInfo, controller_datas: &ControllerDatas) {
+    // 获取可写的映射配置和触发状态，以及只读的布局映射
     let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
-    let layout_map = get_xbox_layout_map(); // 假设
+    let layout_map = get_xbox_layout_map();
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
 
+    // 遍历所有映射
     for mapping in mappings.iter_mut() {
-        // 改为 iter_mut() 以便修改 trigger_state
+        // 根据手柄按钮字符串获取对应的枚举值
         if let Some(button) = layout_map.get(mapping.get_composed_button()) {
+            // 检查该手柄按钮是否被按下
             if controller_datas.get_button(*button) {
+                // 获取或插入该映射的触发状态
                 let trigger_state = trigger_states
                     .entry(mapping.get_id())
                     .or_insert_with(|| mapping.trigger_state.clone());
 
+                // 检查是否可以触发操作
                 if trigger_state.should_trigger() {
                     // 只需发送解析好的 Action 即可！
                     ENIGO_SENDER
@@ -567,6 +587,7 @@ pub fn map(device: &DeviceInfo, controller_datas: &ControllerDatas) {
                         .unwrap();
                 }
             } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
+                // 如果按钮未被按下，重置触发状态
                 state.reset();
             }
         }
