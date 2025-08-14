@@ -28,19 +28,19 @@ mod xeno_utils;
 
 #[tauri::command]
 fn hide_current_window(window: Window) -> Result<(), String> {
-    window.hide().map_err(|e| format!("隐藏窗口失败: {}", e))
+    window.hide().map_err(|e| format!("隐藏窗口失败: {e}"))
 }
 
 #[tauri::command]
 fn close_current_window(window: Window) -> Result<(), String> {
-    window.close().map_err(|e| format!("关闭窗口失败: {}", e))
+    window.close().map_err(|e| format!("关闭窗口失败: {e}"))
 }
 
 #[tauri::command]
 fn minimize_current_window(window: Window) -> Result<(), String> {
     window
         .minimize()
-        .map_err(|e| format!("最小化窗口失败: {}", e))
+        .map_err(|e| format!("最小化窗口失败: {e}"))
 }
 
 #[tauri::command]
@@ -135,8 +135,12 @@ pub fn run() {
 
             setting::get_current_settings,
             setting::update_settings,
+
             mapping::set_mapping,
             mapping::get_mappings,
+            mapping::update_mapping,
+            mapping::add_mapping,
+            mapping::delete_mapping,
 
             preset::preset_test,
             preset::preset_test2,

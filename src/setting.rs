@@ -4,6 +4,7 @@ use crate::xeno_utils;
 use anyhow::{Context, Result};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use std::sync::RwLock;
 use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
 
