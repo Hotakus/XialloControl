@@ -920,6 +920,7 @@ dependencies = [
  "objc2 0.6.1",
  "objc2-app-kit",
  "objc2-foundation 0.3.1",
+ "serde",
  "windows",
  "x11rb",
  "xkbcommon",
