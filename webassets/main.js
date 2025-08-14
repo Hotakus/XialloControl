@@ -714,7 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         uiElements.importPreset?.addEventListener('click', function () {
             updateStatusMessage('预设方案导入成功');
-            invoke("preset_test2");
+            invoke("_create_child_window");
         });
 
         // 死区设置

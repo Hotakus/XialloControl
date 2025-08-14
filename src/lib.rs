@@ -54,6 +54,62 @@ fn get_platform() -> String {
     std::env::consts::OS.to_string() // "linux" | "windows" | "macos" 等
 }
 
+#[tauri::command]
+fn _create_child_window(app_handle: AppHandle) {
+    let child_window = app_handle.get_webview_window("child");
+    child_window
+        .unwrap()
+        .show()
+        .unwrap_or_else(|e| log::error!("Failed to show child window: {e}"));
+}
+
+fn create_child_window(app_handle: AppHandle) -> WebviewWindow {
+    // 判断是否为 Windows 平台
+    #[cfg(target_os = "windows")]
+    let decorations = false;
+    #[cfg(not(target_os = "windows"))]
+    let decorations = true;
+
+    WebviewWindowBuilder::new(
+        &app_handle.clone(),
+        "child",
+        WebviewUrl::App("child.html".into()),
+    )
+    .title("child")
+    .inner_size(800.0, 620.0)
+    .resizable(false)
+    .fullscreen(false)
+    .decorations(decorations)
+    .transparent(false)
+    .maximizable(false)
+    .visible(false)
+    .build()
+    .expect("Failed to create child window")
+}
+
+fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
+    // 判断是否为 Windows 平台
+    #[cfg(target_os = "windows")]
+    let decorations = false;
+    #[cfg(not(target_os = "windows"))]
+    let decorations = true;
+
+    WebviewWindowBuilder::new(
+        &app_handle.clone(),
+        "main",
+        WebviewUrl::App("index.html".into()),
+    )
+    .title("XenoControl")
+    .inner_size(1080.0, 720.0)
+    .resizable(false)
+    .fullscreen(false)
+    .decorations(decorations)
+    .transparent(false)
+    .maximizable(false)
+    .build()
+    .expect("Failed to create main window")
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -67,6 +123,7 @@ pub fn run() {
             minimize_current_window,
             open_url,
             get_platform,
+            _create_child_window,
 
             controller::controller::query_devices,
             controller::controller::use_device,
@@ -88,25 +145,25 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle();
 
-            // 判断是否为 Windows 平台
-            #[cfg(target_os = "windows")]
-            let decorations = false;
-            #[cfg(not(target_os = "windows"))]
-            let decorations = true;
+            let main_window = create_main_window(app_handle.clone());
+            let child_window = create_child_window(app_handle.clone());
 
-            WebviewWindowBuilder::new(
-                &app_handle.clone(),
-                "main",
-                WebviewUrl::App("index.html".into()),
-            )
-            .title("XenoControl")
-            .inner_size(1080.0, 720.0)
-            .resizable(false)
-            .fullscreen(false)
-            .decorations(decorations)
-            .transparent(false)
-            .maximizable(false)
-            .build()?;
+            let child_windows_list = vec![
+                child_window.clone(),
+            ];
+
+            main_window.on_window_event({
+                let app_handle = app_handle.clone(); // 闭包再 clone 一次，保证 'static
+                move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api: _, .. } = event {
+                        log::info!("Main window close requested");
+                        for w in &child_windows_list {
+                            w.close().unwrap_or_else(|e| log::error!("Failed to close child window: {e}"));
+                        }
+                        app_handle.exit(0);
+                    }
+                }
+            });
 
             let _ = adaptive_sampler::initialize();
             let _ = tray::initialize(app_handle.clone());
