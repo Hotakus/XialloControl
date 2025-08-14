@@ -356,10 +356,12 @@ pub async fn use_device(device_name: String) -> bool {
 /// 断开当前设备命令 (Tauri 前端调用)
 #[tauri::command]
 pub async fn disconnect_device() -> bool {
-    log::debug!("尝试断开设备连接");
-    let mut current_device = CURRENT_DEVICE.write().unwrap();
-    *current_device = default_devices()[0].clone();
-    log::info!("✅ 已断开当前设备");
+    _disconnect_device();
+    let app_handle = get_app_handle();
+    if let Err(e) = app_handle.emit("physical_connect_status", false) {
+        log::error!("发送 physical_connect_status 事件失败: {e}");
+        return false
+    }
     true
 }
 
@@ -539,11 +541,10 @@ pub fn listen() {
 }
 
 pub fn _disconnect_device() {
-    disconnect_device();
-    let app_handle = get_app_handle();
-    if let Err(e) = app_handle.emit("physical_connect_status", false) {
-        log::error!("发送 physical_connect_status 事件失败: {e}");
-    }
+    log::debug!("尝试断开设备连接");
+    let mut current_device = CURRENT_DEVICE.write().unwrap();
+    *current_device = default_devices()[0].clone();
+    log::info!("✅ 已断开当前设备");
 }
 
 /// 初始化 Gilrs 事件监听线程
