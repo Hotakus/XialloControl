@@ -384,7 +384,13 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
     let mut modifiers = Vec::new();
     let mut primary_action = None;
 
-    for part in composed.split('+').map(|s| s.trim()) {
+    for part in composed.split('+').map(|s| {
+        if s.len() > 1 {
+            s.trim().to_string()
+        } else {
+            s.to_owned()
+        }
+    }) {
         match part.to_lowercase().as_str() {
             // 修饰键
             "ctrl" | "control" => modifiers.push(enigo::Key::Control),
@@ -439,8 +445,8 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                 // 例如 F1-F12, Space, Enter 等
                 let key = match key_str {
                     "space" => enigo::Key::Space,
-                    "enter" => enigo::Key::Return,
-                    // ... 添加更多特殊键
+                    "enter" => enigo::Key::Unicode('\r'),
+                    // 匹配单个字符的按键
                     s if s.len() == 1 => enigo::Key::Unicode(s.chars().next().unwrap()),
                     _ => return Err(ParseError::UnknownKey(key_str.to_string())),
                 };
