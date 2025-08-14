@@ -801,43 +801,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            let result = false;
             if (state.editingMappingId) {
-                const mapping = state.mappings.find(m => m.id === state.editingMappingId);
-                if (mapping) {
-                    mapping.composed_button = composed_button;
-                    mapping.composed_shortcut_key = raw_shortcut_key; // 保存英文原始值
-                }
-            } else {
-                let keyboard_type = "keyboard";
-
-                switch (raw_shortcut_key) {
-                    case "MouseLeft":
-                    case "MouseRight":
-                    case "MouseMiddle":
-                    case "MouseX1":
-                    case "MouseX2":
-                        keyboard_type = "mouse_button";
-                        break;
-
-                    case "MouseWheelUp":
-                    case "MouseWheelDown":
-                        keyboard_type = "mouse_wheel";
-                        break;
-
-                    // 可以加个 default 看情况
-                    default:
-                      keyboard_type = "keyboard";
-                }
-
-                state.mappings.push({
-                    id: Date.now(),
-                    composed_button: composed_button,
-                    composed_shortcut_key: raw_shortcut_key, // 保存英文原始值
-                    mapping_type: keyboard_type
+                result = await invoke("update_mapping", {
+                    id: state.editingMappingId, // 'id' is the same in both cases
+                    composedButton: composed_button,
+                    composedShortcutKey: raw_shortcut_key,
+                    // mappingType: mapping_type
                 });
+                updateStatusMessage('按键映射已更新');
+            } else {
+                result = await invoke("add_mapping", {
+                    composedButton: composed_button,
+                    composedShortcutKey: raw_shortcut_key,
+                    // mappingType: mapping_type
+                });
+                updateStatusMessage('按键映射已添加');
             }
 
-            if (invoke) invoke('set_mapping', {mapping: state.mappings}); // 发送给后端的就是包含英文值的 state.mappings
+            if (result) {
+                // 保存成功，重新加载映射列表
+                loadMappings();
+            } else {
+                updateStatusMessage('按键映射操作失败', true);
+            }
+
             renderMappings();
             closeModalFunc();
         });
@@ -886,8 +874,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     // --- 逻辑结束 ---
                 }
             } else if (btn.classList.contains('delete')) {
-                state.mappings = state.mappings.filter(m => m.id !== mappingId);
-                if (invoke) invoke('set_mapping', {mapping: state.mappings});
+                invoke('delete_mapping', {id: mappingId})
+                    .then(success => {
+                        if (success) {
+                            updateStatusMessage('映射已删除');
+                            // 从后端重新加载列表，保证数据同步
+                            loadMappings();
+                        } else {
+                            updateStatusMessage('删除映射失败，项目可能已被移除', true);
+                        }
+                    })
+                    .catch(err => {
+                        updateStatusMessage(`删除失败: ${err}`, true);
+                    });
                 renderMappings();
             }
         });

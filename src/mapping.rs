@@ -143,6 +143,89 @@ pub fn set_mapping(mapping: Vec<Mapping>) {
     log::debug!("映射缓存已更新并保存");
 }
 
+#[tauri::command]
+pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: String) -> bool {
+    match parse_composed_key_to_action(&composed_shortcut_key) {
+        Ok(action) => {
+            let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+            if let Some(mapping) = cache.iter_mut().find(|m| m.id == id) {
+                mapping.composed_button = composed_button;
+                mapping.composed_shortcut_key = composed_shortcut_key;
+                mapping.action = action; // <-- 更新解析结果
+
+                drop(cache);
+                save_mappings();
+                return true;
+            }
+            log::error!("更新失败，未找到 id {id} 的映射");
+            false
+        }
+        Err(e) => {
+            log::error!("解析快捷键失败 '{composed_shortcut_key}': {e:?}");
+            false
+        }
+    }
+}
+
+#[tauri::command]
+pub fn add_mapping(composed_button: String, composed_shortcut_key: String) -> bool {
+    log::debug!("请求添加映射配置: '{}', '{}'", composed_button, composed_shortcut_key);
+    // 调用解析器
+    match parse_composed_key_to_action(&composed_shortcut_key) {
+        Ok(action) => {
+            let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+            let id = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64;
+
+            // 创建包含 Action 的新 Mapping
+            let mapping = Mapping {
+                id,
+                composed_button,
+                composed_shortcut_key,
+                action, // <-- 存储解析结果
+                trigger_state: TriggerState::default(),
+            };
+
+            cache.push(mapping);
+            drop(cache);
+            save_mappings();
+            true
+        }
+        Err(e) => {
+            log::error!("解析快捷键失败 '{composed_shortcut_key}': {e:?}");
+            false
+        }
+    }
+}
+
+#[tauri::command]
+pub fn delete_mapping(id: u64) -> bool {
+    log::debug!("请求删除 id {} 的映射配置", id);
+    let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+    let initial_len = cache.len();
+
+    // 使用 retain 方法高效地移除指定 id 的项
+    cache.retain(|m| m.get_id() != id);
+
+    // 检查是否有元素被真的删除了
+    let deleted = cache.len() < initial_len;
+
+    if deleted {
+        // 因为状态已改变，所以需要保存
+        // 在调用 save_mappings 之前释放锁，避免死锁
+        drop(cache);
+        save_mappings();
+        log::info!("已成功删除 id {} 的映射", id);
+    } else {
+        log::warn!("尝试删除一个不存在的映射 id: {}", id);
+    }
+
+    // 返回操作是否成功
+    deleted
+}
+
 // 显式保存映射命令
 #[tauri::command]
 pub fn save_mapping_config() {
