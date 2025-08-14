@@ -138,7 +138,6 @@ impl ControllerDatas {
     }
 
     pub fn set_button(&mut self, button: ControllerButtons, is_pressed: bool) {
-        let button_tmp = self.buttons;
         self.set_button_bit(button as u32, is_pressed);
     }
 

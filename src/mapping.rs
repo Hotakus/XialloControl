@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 // --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
-use crate::controller::controller::DeviceInfo;
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
@@ -249,7 +248,6 @@ fn load_mappings_internal() -> Vec<Mapping> {
 pub fn load_mappings() {
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
     *cache = load_mappings_internal();
-    log::info!("映射缓存已加载 {:#?}", cache);
 }
 
 /// 将全局映射缓存保存到文件中。
@@ -562,7 +560,7 @@ pub fn initialize() {
 
 /// 核心映射函数，将手柄输入映射到相应的操作。
 /// 遍历所有映射配置，检查手柄状态，并触发相应的操作。
-pub fn map(device: &DeviceInfo, controller_datas: &ControllerDatas) {
+pub fn map(controller_datas: &ControllerDatas) {
     // 获取可写的映射配置和触发状态，以及只读的布局映射
     let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
     let layout_map = get_xbox_layout_map();

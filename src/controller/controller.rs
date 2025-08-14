@@ -4,7 +4,7 @@
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::{mapping, xeno_utils};
-use gilrs::{Axis, Button, Event, EventType, Gamepad, GamepadId, Gilrs};
+use gilrs::{Axis, Button, Event, EventType, Gamepad, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -350,10 +350,6 @@ pub async fn use_device(device_name: String) -> bool {
             log::error!("❌ 未找到名为 '{device_name}' 的设备");
             false
         }
-        _ => {
-            log::error!("❌ 未知错误");
-            false
-        } // 无状态变化
     }
 }
 
@@ -530,7 +526,7 @@ pub fn listen() {
             // 执行设备状态轮询
             if let Some(device) = &last_device {
                 poll_controller(device);
-                mapping::map(device, &CONTROLLER_DATA.read().unwrap());
+                mapping::map(&CONTROLLER_DATA.read().unwrap());
             }
 
 
@@ -564,6 +560,7 @@ pub fn gilrs_listen() {
             if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap().as_mut() {
                 // 清空事件队列但不处理
                 while let Some(Event { event, id, .. }) = gilrs.next_event() {
+                    let _ = id;
                     if event == EventType::Disconnected {
                         #[cfg(target_os = "windows")]
                         {

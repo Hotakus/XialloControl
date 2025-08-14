@@ -1,6 +1,6 @@
 cfg_if::cfg_if! {
     if #[cfg(target_os = "windows")] {
-        use crate::controller::controller::{disconnect_device, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
+        use crate::controller::controller::{get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
     } else if #[cfg(target_os = "linux")] {
         use crate::controller::controller::{disconnect_device, DeviceInfo, CONTROLLER_DATA};
     }
