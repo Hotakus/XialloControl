@@ -4,7 +4,10 @@
   "version": "0.15.1",
   "identifier": "com.hotakus.xenocontrol",
   "build": {
-    "frontendDist": "./webassets"
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
   },
   "app": {
     "withGlobalTauri": true,
