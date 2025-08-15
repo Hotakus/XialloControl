@@ -1,0 +1,3 @@
+[submodule "src-tauri/third-party/gilrs"]
+	path = src-tauri/third-party/gilrs
+	url = https://github.com/Hotakus/gilrs.git
