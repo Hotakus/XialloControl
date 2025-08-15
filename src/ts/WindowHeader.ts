@@ -22,13 +22,19 @@ export async function updateTitlebar() {
 // ---------- 窗口按钮事件 ----------
 export function setupWindowButtons() {
     let minimizeButton = uiElements['minimize-button'];
+    let maximizeButton = uiElements['maximize-button'];
     let closeButton  = uiElements['close-button'];
 
-    if (!minimizeButton || !closeButton) return;
+    if (!minimizeButton || !closeButton || !maximizeButton) return;
 
     minimizeButton.addEventListener("click", async () => {
         console.log("minimize button clicked");
         await appWindow.minimize();
+    });
+
+    maximizeButton.addEventListener("click", async () => {
+        console.log("maximize button clicked");
+        await appWindow.toggleMaximize();
     });
 
     closeButton.addEventListener("click", async () => {

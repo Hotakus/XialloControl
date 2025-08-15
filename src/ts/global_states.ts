@@ -36,6 +36,7 @@ export async function initUIElements() {
         // 窗口控制相关
         'titlebar',
         'minimize-button',
+        "maximize-button",
         'close-button',
 
         // 设备连接相关

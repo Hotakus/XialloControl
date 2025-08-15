@@ -1,3 +1,27 @@
+/* 确保根元素和body占据整个视口 */
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* 并且把 body 的布局设置为 flexbox，以便居中和控制内容 */
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: transparent;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    -webkit-app-region: nodrag;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+
+    /* 核心调整：为绝对定位创建上下文 */
+    position: relative;
+}
+
 :root {
     --primary-bg: #2f3542;
     --primary-text: #ffffff;
@@ -12,28 +36,26 @@
     --modal-width: 500px;
     --danger: #e74c3c;
     --success: #2ecc71;
+    --indicator-off: #934242;
+    --indicator-on: #00dc72;
 }
 
 * {
     box-sizing: border-box;
 }
 
-body {
-    margin: 0;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background: transparent;
-    color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    -webkit-app-region: nodrag;
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-}
-
 .window {
-    width: 1080px;
-    height: 720px;
+    /* 终极修复！强制 .window 容器填满父容器 */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    /* 必须保留最小尺寸，以防窗口缩得太小 */
+    min-width: 1080px;
+    min-height: 720px;
+
     background: #ffffff;
     border-radius: var(--border-radius);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
@@ -53,6 +75,7 @@ body {
     user-select: none;
     -webkit-app-region: drag;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
+    flex-shrink: 0;
 }
 
 .window-header.hide {
@@ -72,17 +95,40 @@ body {
     width: 24px;
 }
 
+.window-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* 按钮之间的间距 */
+}
+
+/* window-header 里的按钮样式 */
 .window-header button {
     background: transparent;
     border: none;
     color: var(--primary-text);
-    font-size: 18px;
-    margin-left: 10px;
     cursor: pointer;
     -webkit-app-region: no-drag;
-    padding: 4px 8px;
-    border-radius: 50%;
+
+    /* 核心调整：设置固定的尺寸和圆角 */
+    width: 30px;      /* 按钮宽度 */
+    height: 30px;     /* 按钮高度，保持和宽度一致就是正方形了 */
+    border-radius: 50%; /* 变成圆形！ */
+
     transition: all 0.15s ease;
+
+    /* 让内部的 SVG 图标居中 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 按钮内部的 SVG 样式 */
+.window-header button svg {
+    fill: currentColor;
+
+    /* 核心调整：设置 SVG 的大小，让它更醒目！ */
+    width: 14px;
+    height: 14px;
 }
 
 .window-header button:hover {
@@ -118,6 +164,7 @@ body {
     display: flex;
     min-height: 0;
     padding: 0;
+    flex-grow: 1;
 }
 
 .left-panel {
@@ -129,6 +176,7 @@ body {
     gap: var(--gap);
     min-height: 0;
     border-radius: 0;
+    flex-grow: 1;
 }
 
 .right-panel {
@@ -140,6 +188,7 @@ body {
     gap: var(--gap);
     min-height: 0;
     border-radius: 0;
+    flex-grow: 1;
 }
 
 .card {
@@ -148,6 +197,7 @@ body {
     box-shadow: var(--card-shadow);
     padding: 15px 20px;
     margin: 0 var(--gap);
+    flex-shrink: 0;
 }
 
 .preset-card {
@@ -192,7 +242,6 @@ body {
     transform: translateY(-1px);
 }
 
-/* 增强预设按钮按下效果 */
 .preset-controls button:active {
     transform: translateY(1px);
     background-color: #2a5dbf;
@@ -229,6 +278,7 @@ body {
     border-bottom: 2px solid #e0e4eb;
     margin-bottom: 10px;
     user-select: none;
+    flex-wrap: wrap;
 }
 
 .tab {
@@ -240,6 +290,8 @@ body {
     background-color: #f1f3f6;
     margin-right: 8px;
     transition: background-color 0.2s;
+    flex: 1 1 auto;
+    text-align: center;
 }
 
 .tab.active {
@@ -291,6 +343,7 @@ body {
 .button-map-controls {
     display: flex;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .button-map-controls button {
@@ -330,6 +383,7 @@ body {
     font-size: 14px;
     white-space: nowrap;
     position: relative;
+    flex-wrap: wrap;
 }
 
 .button-map-item:hover {
@@ -353,6 +407,7 @@ body {
 .key-text {
     color: #555;
     flex: 1;
+    min-width: 0;
 }
 
 .key-value {
@@ -363,6 +418,7 @@ body {
     border-radius: 4px;
     min-width: 120px;
     text-align: center;
+    flex-shrink: 0;
 }
 
 .key-value.mouse {
@@ -373,6 +429,7 @@ body {
 .item-actions {
     display: flex;
     gap: 5px;
+    flex-shrink: 0;
 }
 
 .item-action-btn {
@@ -408,12 +465,10 @@ body {
     transition: none;
 }
 
-/* 为编辑按钮添加特定的按下颜色 */
 .item-action-btn.edit:active {
     background-color: rgba(42, 93, 191, 0.4);
 }
 
-/* 为删除按钮添加特定的按下颜色 */
 .item-action-btn.delete:active {
     background-color: rgba(231, 76, 60, 0.4);
 }
@@ -428,6 +483,7 @@ body {
     padding: 0 15px;
     font-size: 14px;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .window-footer a {
@@ -470,6 +526,7 @@ select:focus {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .indicator-label {
@@ -498,10 +555,18 @@ select:focus {
         width: 100%;
         height: 100%;
         border-radius: 0;
+        min-width: unset;
+        min-height: unset;
+        /* 在移动设备上取消绝对定位，使用默认流布局 */
+        position: static;
     }
 
     .window-body {
         flex-direction: column;
+    }
+
+    .left-panel, .right-panel {
+        flex-basis: auto;
     }
 
     .indicator-container {
@@ -525,7 +590,6 @@ select:focus {
     background: rgba(158, 198, 255, 0.3);
 }
 
-/* 增强测试按钮按下效果 */
 .indicator-test-btn:active {
     transform: scale(0.95);
     background: rgba(158, 198, 255, 0.4);
@@ -543,7 +607,6 @@ select:focus {
     flex: 1;
 }
 
-/* 新按钮样式 */
 .icon-button {
     width: 36px;
     height: 36px;
@@ -557,6 +620,7 @@ select:focus {
     justify-content: center;
     background-color: #4c8bf5;
     color: white;
+    flex-shrink: 0;
 }
 
 .icon-button:hover {
@@ -589,7 +653,6 @@ select:focus {
     fill: white;
 }
 
-/* 设置容器 */
 .settings-container {
     display: flex;
     flex-direction: column;
@@ -597,9 +660,9 @@ select:focus {
     padding: 10px;
     height: 100%;
     overflow-y: auto;
+    flex-grow: 1;
 }
 
-/* 设置组样式 */
 .setting-group {
     background: #f8f9fa;
     border-radius: var(--border-radius);
@@ -617,24 +680,24 @@ select:focus {
     gap: 8px;
 }
 
-/* 设置项样式 */
 .setting-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
 .setting-item:last-child {
     margin-bottom: 0;
 }
 
-/* 滑块容器 */
 .slider-container {
     display: flex;
     align-items: center;
     gap: 10px;
-    width: 200px;
+    flex-grow: 1;
+    min-width: 150px;
 }
 
 .slider-container input[type="range"] {
@@ -646,14 +709,15 @@ select:focus {
     text-align: right;
     font-size: 14px;
     color: #555;
+    flex-shrink: 0;
 }
 
-/* 开关样式 */
 .switch {
     position: relative;
     display: inline-block;
     width: 50px;
     height: 24px;
+    flex-shrink: 0;
 }
 
 .switch input {
@@ -694,18 +758,19 @@ input:checked + .slider:before {
     transform: translateX(26px);
 }
 
-/* 下拉菜单调整 */
 #settingTab select {
-    width: 200px;
+    width: auto;
+    flex: 1;
+    min-width: 150px;
     padding: 8px 12px;
 }
 
-/* 轮询频率设置项样式 */
 .polling-container {
     display: flex;
     align-items: center;
     gap: 10px;
-    width: 200px;
+    flex-grow: 1;
+    min-width: 150px;
 }
 
 .polling-container input {
@@ -715,6 +780,7 @@ input:checked + .slider:before {
     border-radius: 8px;
     font-size: 14px;
     background-color: #f8f9fa;
+    flex: 1;
 }
 
 .polling-container input:focus {
@@ -726,9 +792,9 @@ input:checked + .slider:before {
 .polling-container span {
     font-size: 14px;
     color: #555;
+    flex-shrink: 0;
 }
 
-/* 状态提示 */
 .status-message {
     margin-top: 10px;
     padding: 8px;
@@ -749,7 +815,6 @@ input:checked + .slider:before {
     color: #28a745;
 }
 
-/* 动画效果 */
 @keyframes pulse {
     0% {
         transform: scale(1);
@@ -779,7 +844,6 @@ input:checked + .slider:before {
     animation: rotate 0.3s linear;
 }
 
-/* 模态窗口样式 */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -803,7 +867,8 @@ input:checked + .slider:before {
 
 .modal {
     background: var(--modal-bg);
-    width: var(--modal-width);
+    width: 90%;
+    max-width: var(--modal-width);
     border-radius: var(--border-radius);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     overflow: hidden;
@@ -824,6 +889,7 @@ input:checked + .slider:before {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .modal-close {
@@ -839,6 +905,7 @@ input:checked + .slider:before {
     justify-content: center;
     border-radius: 50%;
     transition: all 0.2s ease;
+    flex-shrink: 0;
 }
 
 .modal-close:hover {
@@ -897,15 +964,14 @@ input:checked + .slider:before {
     user-select: none;
     text-align: center;
     padding: 0 20px;
-
-    -webkit-user-select: none; /* 防止文本选中 */
+    -webkit-user-select: none;
     user-select: none;
     -webkit-user-drag: none;
 }
 
 .detector-area, .key-detector {
-   -webkit-context-menu: none; /* 禁用上下文菜单 */
-   context-menu: none; /* 标准属性 */
+    -webkit-context-menu: none;
+    context-menu: none;
 }
 
 .detector-area.active {
@@ -927,6 +993,7 @@ input:checked + .slider:before {
     justify-content: flex-end;
     gap: 10px;
     border-top: 1px solid #e0e4eb;
+    flex-shrink: 0;
 }
 
 .btn {
@@ -1009,13 +1076,11 @@ input:checked + .slider:before {
     overflow-y: auto;
 }
 
-/* 在 :root 中添加指示灯颜色变量 */
 :root {
     --indicator-off: #934242;
     --indicator-on: #00dc72;
 }
 
-/* 更新浅色主题的指示灯颜色 */
 body.theme-light .indicator {
     background-color: var(--indicator-off);
 }
@@ -1024,7 +1089,6 @@ body.theme-light .indicator.on {
     background-color: var(--indicator-on);
 }
 
-/* 优化深色主题配色 */
 body.theme-dark {
     --primary-bg: #1a1e2a;
     --secondary-bg: #212837;
@@ -1034,7 +1098,6 @@ body.theme-dark {
     --indicator-on: #008000;
 }
 
-/* 系统主题跟随优化 */
 @media (prefers-color-scheme: light) {
     body.theme-system {
         --indicator-off: #934242;
@@ -1053,7 +1116,6 @@ body.theme-dark {
     }
 }
 
-/* 更新指示灯样式 */
 .indicator {
     background-color: var(--indicator-off);
 }
@@ -1062,10 +1124,9 @@ body.theme-dark {
     background-color: var(--indicator-on);
 }
 
-/* 优化深色模式下的文本对比度 */
 body.theme-dark .button-map-item .key-text,
 body.theme-dark .button-map-item .key-value,
-body.theme-dark .setting-item label,
+body.theme.dark .setting-item label,
 body.theme-dark .tab {
     color: #e0e4eb;
 }
@@ -1074,7 +1135,6 @@ body.theme-dark .empty-state {
     color: #a0a8b8;
 }
 
-/* 优化深色模式按钮悬停效果 */
 body.theme-dark .icon-button:hover {
     background-color: #3a7de0;
 }
@@ -1085,14 +1145,13 @@ body.theme-dark .button-map-controls button:hover {
 }
 
 .item-action-btn svg {
-    pointer-events: none; /* 允许鼠标事件穿透SVG */
+    pointer-events: none;
 }
 
 .item-action-btn:hover svg path {
-    fill: currentColor; /* 保持SVG颜色与父级一致 */
+    fill: currentColor;
 }
 
-/* 新增摇杆按钮行样式 */
 .stick-buttons-row {
     display: flex;
     gap: 10px;
@@ -1107,6 +1166,7 @@ body.theme-dark .button-map-controls button:hover {
     align-items: center;
     gap: 6px;
     background: #4c8bf5;
+    flex-grow: 1;
 }
 
 .stick-buttons-row .icon-button:hover {
@@ -1121,8 +1181,6 @@ body.theme-dark .button-map-controls button:hover {
     width: 100%;
 }
 
-
-/* 摇杆校准窗口样式 - 开始 */
 .joystick-cali-overlay {
     position: fixed;
     top: 0;
@@ -1134,7 +1192,6 @@ body.theme-dark .button-map-controls button:hover {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    /* 确保初始状态隐藏 */
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -1151,9 +1208,9 @@ body.theme-dark .button-map-controls button:hover {
     box-shadow: var(--card-shadow);
     padding: 0;
     position: relative;
-    /*width: 63%;*/
+    width: 90%;
     max-width: 700px;
-    max-height: 720px;
+    max-height: 90vh;
     overflow: hidden;
     transform: translateY(20px);
     transition: transform 0.3s ease;
@@ -1173,6 +1230,7 @@ body.theme-dark .button-map-controls button:hover {
     justify-content: space-between;
     align-items: center;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
+    flex-shrink: 0;
 }
 
 .joystick-cali-modal .modal-header .modal-close {
@@ -1195,39 +1253,37 @@ body.theme-dark .button-map-controls button:hover {
 }
 
 .joystick-cali-modal .modal-body {
-    padding: 20px 40px;
+    padding: 20px;
     display: flex;
-    /* 改变flex方向为行，允许两个摇杆并排 */
     flex-direction: row;
-    /* 缩小间距，使摇杆更近 */
-    gap: 60px; /* 调整此值以控制摇杆间距 */
-    justify-content: center; /* 水平居中 */
-    align-items: flex-start; /* 顶部对齐 */
-    flex-wrap: wrap; /* 允许换行，以防小屏幕下溢出 */
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    overflow-y: auto;
 }
 
-/* 新增：摇杆显示组容器，包含摇杆区域和进度条 */
 .joystick-display-group {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 25px;
+    gap: 15px;
     padding: 10px;
     border: 1px solid #e0e4eb;
     border-radius: var(--border-radius);
     background: #fdfdfd;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    flex: 1 1 300px;
 }
 
 .joystick-area {
-    width: 150px;
-    height: 150px;
+    width: 120px;
+    height: 120px;
     background: #f8f9fa;
     border-radius: 50%;
-    /* margin: 10px auto; /* 移除自动margin，由flex布局控制 */
     position: relative;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-    flex-shrink: 0; /* 防止摇杆区域缩小 */
+    flex-shrink: 0;
 }
 
 .joystick-handle {
@@ -1236,16 +1292,16 @@ body.theme-dark .button-map-controls button:hover {
     background: #4c8bf5;
     border-radius: 50%;
     position: absolute;
-    top: 70px; /* 初始位置居中 */
-    left: 70px; /* 初始位置居中 */
-    cursor: grab; /* 拖拽手势 */
+    top: 55px;
+    left: 55px;
+    cursor: grab;
     z-index: 2;
-    transition: transform 0.05s linear; /* 更快的响应 */
+    transition: transform 0.05s linear;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .joystick-handle:active {
-    cursor: grabbing; /* 拖拽中手势 */
+    cursor: grabbing;
 }
 
 .crosshair {
@@ -1260,52 +1316,43 @@ body.theme-dark .button-map-controls button:hover {
     border-radius: 50%;
 }
 
-/* 删除 stick-readout 样式，因为XY值将通过进度条显示 */
-/* .stick-readout {
-    margin-top: 10px;
-    font-weight: bold;
-    color: #2f3542;
-    text-align: center;
-} */
-
-/* 新增：进度条容器 */
 .progress-bars-container {
     display: flex;
-    flex-direction: column; /* 垂直排列X和Y进度条 */
-    gap: 10px; /* 两个进度条之间的间距 */
-    height: 150px; /* 与摇杆区域高度保持一致 */
-    justify-content: center; /* 垂直居中 */
-    padding-left: 10px; /* 与摇杆区域的视觉间距 */
-    border-left: 1px solid #e0e4eb; /* 分隔线 */
+    flex-direction: column;
+    gap: 10px;
+    height: 120px;
+    justify-content: center;
+    padding-left: 10px;
+    border-left: 1px solid #e0e4eb;
+    flex-grow: 1;
 }
 
-/* 新增：单个垂直进度条样式 */
 .progress-bar-vertical {
-    width: 20px; /* 进度条宽度 */
-    height: 65px; /* 进度条高度 */
+    width: 20px;
+    height: 65px;
     background-color: #e0e4eb;
     border-radius: 10px;
     overflow: hidden;
     position: relative;
     display: flex;
-    align-items: flex-end; /* 填充从底部开始 */
+    align-items: flex-end;
     box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    margin: 0 auto;
 }
 
 .progress-fill {
     width: 100%;
-    height: 0%; /* 初始高度为0 */
-    background-color: #4c8bf5; /* 进度条填充颜色 */
-    transition: height 0.1s ease-out; /* 平滑过渡 */
+    height: 0%;
+    background-color: #4c8bf5;
+    transition: height 0.1s ease-out;
     position: absolute;
     bottom: 0;
     left: 0;
 }
 
-/* 进度条值显示 */
 .progress-value {
     position: absolute;
-    top: -20px; /* 放在进度条上方 */
+    top: -20px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 12px;
@@ -1314,7 +1361,6 @@ body.theme-dark .button-map-controls button:hover {
     white-space: nowrap;
 }
 
-/* 进度条标签 */
 .progress-label {
     font-size: 12px;
     text-align: center;
@@ -1326,40 +1372,27 @@ body.theme-dark .button-map-controls button:hover {
     padding: 15px 20px;
     background: #f8f9fa;
     display: flex;
-    /* 校准按钮合为一个，居中显示 */
-    justify-content: center; /* 居中按钮 */
-    gap: 15px; /* 按钮之间的间距 */
+    justify-content: center;
+    gap: 15px;
     border-top: 1px solid #e0e4eb;
     border-radius: 0 0 var(--border-radius) var(--border-radius);
+    flex-shrink: 0;
 }
 
-/* 移除 .joystick-cali-modal .btn-small 样式，因为校准按钮会合并 */
-/* .joystick-cali-modal .btn-small {
-    padding: 8px 12px;
-    font-size: 14px;
-    margin-top: 10px;
-    width: 100%;
-    background: #4c8bf5;
-    color: white;
-} */
-
-/* 新增合并后的校准按钮样式 */
 .cali-btn-group {
     display: flex;
-    flex-direction: column; /* 垂直排列 */
-    gap: 8px; /* 按钮之间间距 */
-    align-items: center; /* 水平居中 */
-    margin-top: 10px; /* 与上方摇杆区域的间距 */
-    width: 100%; /* 占据可用宽度 */
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+    width: 100%;
 }
 
 .cali-btn-group .btn {
-    width: 150px; /* 固定按钮宽度 */
+    width: 100%;
+    max-width: 150px;
 }
 
-/* 摇杆校准窗口样式 - 结束 */
-
-/* 添加在文件末尾 */
 .icon-button.disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -1369,4 +1402,101 @@ body.theme-dark .button-map-controls button:hover {
 .icon-button.disabled:hover {
     background-color: initial;
     transform: none;
+}
+
+
+/* ------------------------------------- */
+/* 为高分辨率屏幕适配字体大小的魔法  */
+/* ------------------------------------- */
+
+/* 2K 及以上屏幕适配：当视口宽度大于或等于 2560px 时触发 */
+@media (min-width: 2560px) {
+    /* 增加基础字体大小，让整个应用都变大一点 */
+    body {
+        font-size: 1.25em; /* 基础字体增加25% */
+    }
+
+    /* 针对具体元素进行调整，确保它们在高分辨率下也能舒适阅读 */
+    .window-header {
+        font-size: 24px; /* 标题字体加大 */
+    }
+
+    .header-left img {
+        height: 30px; /* 标题图标也变大 */
+        width: 30px;
+    }
+
+    .window-header button {
+        font-size: 22px; /* 按钮图标变大 */
+    }
+
+    .card {
+        padding: 20px 25px; /* 卡片内边距也变大一些 */
+    }
+
+    .preset-controls button,
+    .icon-button,
+    .button-map-controls button {
+        width: 42px;
+        height: 42px; /* 按钮尺寸变大 */
+    }
+
+    .preset-icon, .button-icon, .icon-button svg {
+        font-size: 20px;
+        width: 24px;
+        height: 24px; /* 按钮内部的图标也变大 */
+    }
+
+    .window-footer {
+        height: 44px; /* 页脚高度增加 */
+        font-size: 16px; /* 页脚字体变大 */
+    }
+
+    .key-value {
+        font-size: 16px;
+        min-width: 150px; /* 按键值显示区域变大 */
+    }
+}
+
+/* 4K 及以上屏幕适配：当视口宽度大于或等于 3840px 时触发 */
+@media (min-width: 3840px) {
+    body {
+        font-size: 1.5em; /* 基础字体增加50% */
+    }
+
+    .window-header {
+        font-size: 28px;
+    }
+
+    .header-left img {
+        height: 36px;
+        width: 36px;
+    }
+
+    .window-header button {
+        font-size: 26px;
+    }
+
+    .preset-controls button,
+    .icon-button,
+    .button-map-controls button {
+        width: 48px;
+        height: 48px;
+    }
+
+    .preset-icon, .button-icon, .icon-button svg {
+        font-size: 24px;
+        width: 28px;
+        height: 28px;
+    }
+
+    .window-footer {
+        height: 50px;
+        font-size: 18px;
+    }
+
+    .key-value {
+        font-size: 18px;
+        min-width: 180px;
+    }
 }
