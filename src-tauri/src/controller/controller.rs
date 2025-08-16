@@ -360,7 +360,7 @@ pub async fn disconnect_device() -> bool {
     let app_handle = get_app_handle();
     if let Err(e) = app_handle.emit("physical_connect_status", false) {
         log::error!("发送 physical_connect_status 事件失败: {e}");
-        return false
+        return false;
     }
     true
 }
@@ -396,26 +396,77 @@ pub async fn set_frequency(freq: u32) {
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
 
-
     let buttons = [
-        (gamepad.is_pressed(Button::South), ControllerButtons::South, "South"),
-        (gamepad.is_pressed(Button::East), ControllerButtons::East, "East"),
-        (gamepad.is_pressed(Button::West), ControllerButtons::West, "West"),
-        (gamepad.is_pressed(Button::North), ControllerButtons::North, "North"),
-
-        (gamepad.is_pressed(Button::DPadDown), ControllerButtons::Down, "DPadDown"),
-        (gamepad.is_pressed(Button::DPadLeft), ControllerButtons::Left, "DPadLeft"),
-        (gamepad.is_pressed(Button::DPadRight), ControllerButtons::Right, "DPadRight"),
-        (gamepad.is_pressed(Button::DPadUp), ControllerButtons::Up, "DPadUp"),
-
-        (gamepad.is_pressed(Button::LeftTrigger), ControllerButtons::LB, "LB"),
-        (gamepad.is_pressed(Button::RightTrigger), ControllerButtons::RB, "RB"),
-
-        (gamepad.is_pressed(Button::LeftThumb), ControllerButtons::LStick, "LStick"),
-        (gamepad.is_pressed(Button::RightThumb), ControllerButtons::RStick, "RStick"),
-
-        (gamepad.is_pressed(Button::Select), ControllerButtons::Back, "Select"),
-        (gamepad.is_pressed(Button::Start), ControllerButtons::Start, "Start"),
+        (
+            gamepad.is_pressed(Button::South),
+            ControllerButtons::South,
+            "South",
+        ),
+        (
+            gamepad.is_pressed(Button::East),
+            ControllerButtons::East,
+            "East",
+        ),
+        (
+            gamepad.is_pressed(Button::West),
+            ControllerButtons::West,
+            "West",
+        ),
+        (
+            gamepad.is_pressed(Button::North),
+            ControllerButtons::North,
+            "North",
+        ),
+        (
+            gamepad.is_pressed(Button::DPadDown),
+            ControllerButtons::Down,
+            "DPadDown",
+        ),
+        (
+            gamepad.is_pressed(Button::DPadLeft),
+            ControllerButtons::Left,
+            "DPadLeft",
+        ),
+        (
+            gamepad.is_pressed(Button::DPadRight),
+            ControllerButtons::Right,
+            "DPadRight",
+        ),
+        (
+            gamepad.is_pressed(Button::DPadUp),
+            ControllerButtons::Up,
+            "DPadUp",
+        ),
+        (
+            gamepad.is_pressed(Button::LeftTrigger),
+            ControllerButtons::LB,
+            "LB",
+        ),
+        (
+            gamepad.is_pressed(Button::RightTrigger),
+            ControllerButtons::RB,
+            "RB",
+        ),
+        (
+            gamepad.is_pressed(Button::LeftThumb),
+            ControllerButtons::LStick,
+            "LStick",
+        ),
+        (
+            gamepad.is_pressed(Button::RightThumb),
+            ControllerButtons::RStick,
+            "RStick",
+        ),
+        (
+            gamepad.is_pressed(Button::Select),
+            ControllerButtons::Back,
+            "Select",
+        ),
+        (
+            gamepad.is_pressed(Button::Start),
+            ControllerButtons::Start,
+            "Start",
+        ),
     ];
 
     for (pressed, button, name) in buttons {
@@ -429,14 +480,20 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     log::debug!("---------------- {:#?}", gamepad.id());
     let left_stick_x = gamepad.axis_data(Axis::LeftStickX).unwrap().value();
     let left_stick_y = gamepad.axis_data(Axis::LeftStickY).unwrap().value();
-    log::debug!("Left Stick X: {:#?}, Left Stick Y: {:#?}", left_stick_x, left_stick_y);
+    log::debug!(
+        "Left Stick X: {:#?}, Left Stick Y: {:#?}",
+        left_stick_x,
+        left_stick_y
+    );
 
     let right_stick_x = gamepad.axis_data(Axis::RightStickX).unwrap().value();
     let right_stick_y = gamepad.axis_data(Axis::RightStickY).unwrap().value();
-    log::debug!("Right Stick X: {:#?}, Right Stick Y: {:#?}", right_stick_x, right_stick_y);
+    log::debug!(
+        "Right Stick X: {:#?}, Right Stick Y: {:#?}",
+        right_stick_x,
+        right_stick_y
+    );
     log::debug!("----------------");
-
-
 }
 
 /// 轮询非Xbox控制器状态
@@ -451,7 +508,7 @@ fn poll_other_controllers(device: &DeviceInfo) {
 
         // 匹配当前设备
         if vid.eq_ignore_ascii_case(&device.vendor_id)
-            && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap() )
+            && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap())
         {
             _poll_other_controllers(gamepad);
         }
@@ -492,7 +549,6 @@ pub fn listen() {
         let mut last_device: Option<DeviceInfo> = None;
 
         loop {
-
             let time_start = Instant::now();
 
             let current_device = CURRENT_DEVICE.read().unwrap().clone();
@@ -530,7 +586,6 @@ pub fn listen() {
                 poll_controller(device);
                 mapping::map(&CONTROLLER_DATA.read().unwrap());
             }
-
 
             let elapsed = time_start.elapsed();
             // log::info!("elapsed time: {:#?}", elapsed);
@@ -602,7 +657,7 @@ fn query_needed_handle(app_handle: AppHandle) {
 /// 3. 主设备状态监听
 pub fn initialize(app_handle: AppHandle) {
     log::debug!("初始化控制器模块");
-    
+
     query_needed_handle(app_handle);
 
     gilrs_listen();

@@ -1,4 +1,3 @@
-
 // 1. check stick stilled
 // 2. push stick to max range
 // 3. rotate stick 360 degrees (check max range)
@@ -29,6 +28,4 @@ impl StickCalibration {
     pub fn update_step_to(&mut self, step: StickTestSteps) {
         self.step = step;
     }
-
-    
 }
