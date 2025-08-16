@@ -71,7 +71,8 @@ jobs:
           npm install -g auto-changelog
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "v0.0.0")
           echo "Previous tag: $PREV_TAG"
-          npx auto-changelog --from $PREV_TAG --to HEAD --output CHANGELOG.md
+
+          npx auto-changelog --tag-from $PREV_TAG --tag-to HEAD --output CHANGELOG.md
 
           # 写入 RELEASE_BODY 环境变量
           echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
