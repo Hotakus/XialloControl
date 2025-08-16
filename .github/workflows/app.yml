@@ -70,6 +70,7 @@ jobs:
         shell: bash
         run: |
           npm install -g auto-changelog
+          
           # 根据不同操作系统选择合适的命令语法
           case "${{ matrix.platform }}" in
             ubuntu-22.04 | macos-latest)
@@ -87,11 +88,13 @@ jobs:
           esac
           
           # 写入 RELEASE_BODY 环境变量
-          echo "RELEASE_BODY<<EOF" >> "$GITHUB_ENV"
-          echo "See the assets to download this version and install." >> "$GITHUB_ENV"
-          echo "" >> "$GITHUB_ENV"
-          cat CHANGELOG.md >> "$GITHUB_ENV"
-          echo "EOF" >> "$GITHUB_ENV"
+          {
+            echo "RELEASE_BODY<<EOF"
+            echo "See the assets to download this version and install."
+            echo ""
+            cat CHANGELOG.md
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
       # Tauri build + release
       - uses: tauri-apps/tauri-action@v0
