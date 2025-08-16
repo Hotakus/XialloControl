@@ -68,9 +68,12 @@ jobs:
         id: build_changelog
         if: ${{ !github.event.pull_request.head.repo.fork }}
         uses: mikepenz/release-changelog-builder-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # 只生成当前版本和上一个版本之间的 changelog
           toTag: ${{ github.ref_name }}
+          configuration: .github/workflows/changelog-config.json
 
       # Tauri build + release
       - uses: tauri-apps/tauri-action@v0
