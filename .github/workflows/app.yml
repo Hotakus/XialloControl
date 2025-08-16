@@ -73,13 +73,13 @@ jobs:
         with:
           # 只生成当前版本和上一个版本之间的 changelog
           toTag: ${{ github.ref_name }}
-          configurationJson: .github/workflows/changelog-config.json
+          configurationJson: "changelog-config.json"
 
       # Tauri build + release
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           RELEASE_BODY: ${{ env.RELEASE_BODY }}
         with:
@@ -88,6 +88,6 @@ jobs:
           releaseBody: ${{steps.github_release.outputs.changelog}}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
           prerelease: true
-          includeUpdaterJson: true
-          updaterJsonPreferNsis: true
+#          includeUpdaterJson: true
+          updaterJsonKeepUniversal: true
           args: ${{ matrix.args }}
