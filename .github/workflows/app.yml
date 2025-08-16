@@ -2,7 +2,7 @@ name: "publish"
 
 on:
   push:
-    tags: ["test-v*"]
+    tags: ["v*"]
     branches:
       - release
   workflow_dispatch:
