@@ -22,21 +22,69 @@ fn _poll_xbox_controller_state(state: XInputState) {
 
     // 按钮状态检测
     let buttons = [
-        (state.south_button(), ControllerButtons::South, "Xbox A 键（South）"),
-        (state.east_button(), ControllerButtons::East, "Xbox B 键（East）"),
-        (state.north_button(), ControllerButtons::North, "Xbox Y 键（North）"),
-        (state.west_button(), ControllerButtons::West, "Xbox X 键（West）"),
-        (state.guide_button(), ControllerButtons::Guide, "Xbox Guide 键"),
-        (state.start_button(), ControllerButtons::Start, "Xbox Start 键"),
-        (state.select_button(), ControllerButtons::Back, "Xbox Select 键"),
-        (state.arrow_down(), ControllerButtons::Down, "Xbox 方向键（Down）"),
-        (state.arrow_left(), ControllerButtons::Left, "Xbox 方向键（Left）"),
-        (state.arrow_right(), ControllerButtons::Right, "Xbox 方向键（Right）"),
+        (
+            state.south_button(),
+            ControllerButtons::South,
+            "Xbox A 键（South）",
+        ),
+        (
+            state.east_button(),
+            ControllerButtons::East,
+            "Xbox B 键（East）",
+        ),
+        (
+            state.north_button(),
+            ControllerButtons::North,
+            "Xbox Y 键（North）",
+        ),
+        (
+            state.west_button(),
+            ControllerButtons::West,
+            "Xbox X 键（West）",
+        ),
+        (
+            state.guide_button(),
+            ControllerButtons::Guide,
+            "Xbox Guide 键",
+        ),
+        (
+            state.start_button(),
+            ControllerButtons::Start,
+            "Xbox Start 键",
+        ),
+        (
+            state.select_button(),
+            ControllerButtons::Back,
+            "Xbox Select 键",
+        ),
+        (
+            state.arrow_down(),
+            ControllerButtons::Down,
+            "Xbox 方向键（Down）",
+        ),
+        (
+            state.arrow_left(),
+            ControllerButtons::Left,
+            "Xbox 方向键（Left）",
+        ),
+        (
+            state.arrow_right(),
+            ControllerButtons::Right,
+            "Xbox 方向键（Right）",
+        ),
         (state.arrow_up(), ControllerButtons::Up, "Xbox 方向键（Up）"),
         (state.left_shoulder(), ControllerButtons::LB, "Xbox LB 键"),
         (state.right_shoulder(), ControllerButtons::RB, "Xbox RB 键"),
-        (state.left_thumb_button(), ControllerButtons::LStick, "Xbox 左摇杆按键"),
-        (state.right_thumb_button(), ControllerButtons::RStick, "Xbox 右摇杆按键")
+        (
+            state.left_thumb_button(),
+            ControllerButtons::LStick,
+            "Xbox 左摇杆按键",
+        ),
+        (
+            state.right_thumb_button(),
+            ControllerButtons::RStick,
+            "Xbox 右摇杆按键",
+        ),
     ];
 
     for (pressed, button, label) in buttons {
@@ -73,7 +121,7 @@ fn _poll_xbox_controller_state(state: XInputState) {
     controller_data.left_trigger.has_pressure = true;
 
     let mut global_controller_data = CONTROLLER_DATA.write().unwrap();
-    if *global_controller_data != controller_data{
+    if *global_controller_data != controller_data {
         *global_controller_data = controller_data;
 
         let app_handle = get_app_handle();
