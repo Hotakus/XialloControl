@@ -64,37 +64,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
 
-      # Generate changelog for this release only
-      - name: Generate changelog
+      - name: Generate Changelog
+        id: build_changelog
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        shell: bash
-        run: |
-          npm install -g auto-changelog
-          
-          # 根据不同操作系统选择合适的命令语法
-          case "${{ matrix.platform }}" in
-            ubuntu-22.04 | macos-latest)
-              # macOS 和 Linux (bash)
-              PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "v0.0.0")
-              echo "Previous tag: $PREV_TAG"
-              npx auto-changelog --from-tag "$PREV_TAG" --to-tag HEAD --output CHANGELOG.md
-              ;;
-            windows-latest)
-              # Windows (PowerShell)
-              PREV_TAG=$(pwsh -c "git describe --tags --abbrev=0 HEAD^ 2> `$null || Write-Output \"v0.0.0\"")
-              echo "Previous tag: $PREV_TAG"
-              npx auto-changelog --from-tag "$PREV_TAG" --to-tag HEAD --output CHANGELOG.md
-              ;;
-          esac
-          
-          # 写入 RELEASE_BODY 环境变量
-          {
-            echo "RELEASE_BODY<<EOF"
-            echo "See the assets to download this version and install."
-            echo ""
-            cat CHANGELOG.md
-            echo "EOF"
-          } >> "$GITHUB_ENV"
+        uses: mikepenz/release-changelog-builder-action@v1
+        with:
+          # 只生成当前版本和上一个版本之间的 changelog
+          toTag: ${{ github.ref_name }}
 
       # Tauri build + release
       - uses: tauri-apps/tauri-action@v0
@@ -105,7 +81,7 @@ jobs:
         with:
           tagName: ${{ !github.event.pull_request.head.repo.fork && format('v{0}', env.npm_package_version) || '' }}
           releaseName: ${{ !github.event.pull_request.head.repo.fork && format('Release v{0}', env.npm_package_version) || '' }}
-          releaseBody: ${{ env.RELEASE_BODY }}
+          releaseBody: ${{ steps.build_changelog.outputs.changelog }}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
           prerelease: true
           includeUpdaterJson: true
