@@ -27,17 +27,17 @@
 
     <div class="card">
       <div class="tabs" role="tablist">
-        <div class="tab active" role="tab" aria-selected="true" data-tab="buttonMapTab">按键映射</div>
-        <div class="tab" role="tab" aria-selected="false" data-tab="stickMapTab">摇杆映射</div>
-        <div class="tab" role="tab" aria-selected="false" data-tab="settingTab">设置</div>
+        <div class="tab" :class="{active: state.activeTab === 'buttonMapTab'}" role="tab" aria-selected="true" data-tab="buttonMapTab" @click="switchTab('buttonMapTab')">按键映射</div>
+        <div class="tab" :class="{active: state.activeTab ==='stickMapTab'}" role="tab" aria-selected="false" data-tab="stickMapTab" @click="switchTab('stickMapTab')">摇杆映射</div>
+        <div class="tab" :class="{active: state.activeTab ==='settingTab'}" role="tab" aria-selected="false" data-tab="settingTab" @click="switchTab('settingTab')">设置</div>
       </div>
 
-      <div id="buttonMapTab" class="tab-content active" role="tabpanel">
+      <div id="buttonMapTab" class="tab-content" :class="{active: state.activeTab === 'buttonMapTab'}" role="tabpanel">
         <div class="tab-content-container">
           <div class="button-map-header">
             <div class="button-map-title"><i class="fas fa-keyboard"></i> 按键映射</div>
             <div class="button-map-controls">
-              <button id="add-button-map" title="添加映射" class="icon-button">
+              <button id="add-button-map" title="添加映射" class="icon-button" @click="addButtonMap()">
                 <svg t="1753626247148" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2595" width="200" height="200">
                   <path d="M508.9 926.4c-36.3-1.6-64.6-32.2-64.6-68.6V166.1c0-36.3 28.3-66.9 64.6-68.6 38.8-1.7 70.7 29.2 70.7 67.6v693.7c0 38.4-31.9 69.4-70.7 67.6z" fill="#ffffff" p-id="2596"></path>
                   <path d="M858.9 579.6H165.2c-37.4 0-67.6-30.3-67.6-67.6 0-37.4 30.3-67.6 67.6-67.6h693.7c37.4 0 67.6 30.3 67.6 67.6 0 37.4-30.3 67.6-67.6 67.6z" fill="#ffffff" p-id="2597"></path>
@@ -47,7 +47,7 @@
           </div>
           <div class="button-map" id="button-mapping-list">
             <div class="empty-state">
-              <p>尚未添加任何按键映射
+              <p>尚未添加任何按键映射 <br>
                 点击右上角的按钮添加映射
               </p>
             </div>
@@ -55,7 +55,7 @@
         </div>
       </div>
 
-      <div id="stickMapTab" class="tab-content" role="tabpanel">
+      <div id="stickMapTab" class="tab-content" :class="{active: state.activeTab ==='stickMapTab'}" role="tabpanel">
         <div class="settings-container">
           <div class="setting-group">
             <h3>摇杆设置</h3>
@@ -92,15 +92,15 @@
         </div>
       </div>
 
-      <div id="settingTab" class="tab-content" role="tabpanel">
+      <div id="settingTab" class="tab-content" :class="{active: state.activeTab ==='settingTab'}" role="tabpanel">
         <div class="settings-container">
           <div class="setting-group">
-            <h3><i class="fas fa-cog"></i> 软件设置</h3>
+            <h3><i class="fas fa-cog"></i>软件设置</h3>
 
             <div class="setting-item">
               <label for="auto-start">开机自启动:</label>
               <label class="switch">
-                <input type="checkbox" id="auto-start" checked>
+                <input type="checkbox" id="auto-start" v-model="state.autoStart" @change="updateSettings()">
                 <span class="slider round"></span>
               </label>
             </div>
@@ -108,7 +108,7 @@
             <div class="setting-item">
               <label for="minimize-to-tray">最小化到托盘:</label>
               <label class="switch">
-                <input type="checkbox" id="minimize-to-tray" checked>
+                <input type="checkbox" id="minimize-to-tray" v-model="state.minimizeToTray" @change="updateSettings()">
                 <span class="slider round"></span>
               </label>
             </div>
@@ -116,14 +116,14 @@
             <div class="setting-item">
               <label for="polling-frequency">轮询频率:</label>
               <div class="polling-container">
-                <input type="number" id="polling-frequency" min="1" max="8000" value="125">
+                <input type="number" id="polling-frequency" min="1" max="8000" value="125" v-model="state.pollingFrequency" @change="updateSettings()">
                 <span>Hz</span>
               </div>
             </div>
 
             <div class="setting-item">
               <label for="theme">界面主题:</label>
-              <select id="theme">
+              <select id="theme" v-model="state.theme" @change="changeTheme()">
                 <option value="light">浅色模式</option>
                 <option value="dark">深色模式</option>
                 <option value="system">跟随系统</option>
@@ -134,12 +134,67 @@
       </div>
     </div>
   </div>
+
+
+  <transition name="modal-fade">
+    <div
+        class="modal-overlay"
+        id="mapping-modal" :class="{active: state.showMappingModal}">
+      <div class="modal">
+        <div class="modal-header">
+          <span id="modal-title">
+            {{ state.modalTitle }}
+          </span>
+          <button class="modal-close" id="close-modal" @click="closeButtonMapModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label><i class="fas fa-gamepad"></i> 选择手柄按键</label>
+            <select class="form-control" id="controller-button" v-model="state.selectedButton">
+              <option value="">-- 请选择按键 --</option>
+              <option value="A">A 按钮</option>
+              <option value="B">B 按钮</option>
+              <option value="X">X 按钮</option>
+              <option value="Y">Y 按钮</option>
+              <option value="LB">左肩键 (LB)</option>
+              <option value="RB">右肩键 (RB)</option>
+            </select>
+          </div>
+
+          <div class="form-group key-detector">
+            <label><i class="fas fa-keyboard"></i> 映射到：</label>
+            <div class="detector-area" :class="{active: state.keyListenerActive}" id="key-detector-area" @click="detectKey()">
+              {{ state.keyDetectorText }}
+            </div>
+            <div class="detector-hint">支持单键或组合键（如 Ctrl+C、Alt+F4）</div>
+            <div class="key-display" id="key-display">{{ state.keyDisplayText }}</div>
+          </div>
+          <div id="modal-error" class="status-message error" style="margin-top: 15px;" v-show="state.modalErrorVisible">
+            {{ state.modalErrorMessage }}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="cancel-btn" @click="closeButtonMapModal()">取消</button>
+          <button class="btn btn-primary" id="confirm-btn" @click="saveButtonMap()">确认</button>
+        </div>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <script setup lang="ts">
-// 可以写组件逻辑
+import {
+  updateSettings,
+  switchTab,
+  changeTheme,
+  saveButtonMap,
+  openButtonMapModal,
+  closeButtonMapModal,
+  detectKey, addButtonMap
+} from "@/ts/RightPanel.ts";
+import {state} from "@/ts/global_states.ts";
 </script>
 
 <style scoped>
-/* 如果只作用于这个组件，可以写 scoped 样式 */
+
 </style>

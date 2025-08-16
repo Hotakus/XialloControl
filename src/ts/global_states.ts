@@ -8,15 +8,35 @@ let appWindow = getCurrentWindow();
 
 // ---------- 响应式应用状态 ----------
 export const state = reactive({
+    titlebar_visible: true,
+
+    activeTab: 'buttonMapTab',
+    autoStart: false,
+    minimizeToTray: false,
+    theme: 'light',
+    pollingFrequency: 125,
+
+    // 按键映射模态窗口相关
+    showMappingModal: false,
+    modalErrorVisible: false,
+    modalErrorMessage: '',
+    modalTitle: '',
+    keyListenerActive: false,
+    keyDetectorText: '点击此处并按下键盘按键、鼠标按键或滚动滚轮',
+    keyDisplayText: '',
+    selectedButton: "",
+    isMouseKey: false,
+
+    // main.js 原有的状态
     hasUserSelectedDevice: false,
     currentDevices: [] as string[],
     deviceSelected: null as string | null,
-    minimizeToTray: false,
+
     isConnected: false,
     deviceType: 'xbox',
     mappings: [] as any[],
     editingMappingId: null as number | null,
-    keyListenerActive: false,
+
     preventNextClick: false,
     currentKeys: {
         ctrl: false,
@@ -24,6 +44,33 @@ export const state = reactive({
         alt: false,
         meta: false,
         key: null as string | null
+    },
+
+    // 从 main.js 添加过来的新状态
+    current_controller_datas: {
+        buttons: 0,
+        left_stick: {x: 0, y: 0, is_pressed: false},
+        right_stick: {x: 0, y: 0, is_pressed: false},
+        left_trigger: {value: 0, has_pressure: false, is_pressed: false},
+        right_trigger: {value: 0, has_pressure: false, is_pressed: false},
+        left_stick_center: [0, 0],
+        right_stick_center: [0, 0],
+        limits: {
+            sticks_value_min: -0.0,
+            sticks_value_max: 0.0,
+            triggers_value_min: 0.0,
+            triggers_value_max: 0.0,
+        },
+        is_acting: false
+    },
+    previous_preset_name: "default",
+    current_preset: {
+        name: "",
+        items: {
+            deadzone: 0,
+            deadzone_left: 0,
+            mappings: []
+        }
     }
 });
 
@@ -74,6 +121,28 @@ export async function initUIElements() {
         'mapping-modal',
         'modal-title',
         'modal-error',
+        'close-modal',
+        'cancel-btn',
+
+        // 摇杆校准相关
+        'open-joystick-cali-modal',
+        'joystick-cali-modal',
+        'close-joystick-cali-modal',
+        'cancel-joystick-cali-btn',
+        'joystick-left',
+        'joystick-right',
+        'handle-left',
+        'handle-right',
+        'deadzone-cali-left',
+        'deadzone-cali-right',
+        'progress-x-left',
+        'progress-y-left',
+        'progress-x-left-value',
+        'progress-y-left-value',
+        'progress-x-right',
+        'progress-y-right',
+        'progress-x-right-value',
+        'progress-y-right-value',
 
         // 其他
         'github-link'
