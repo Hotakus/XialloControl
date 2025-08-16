@@ -1,11 +1,8 @@
 use crate::xeno_utils;
 
-
 pub fn setup() {
     xeno_utils::create_config_dir();
 }
-
-
 
 // 1. 软件启动
 // 2. 软件读取设置文件，读取上一次软件使用的预设名
