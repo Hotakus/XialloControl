@@ -1,10 +1,10 @@
 use tauri::AppHandle;
 
+pub mod calibrate;
 pub mod controller;
 pub mod datas;
-pub mod xbox;
 pub mod logic;
-pub mod calibrate;
+pub mod xbox;
 
 pub fn initialize(app_handle: AppHandle) {
     controller::initialize(app_handle);
