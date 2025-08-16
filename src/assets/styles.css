@@ -176,7 +176,7 @@ body {
     gap: var(--gap);
     min-height: 0;
     border-radius: 0;
-    flex-grow: 1;
+    /*flex-grow: 1;*/
 }
 
 .right-panel {
@@ -188,7 +188,7 @@ body {
     gap: var(--gap);
     min-height: 0;
     border-radius: 0;
-    flex-grow: 1;
+    /*flex-grow: 1;*/
 }
 
 .card {
@@ -410,7 +410,7 @@ body {
     min-width: 0;
 }
 
-.key-value {
+.key-display {
     font-weight: bold;
     color: #2f3542;
     background: #e0e4eb;
@@ -421,10 +421,6 @@ body {
     flex-shrink: 0;
 }
 
-.key-value.mouse {
-    background: #d7e3ff;
-    color: #2a5dbf;
-}
 
 .item-actions {
     display: flex;
@@ -760,7 +756,7 @@ input:checked + .slider:before {
 
 #settingTab select {
     width: auto;
-    flex: 1;
+    /*flex: 1;*/
     min-width: 150px;
     padding: 8px 12px;
 }
@@ -769,7 +765,7 @@ input:checked + .slider:before {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex-grow: 1;
+    /*flex-grow: 1;*/
     min-width: 150px;
 }
 
@@ -876,8 +872,58 @@ input:checked + .slider:before {
     transition: transform 0.3s ease;
 }
 
+
 .modal-overlay.active .modal {
     transform: translateY(0);
+}
+
+
+/*
+  弹窗容器的基础样式
+  这里定义了弹窗的背景、位置等，让它在页面上正常显示
+*/
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/*
+  进入动画的起点和离开动画的终点
+  这个类在元素被插入DOM时立即应用，定义了动画的起始状态
+  我们在这里让它不可见，并稍微向下移动
+*/
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+    opacity: 0;
+    /* `visibility`在CSS动画中不会平滑过渡，所以最好依赖`opacity` */
+    visibility: hidden;
+
+    /* 弹窗主体的动画起点 */
+    .modal {
+        transform: translateY(20px);
+    }
+}
+
+/*
+  进入和离开动画的持续过程
+  这个类在动画进行中一直存在，定义了过渡的时间和缓动函数
+*/
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+
+    /* 弹窗主体的动画过程 */
+    .modal {
+        transition: transform 0.3s ease;
+    }
 }
 
 .modal-header {
