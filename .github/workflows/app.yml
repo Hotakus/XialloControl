@@ -69,11 +69,22 @@ jobs:
         if: ${{ !github.event.pull_request.head.repo.fork }}
         run: |
           npm install -g auto-changelog
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "v0.0.0")
-          echo "Previous tag: $PREV_TAG"
-
-          npx auto-changelog --tag-from $PREV_TAG --tag-to HEAD --output CHANGELOG.md
-
+          # 根据不同操作系统选择合适的命令语法
+          if [[ "${{ matrix.platform }}" == "ubuntu-22.04" || "${{ matrix.platform }}" == "macos-latest" ]]; then
+            # macOS 和 Linux (bash)
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "v0.0.0")
+            echo "Previous tag: $PREV_TAG"
+            npx auto-changelog --from-tag $PREV_TAG --to-tag HEAD --output CHANGELOG.md
+          elif [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
+            # Windows (PowerShell)
+            $PREV_TAG = git describe --tags --abbrev=0 HEAD^ 2>$null
+            if (-not $PREV_TAG) {
+              $PREV_TAG = "v0.0.0"
+            }
+            Write-Host "Previous tag: $PREV_TAG"
+            npx auto-changelog --from-tag $PREV_TAG --to-tag HEAD --output CHANGELOG.md
+          fi
+          
           # 写入 RELEASE_BODY 环境变量
           echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
           echo "See the assets to download this version and install." >> $GITHUB_ENV
