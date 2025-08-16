@@ -5,17 +5,13 @@ import {uiElements, state, invoke, appWindow} from "@/ts/global_states";
 export async function updateTitlebar() {
     if (!invoke) return;
     const platform = await invoke<string>("get_platform");
-    const titlebar = uiElements['titlebar'];
-    if (!titlebar) return;
-
     if (platform === "windows") {
-        titlebar.classList.add("show");
-        titlebar.classList.remove("hide");
+        state.titlebar_visible = true;
     } else if (platform === "linux") {
-        titlebar.classList.add("hide");
-        titlebar.classList.remove("show");
+        state.titlebar_visible = false;
     } else {
-        console.warn(`未知平台: ${platform}`);
+        // TODO: macOS titlebar
+        state.titlebar_visible = true;
     }
 }
 

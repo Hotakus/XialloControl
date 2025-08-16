@@ -1,5 +1,6 @@
 <template>
   <div class="window-header"
+       :class="{ 'show': state.titlebar_visible, 'hide':!state.titlebar_visible }"
        id="titlebar">
     <div class="header-left">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white">
@@ -33,7 +34,7 @@
 
 <script setup lang="ts">
 import {onMounted} from "vue";
-import {initUIElements} from "@/ts/global_states";
+import {initUIElements, state} from "@/ts/global_states";
 import {updateTitlebar, setupWindowButtons} from "@/ts/WindowHeader";
 
 onMounted(async () => {
