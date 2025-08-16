@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: "ubuntu-22.04"
+          - platform: "ubuntu-latest"
             args: ""
           - platform: "windows-latest"
             args: ""
@@ -59,7 +59,7 @@ jobs:
 
       # System dependencies (Ubuntu)
       - name: Install system dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
@@ -67,13 +67,13 @@ jobs:
       - name: Generate Changelog
         id: build_changelog
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: mikepenz/release-changelog-builder-action@{latest-release}
+        uses: mikepenz/release-changelog-builder-action@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # 只生成当前版本和上一个版本之间的 changelog
           toTag: ${{ github.ref_name }}
-          configuration: .github/workflows/changelog-config.json
+          configurationJson: .github/workflows/changelog-config.json
 
       # Tauri build + release
       - uses: tauri-apps/tauri-action@v0
@@ -85,7 +85,7 @@ jobs:
         with:
           tagName: ${{ !github.event.pull_request.head.repo.fork && 'v__VERSION__' || '' }}
           releaseName: "Release v__VERSION__"
-          releaseBody: ${{ steps.build_changelog.outputs.changelog }}
+          releaseBody: ${{steps.github_release.outputs.changelog}}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
           prerelease: true
           includeUpdaterJson: true
