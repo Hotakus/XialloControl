@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::mapping::{get_mappings, Mapping};
+use crate::mapping::{Mapping, get_mappings};
 use crate::setting::load_settings;
 use crate::xeno_utils;
 use once_cell::sync::Lazy;
@@ -12,9 +12,8 @@ const PRESET_DIR: &str = "presets";
 
 const DEFAULT_DEADZONE: u8 = 10; // 10%
 
-pub static CURRENT_PRESET: Lazy<RwLock<Preset>> = Lazy::new(|| {
-    RwLock::new(Preset::new("default".to_string(), vec![]))
-});
+pub static CURRENT_PRESET: Lazy<RwLock<Preset>> =
+    Lazy::new(|| RwLock::new(Preset::new("default".to_string(), vec![])));
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PresetItems {
@@ -105,7 +104,6 @@ fn default_deadzone() -> u8 {
     DEFAULT_DEADZONE
 }
 
-
 #[tauri::command]
 pub fn preset_test() {
     let mut preset = CURRENT_PRESET.write().unwrap();
@@ -138,4 +136,3 @@ pub fn get_preset(name: &str) -> Preset {
     preset.load(name);
     preset.clone()
 }
-

@@ -45,8 +45,7 @@ impl ControllerLimits {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum ControllerButtons {
     // Face buttons
     South = 0,
