@@ -113,6 +113,7 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             Some(vec!["--flag1", "--flag2"]),
@@ -162,7 +163,9 @@ pub fn run() {
                     if let tauri::WindowEvent::CloseRequested { api: _, .. } = event {
                         log::info!("Main window close requested");
                         for w in &child_windows_list {
-                            w.close().unwrap_or_else(|e| log::error!("Failed to close child window: {e}"));
+                            w.close().unwrap_or_else(|e| {
+                                log::error!("Failed to close child window: {e}")
+                            });
                         }
                         app_handle.exit(0);
                     }

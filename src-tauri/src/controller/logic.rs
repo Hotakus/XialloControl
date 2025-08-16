@@ -152,4 +152,3 @@ pub fn check_controller_deadzone() -> (f32, f32) {
 
     (left_stick_max, right_stick_max)
 }
-
