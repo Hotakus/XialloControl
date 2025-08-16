@@ -67,7 +67,7 @@ jobs:
       - name: Generate Changelog
         id: build_changelog
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: mikepenz/release-changelog-builder-action@v1
+        uses: mikepenz/release-changelog-builder-action@{latest-release}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -80,10 +80,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           RELEASE_BODY: ${{ env.RELEASE_BODY }}
         with:
-          tagName: ${{ !github.event.pull_request.head.repo.fork && format('v{0}', env.npm_package_version) || '' }}
-          releaseName: ${{ !github.event.pull_request.head.repo.fork && format('Release v{0}', env.npm_package_version) || '' }}
+          tagName: ${{ !github.event.pull_request.head.repo.fork && 'v__VERSION__' || '' }}
+          releaseName: "Release v__VERSION__"
           releaseBody: ${{ steps.build_changelog.outputs.changelog }}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
           prerelease: true
