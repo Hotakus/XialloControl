@@ -69,7 +69,7 @@ jobs:
         if: ${{ !github.event.pull_request.head.repo.fork }}
         shell: bash
         run: |
-          pnpm install -g auto-changelog
+          npm install -g auto-changelog
           # 根据不同操作系统选择合适的命令语法
           case "${{ matrix.platform }}" in
             ubuntu-22.04 | macos-latest)
