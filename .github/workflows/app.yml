@@ -1,12 +1,12 @@
-name: 'publish'
+name: "publish"
 
 on:
   push:
-    tags: [ "test-v*" ]
+    tags: ["test-v*"]
     branches:
       - release
-
-# This workflow will trigger on each push to the `release` branch to create or update a GitHub release, build your app, and upload the artifacts to the release.
+  workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: write
@@ -19,14 +19,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-#          - platform: 'macos-latest' # for Arm based macs (M1 and above).
-#            args: '--target aarch64-apple-darwin'
-#          - platform: 'macos-latest' # for Intel based macs.
-#            args: '--target x86_64-apple-darwin'
-          - platform: 'ubuntu-22.04' # for Tauri v1 you could replace this with ubuntu-20.04.
-            args: ''
-          - platform: 'windows-latest'
-            args: ''
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
+#          - platform: "macos-latest"
+#            args: "--target x86_64-apple-darwin"       # Intel
+#          - platform: "macos-latest"
+#            args: "--target aarch64-apple-darwin"     # Arm (M1/M2)
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -34,41 +34,58 @@ jobs:
         with:
           submodules: recursive
 
-      - name: setup node
-        uses: actions/setup-node@v4
+      # Node + pnpm
+      - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-
-      - name: install pnpm
-        run: npm install -g pnpm
-
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+          cache: "pnpm"
+      - uses: pnpm/action-setup@v4
         with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          version: 10.x.x
 
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      # Rust
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && matrix.args != '' && matrix.args || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          workspaces: |
+            src-tauri -> ../../target
+
+      # System dependencies (Ubuntu)
+      - name: Install system dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev libwebkit2gtk-4.1-dev librsvg2-dev \
-            patchelf  libudev-dev pkg-config libayatana-appindicator3-dev
-        # webkitgtk 4.0 is for Tauri v1 - webkitgtk 4.1 is for Tauri v2.
-        # You can remove the one that doesn't apply to your app to speed up the workflow a bit.
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
 
-      - name: install frontend dependencies
-        run: pnpm install # change this to npm, pnpm or bun depending on which one you use.
+      # Generate changelog
+      - name: Generate changelog
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        run: |
+          npx auto-changelog -p -t CHANGELOG.md
+          echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
+          echo "See the assets to download this version and install." >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          cat CHANGELOG.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
+      # Tauri build + release
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          RELEASE_BODY: ${{ env.RELEASE_BODY }}
         with:
-          tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
-          releaseName: 'Release v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: false
+          tagName: ${{ !github.event.pull_request.head.repo.fork && format('v{0}', env.npm_package_version) || '' }}
+          releaseName: ${{ !github.event.pull_request.head.repo.fork && format('Release v{0}', env.npm_package_version) || '' }}
+          releaseBody: ${{ env.RELEASE_BODY }}
+          releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
           prerelease: true
           includeUpdaterJson: true
           updaterJsonPreferNsis: true
