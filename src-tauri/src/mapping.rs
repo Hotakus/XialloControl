@@ -200,9 +200,8 @@ pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| {
 
 /// TOML 配置文件名。
 const DEFAULT_MAPPINGS_FILE: &str = "mappings.toml";
-pub static MAPPING_FILE_PATH: Lazy<RwLock<PathBuf>> = Lazy::new(|| {
-    RwLock::from(PathBuf::from(DEFAULT_MAPPINGS_FILE))
-});
+pub static MAPPING_FILE_PATH: Lazy<RwLock<PathBuf>> =
+    Lazy::new(|| RwLock::from(PathBuf::from(DEFAULT_MAPPINGS_FILE)));
 
 /// 全局手柄按键布局映射，例如将 "Y" 映射到 `ControllerButtons::North`。
 pub static XBOX_LAYOUT_MAP: Lazy<RwLock<HashMap<&'static str, ControllerButtons>>> =
@@ -232,8 +231,6 @@ pub fn set_mapping_file_path(path: PathBuf) {
 pub fn get_mapping_file_path() -> PathBuf {
     MAPPING_FILE_PATH.read().unwrap().clone()
 }
-
-
 
 /// 内部加载映射配置的实现，从文件读取。
 fn load_mappings_internal() -> Vec<Mapping> {

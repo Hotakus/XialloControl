@@ -2,8 +2,8 @@
 
 use crate::mapping::{Mapping, get_mappings};
 use crate::setting::{get_setting, load_settings};
-use crate::{mapping, xeno_utils};
 use crate::xeno_utils::ensure_dir;
+use crate::{mapping, xeno_utils};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -162,8 +162,11 @@ pub fn initialize() {
         mapping::set_mapping_file_path(
             PathBuf::from(PRESET_DIR)
                 .join(preset.name.clone())
-                .join(preset.items.mappings_file_name.clone())
+                .join(preset.items.mappings_file_name.clone()),
         );
-        println!("mappings_file_path = {:#?}", mapping::get_mapping_file_path());
+        println!(
+            "mappings_file_path = {:#?}",
+            mapping::get_mapping_file_path()
+        );
     }
 }

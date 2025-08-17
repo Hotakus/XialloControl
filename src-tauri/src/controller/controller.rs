@@ -14,9 +14,9 @@ use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
 use crate::controller::xbox;
+use crate::setting::get_setting;
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputHandle;
-use crate::setting::get_setting;
 
 // ---------------------- 结构体定义 ----------------------
 /// 游戏控制器设备信息
@@ -658,7 +658,7 @@ fn query_needed_handle(app_handle: AppHandle) {
 /// 3. 主设备状态监听
 pub fn initialize(app_handle: AppHandle) {
     log::debug!("初始化控制器模块");
-    
+
     let setting = get_setting();
     set_frequency(setting.polling_frequency);
 
