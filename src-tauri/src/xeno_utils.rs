@@ -18,7 +18,7 @@ pub fn create_config_dir() {
     if !config_dir.exists() {
         fs::create_dir_all(&config_dir).expect("创建失败");
     } else {
-        println!("Config dir already exists");
+        log::debug!("Config dir already exists");
     }
 }
 
