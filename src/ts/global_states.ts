@@ -8,6 +8,8 @@ let appWindow = getCurrentWindow();
 
 // ---------- 响应式应用状态 ----------
 export const state = reactive({
+    version: '0.0.0',
+
     titlebar_visible: true,
 
     statusMessage: '选择设备后点击连接按钮',

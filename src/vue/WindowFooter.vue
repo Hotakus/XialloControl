@@ -6,7 +6,7 @@
     </div>
 
     <div>
-      <span>© 2025 XenoControl 0.15.1</span>
+      <span>© 2025 XenoControl {{ state.version }}</span>
       <a id="github-link" href="https://github.com/Hotakus/XenoControl" target="_blank" rel="noopener noreferrer" title="GitHub 仓库">GitHub</a>
     </div>
   </div>
@@ -14,6 +14,18 @@
 
 <script setup lang="ts">
 // 可以写组件逻辑
+import {getVersion} from '@tauri-apps/api/app'
+import {onMounted} from "vue";
+import {state} from "@/ts/global_states.ts";
+
+async function v() {
+  state.version = await getVersion()
+  console.log("XenoControl Version: ", state.version)
+}
+
+onMounted(() => {
+  v()
+})
 </script>
 
 <style scoped>
