@@ -66,6 +66,7 @@ body {
 
 .window-header.show {
     height: 30px;
+
     background: var(--primary-bg);
     color: var(--primary-text);
     display: flex;
