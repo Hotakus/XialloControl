@@ -73,7 +73,7 @@ body {
     align-items: center;
     padding: 0 10px;
     user-select: none;
-    -webkit-app-region: drag;
+    /*-webkit-app-region: drag;*/
     border-radius: var(--border-radius) var(--border-radius) 0 0;
     flex-shrink: 0;
 }

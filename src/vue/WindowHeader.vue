@@ -1,7 +1,7 @@
 <template>
   <div class="window-header"
        :class="{ 'show': state.titlebar_visible, 'hide':!state.titlebar_visible }"
-       id="titlebar">
+       id="titlebar" data-tauri-drag-region>
     <div class="header-left">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="white">
         <path d="M18 2h-3.5l-1-1h-5l-1 1H6v2h12V2zm3 7H3v11c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9zM8 12h2v5H8v-5zm6 0h2v5h-2v-5z"/>
