@@ -21,7 +21,11 @@
           </svg>
         </button>
       </div>
-      <div id="status-message" class="status-message">选择设备后点击连接按钮</div>
+      <div id="status-message"
+           class="status-message"
+           :class="{ success: state.statusMessageIsSuccess, error: state.statusMessageIsError }">
+        {{ state.statusMessage }}
+      </div>
     </div>
 
     <div class="card controller-image"></div>
@@ -30,6 +34,7 @@
 
 <script setup lang="ts">
 // 可以写组件逻辑
+import {state} from "@/ts/global_states.ts";
 </script>
 
 <style scoped>
