@@ -10,11 +10,17 @@ let appWindow = getCurrentWindow();
 export const state = reactive({
     titlebar_visible: true,
 
+    statusMessage: '选择设备后点击连接按钮',
+    statusMessageIsError: false,
+    statusMessageIsSuccess: false,
+
     activeTab: 'buttonMapTab',
+
     autoStart: false,
     minimizeToTray: false,
     theme: 'light',
     pollingFrequency: 125,
+    previousPreset: "default",
 
     // 按键映射模态窗口相关
     showMappingModal: false,
@@ -63,7 +69,7 @@ export const state = reactive({
         },
         is_acting: false
     },
-    previous_preset_name: "default",
+
     current_preset: {
         name: "",
         items: {
