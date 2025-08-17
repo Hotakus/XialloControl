@@ -27,10 +27,8 @@ export async function updateSettings() {
         minimize_to_tray: state.minimizeToTray,
         theme: state.theme,
         polling_frequency: state.pollingFrequency,
-        previous_preset: state.previous_preset_name
+        previous_preset: state.previousPreset
     };
-
-    console.log("保存设置:", newSettings);
 
     try {
         await invoke("update_settings", {newSettings});
@@ -50,7 +48,7 @@ export async function changeTheme() {
 }
 
 
-export async function openButtonMapModal(title = "添加按键映射", selectedButton = "", keyDisplayText = "", mappingId = null) {
+export async function openButtonMapModal(title = "添加按键映射", selectedButton = "", keyDisplayText = "", mappingId: any = null) {
     state.modalErrorVisible = false;
     state.modalErrorMessage = '';
 
@@ -66,19 +64,53 @@ export async function openButtonMapModal(title = "添加按键映射", selectedB
     state.showMappingModal = true;
 }
 
-export async function editButtonMap() {
-    // TODO: 编辑按钮映射
+export async function editButtonMap(id: number) {
+    const mapping = state.mappings.find(m => m.id === id);
+    if (mapping) {
+        // --- 新增转换和状态恢复逻辑 ---
+        const raw_key: string = mapping.composed_shortcut_key; // 获取英文原始值
 
+        // 1. 转换为中文显示值，用于弹窗UI
+        const display_key = raw_key.split(' + ').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+
+        // 2. 反向解析原始值，恢复 state.currentKeys 状态
+        const parts = raw_key.split(' + ');
+        state.currentKeys = {ctrl: false, shift: false, alt: false, meta: false, key: null}; // 重置
+        state.currentKeys.ctrl = parts.includes('Control');
+        state.currentKeys.shift = parts.includes('Shift');
+        state.currentKeys.alt = parts.includes('Alt');
+        state.currentKeys.meta = parts.includes('Meta');
+        // 查找不是修饰键的部分作为主键
+        state.currentKeys.key = parts.find(p => !['Control', 'Shift', 'Alt', 'Meta'].includes(p)) || null;
+
+        // 使用转换后的中文值和恢复的状态打开模态窗口
+        console.log("编辑按钮映射", id);
+        await openButtonMapModal("编辑按键映射", mapping.composed_button, display_key, mapping.id);
+        // --- 逻辑结束 ---
+    }
+}
+
+export async function deleteButtonMap(id: number) {
+    // TODO: 删除按钮映射
+    invoke('delete_mapping', {id: id})
+        .then(success => {
+            if (success) {
+                updateStatusMessage('映射已删除');
+                // 从后端重新加载列表，保证数据同步
+                queryMappings();
+            } else {
+                updateStatusMessage('删除映射失败，项目可能已被移除', true);
+            }
+        })
+        .catch(err => {
+            updateStatusMessage(`删除失败: ${err}`, true);
+        });
+    // renderMappings();
 }
 
 export async function closeButtonMapModal() {
     stopKeyDetection(true);
     state.showMappingModal = false;
-}
-
-
-export async function saveButtonMap() {
-    // TODO: 保存按钮映射
 }
 
 
@@ -207,9 +239,6 @@ function updateKeyDisplay() {
     }
 
     state.keyDisplayText = displayText;
-
-    // TODO: test code
-    // uiElements.keyDisplay.classList.toggle('mouse', isMouseKey);
 }
 
 // 移除按键监听器
@@ -325,5 +354,4 @@ export async function detectKey() {
         console.log("开始按键监听");
     }
 }
-
 
