@@ -25,6 +25,7 @@ mod preset;
 mod setting;
 mod tray;
 mod xeno_utils;
+mod setup;
 
 #[tauri::command]
 fn hide_current_window(window: Window) -> Result<(), String> {
@@ -128,7 +129,6 @@ pub fn run() {
             open_url,
             get_platform,
             _create_child_window,
-
             controller::controller::query_devices,
             controller::controller::use_device,
             controller::controller::disconnect_device,
@@ -136,19 +136,16 @@ pub fn run() {
             controller::controller::get_controller_data,
             controller::logic::controller_stick_drift_sampling,
             controller::logic::check_controller_deadzone,
-
             setting::get_current_settings,
             setting::update_settings,
-
             mapping::set_mapping,
             mapping::get_mappings,
             mapping::update_mapping,
             mapping::add_mapping,
             mapping::delete_mapping,
-
             preset::preset_test,
             preset::preset_test2,
-            preset::get_preset
+            preset::load_preset
         ])
         .setup(|app| {
             let app_handle = app.handle();
@@ -156,9 +153,7 @@ pub fn run() {
             let main_window = create_main_window(app_handle.clone());
             let child_window = create_child_window(app_handle.clone());
 
-            let child_windows_list = vec![
-                child_window.clone(),
-            ];
+            let child_windows_list = vec![child_window.clone()];
 
             main_window.on_window_event({
                 let app_handle = app_handle.clone(); // 闭包再 clone 一次，保证 'static
@@ -175,12 +170,9 @@ pub fn run() {
                 }
             });
 
-            let _ = adaptive_sampler::initialize();
             let _ = tray::initialize(app_handle.clone());
-            let _ = controller::initialize(app_handle.clone());
-            let _ = xeno_utils::initialize();
-            let _ = setting::initialize();
-            let _ = mapping::initialize();
+            setup::initialize(app_handle.clone());
+
             Ok(())
         })
         .run(tauri::generate_context!())
