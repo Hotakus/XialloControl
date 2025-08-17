@@ -1,6 +1,7 @@
-import {state, uiElements} from "@/ts/global_states.ts";
+import {state} from "@/ts/global_states.ts";
 import {invoke} from "@tauri-apps/api/core";
-import {watch} from 'vue'; // 🐱 喵！导入 watch
+import {updateStatusMessage} from "@/ts/LeftPanel.ts";
+import {queryMappings} from "@/App.ts";
 
 
 /**
