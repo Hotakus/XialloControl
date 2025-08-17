@@ -8,17 +8,24 @@
   <a href="https://github.com/hotakus/XenoControl/releases/latest">
     <img src="https://img.shields.io/github/v/release/hotakus/XenoControl?style=flat-square&logo=github" alt="GitHub release">
   </a>
+<a href="https://www.rust-lang.org">
+    <img src="https://img.shields.io/github/actions/workflow/status/hotakus/XenoControl/app.yml?style=flat-square" alt="Rust">
+  </a>
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MPL%202.0-orange?style=flat-square" alt="License">
   </a>
   <a href="https://github.com/hotakus/XenoControl">
     <img src="https://img.shields.io/github/repo-size/hotakus/XenoControl?style=flat-square" alt="Repo size">
   </a>
+  <br>
+  <a href="https://tauri.app">
+    <img src="https://img.shields.io/badge/Tauri-2.7.0-FFC131?style=flat-square&logo=tauri" alt="Tauri">
+  </a>
   <a href="https://www.rust-lang.org">
     <img src="https://img.shields.io/badge/Rust-2024-orange?style=flat-square&logo=rust" alt="Rust">
   </a>
   <a href="https://tauri.app">
-    <img src="https://img.shields.io/badge/Tauri-2.7.0-FFC131?style=flat-square&logo=tauri" alt="Tauri">
+    <img src="https://img.shields.io/badge/PackageManager-PNPM-blue?style=flat-square&logo=pnpm" alt="Tauri">
   </a>
 </p>
 
@@ -41,16 +48,19 @@ XenoControl 是一款为创意工作者设计的手柄控制软件，让您可�
 ### ✨ 功能特点
 
 #### 🎮 创意工作优化
+
 - **按键映射**：将手柄按键映射为画笔、橡皮擦、撤销等常用功能
 - **摇杆控制**：使用摇杆控制画笔大小、画布缩放等操作
 - **多预设方案**：保存和导入多个预设配置，适应不同软件和工作流程
 
 #### ⚙️ 高级控制
+
 - **死区调整**：自定义摇杆死区范围，优化操作精度
 - **轮询频率**：调整手柄轮询频率（1-16000Hz）确保响应灵敏（默认125Hz，推荐1000hz，高于1khz以上可能会影响性能，并且手柄必须支持高频）
 - **主题切换**：提供浅色、深色及系统跟随三种视觉主题
 
 #### 🚀 效率提升
+
 - **开机自启**：随系统启动，随时可用（可选）
 - **托盘运行**：最小化到系统托盘，不干扰创作过程 （可选）
 
