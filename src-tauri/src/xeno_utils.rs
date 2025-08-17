@@ -44,6 +44,16 @@ pub fn ensure_config_dir() {
     }
 }
 
+pub fn ensure_dir(dir: &PathBuf) -> Option<PathBuf> {
+    let config_dir = get_app_root().join(GLOBAL_CONFIG_DIR);
+    let full_dir = config_dir.join(dir);
+    if !full_dir.exists() {
+        fs::create_dir_all(&full_dir).expect("创建目录失败");
+    }
+    Some(full_dir)
+}
+
 pub fn initialize() {
     log::debug!("初始化实用工具");
+    create_config_dir();
 }
