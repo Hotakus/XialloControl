@@ -15,8 +15,11 @@
 use std::env;
 use tauri::{AppHandle, Manager, WebviewWindow, Window};
 // 👈 引入 Manager 以启用 create_window
+use crate::xeno_utils::get_config_path;
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_log::fern;
+use tauri_plugin_log::fern::colors::{ColoredLevelConfig};
 
 mod adaptive_sampler;
 mod controller;
@@ -116,7 +119,30 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(tauri_plugin_window_state::Builder::new().build())
+        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {
+            // Write your code here...
+        }))
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .target(tauri_plugin_log::Target::new(
+                    tauri_plugin_log::TargetKind::Folder {
+                        path: get_config_path("logs"),
+                        file_name: None,
+                    },
+                ))
+                .level(log::LevelFilter::Debug)
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .with_colors(
+                    ColoredLevelConfig::new()
+                        .error(fern::colors::Color::BrightRed)
+                        .warn(fern::colors::Color::Yellow)
+                        .info(fern::colors::Color::Green)
+                        .debug(fern::colors::Color::Blue)
+                        .trace(fern::colors::Color::White),
+                )
+                .build(),
+        )
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
@@ -152,9 +178,10 @@ pub fn run() {
             let app_handle = app.handle();
 
             let main_window = create_main_window(app_handle.clone());
-            let child_window = create_child_window(app_handle.clone());
 
-            let child_windows_list = vec![child_window.clone()];
+            // let child_window = create_child_window(app_handle.clone());
+            // let child_windows_list = vec![child_window.clone()];
+            let child_windows_list: Vec<WebviewWindow> = vec![];
 
             main_window.on_window_event({
                 let app_handle = app_handle.clone(); // 闭包再 clone 一次，保证 'static
@@ -172,7 +199,9 @@ pub fn run() {
             });
 
             let _ = tray::initialize(app_handle.clone());
-            setup::initialize(app_handle.clone());
+
+            setup::initialize();
+            controller::initialize(app_handle.clone());
 
             Ok(())
         })
