@@ -116,7 +116,7 @@
             <div class="setting-item">
               <label for="polling-frequency">轮询频率:</label>
               <div class="polling-container">
-                <input type="number" id="polling-frequency" min="1" max="8000" value="125" v-model="state.pollingFrequency" @change="updateSettings()">
+                <input type="number" id="polling-frequency" min="1" max="8000" value="125" v-model="state.pollingFrequency" @change="setPollingFrequency()">
                 <span>Hz</span>
               </div>
             </div>

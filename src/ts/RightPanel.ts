@@ -13,6 +13,11 @@ export function switchTab(tabName: string) {
 }
 
 
+export async function setPollingFrequency() {
+    await invoke("set_frequency", {freq: state.pollingFrequency});
+    await updateSettings();
+}
+
 /**
  * 保存设置
  */
