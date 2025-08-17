@@ -1,15 +1,13 @@
 use crate::{adaptive_sampler, controller, mapping, preset, setting, xeno_utils};
+use log::Level;
 use tauri::AppHandle;
+use tauri_plugin_log::fern::colors::{Color, ColoredLevelConfig};
 
-pub fn initialize(app_handle: AppHandle) {
-    xeno_utils::initialize();
-
+pub fn initialize() {
     setting::initialize();
-
     preset::initialize();
 
     mapping::initialize();
-    controller::initialize(app_handle.clone());
 
     adaptive_sampler::initialize();
 }
