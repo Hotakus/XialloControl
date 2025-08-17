@@ -1,13 +1,13 @@
 <template>
   <div class="window theme-light">
-    <WindowHeader />
+    <WindowHeader/>
     <div class="window-body">
-      <LeftPanel />
-      <RightPanel />
+      <LeftPanel/>
+      <RightPanel/>
     </div>
-    <WindowFooter />
-    <MappingModal />
-    <JoystickCaliModal />
+    <WindowFooter/>
+    <MappingModal/>
+    <JoystickCaliModal/>
   </div>
 </template>
 
@@ -18,6 +18,12 @@ import RightPanel from './vue/RightPanel.vue'
 import WindowFooter from './vue/WindowFooter.vue'
 import MappingModal from './vue/MappingModal.vue'
 import JoystickCaliModal from './vue/JoystickCaliModal.vue'
+import {onMounted} from "vue";
+import {initApp} from "@/App.ts";
+
+onMounted(() => {
+  initApp();
+})
 </script>
 
 <style>
