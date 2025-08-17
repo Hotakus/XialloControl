@@ -1,0 +1,110 @@
+name: "publish"
+
+on:
+  push:
+    tags: ["v*"]
+    branches:
+      - release
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  # ----------------------------------------------------
+  # 步骤 1: 新增一个独立的 Job 来生成 Changelog
+  # ----------------------------------------------------
+  generate-changelog:
+    name: Generate Changelog
+    # 只在推送 tag 的时候才运行这个 Job
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    outputs:
+      # 将生成的 changelog 作为输出，给下游的 Job 使用
+      changelog: ${{ steps.changelog_builder.outputs.changelog }}
+    steps:
+      # 需要 checkout 代码来读取配置文件
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Changelog
+        id: changelog_builder
+        uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          # 注意：这里参数名是 'configuration' 哦
+          configuration: ".github/workflows/changelog-config.json"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # ----------------------------------------------------
+  # 步骤 2: 修改你原来的 Job，让它依赖上面的 Job
+  # ----------------------------------------------------
+  publish-tauri:
+    # 依赖 generate-changelog Job
+    needs: generate-changelog
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "ubuntu-latest"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
+    #          - platform: "macos-latest"
+    #            args: "--target x86_64-apple-darwin"
+    #          - platform: "macos-latest"
+    #            args: "--target aarch64-apple-darwin"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      # Checkout
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Node + pnpm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      # Rust
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && matrix.args != '' && matrix.args || '' }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          workspaces: |
+            src-tauri -> ../../target
+
+      # System dependencies (Ubuntu)
+      - name: Install system dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
+
+      # ！！！！ 注意：Changelog 生成步骤已经移走了 ！！！！
+
+      # Tauri build + release
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+        with:
+          # 这里 tagName 的逻辑可以简化一下，只在 tag push 时才使用 __VERSION__ 占位符
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && 'v__VERSION__' || '' }}
+          releaseName: "Release v__VERSION__"
+          # 从上游 Job 的 outputs 中获取 changelog！
+          releaseBody: ${{ needs.generate-changelog.outputs.changelog }}
+          releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+          prerelease: true
+          updaterJsonKeepUniversal: true
+          args: ${{ matrix.args }}

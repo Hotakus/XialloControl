@@ -1,0 +1,45 @@
+{
+  "header": "# 更新日志",
+  "footer": "\n\n---",
+  "categories": [
+    {
+      "title": "✨ 新功能",
+      "labels": ["feat"]
+    },
+    {
+      "title": "🐛 修复",
+      "labels": ["fix"]
+    },
+    {
+      "title": "📚 文档",
+      "labels": ["docs"]
+    },
+    {
+      "title": "🚀 性能优化",
+      "labels": ["perf"]
+    },
+    {
+      "title": "💅 样式调整",
+      "labels": ["style"]
+    },
+    {
+      "title": "🔨 重构",
+      "labels": ["refactor"]
+    },
+    {
+      "title": "🧪 测试",
+      "labels": ["test"]
+    },
+    {
+      "title": "📦 构建",
+      "labels": ["build"]
+    },
+    {
+      "title": "🤖 CI/CD",
+      "labels": ["ci"]
+    }
+  ],
+  "ignore_labels": ["chore"],
+  "sort": "commit_date",
+  "sort_direction": "desc"
+}
