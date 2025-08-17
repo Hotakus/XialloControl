@@ -1148,6 +1148,7 @@ version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4316185f709b23713e41e3195f90edef7fb00c3ed4adc79769cf09cc762a3b29"
 dependencies = [
+ "colored",
  "log",
 ]
 
@@ -4664,6 +4665,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauri-plugin-single-instance"
+version = "2.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50a0e5a4ce43cb3a733c3aef85e8478bc769dac743c615e26639cbf5d953faf7"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror 2.0.12",
+ "tracing",
+ "windows-sys 0.60.2",
+ "zbus",
+]
+
+[[package]]
 name = "tauri-plugin-updater"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4693,6 +4709,21 @@ dependencies = [
  "url",
  "windows-sys 0.60.2",
  "zip",
+]
+
+[[package]]
+name = "tauri-plugin-window-state"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d5f6fe3291bfa609c7e0b0ee3bedac294d94c7018934086ce782c1d0f2a468e"
+dependencies = [
+ "bitflags 2.9.1",
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -6203,7 +6234,7 @@ dependencies = [
 
 [[package]]
 name = "xenocontrol"
-version = "0.16.1"
+version = "0.16.5"
 dependencies = [
  "anyhow",
  "cfg-if",
@@ -6225,7 +6256,9 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-os",
  "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
  "tauri-plugin-updater",
+ "tauri-plugin-window-state",
  "tokio",
  "toml 0.8.23",
 ]
