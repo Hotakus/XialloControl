@@ -410,6 +410,21 @@ body {
     min-width: 0;
 }
 
+.key-value {
+    font-weight: bold;
+    color: #2f3542;
+    background: #e0e4eb;
+    padding: 4px 10px;
+    border-radius: 4px;
+    min-width: 120px;
+    text-align: center;
+}
+
+.key-value.mouse {
+    background: #d7e3ff;
+    color: #2a5dbf;
+}
+
 .key-display {
     font-weight: bold;
     color: #2f3542;
