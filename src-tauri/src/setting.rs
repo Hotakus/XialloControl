@@ -33,8 +33,8 @@ pub struct AppSettings {
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
-            auto_start: true,
-            minimize_to_tray: true,
+            auto_start: false,
+            minimize_to_tray: false,
             theme: "light".to_string(),
             polling_frequency: DEFAULT_POLLING_FREQUENCY,
             previous_preset: "default".to_string(),
@@ -144,9 +144,9 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
 }
 
 #[tauri::command]
-pub async fn get_current_settings() -> Result<AppSettings, String> {
+pub async fn get_current_settings() -> AppSettings {
     log::debug!("前端请求当前设置");
-    Ok(get_setting())
+    get_setting()
 }
 
 pub fn initialize() {
