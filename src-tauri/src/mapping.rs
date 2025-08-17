@@ -7,6 +7,7 @@ use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{RwLock, RwLockReadGuard};
 use std::thread;
@@ -198,7 +199,10 @@ pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| {
 });
 
 /// TOML 配置文件名。
-const MAPPINGS_FILE: &str = "mappings.toml";
+const DEFAULT_MAPPINGS_FILE: &str = "mappings.toml";
+pub static MAPPING_FILE_PATH: Lazy<RwLock<PathBuf>> = Lazy::new(|| {
+    RwLock::from(PathBuf::from(DEFAULT_MAPPINGS_FILE))
+});
 
 /// 全局手柄按键布局映射，例如将 "Y" 映射到 `ControllerButtons::North`。
 pub static XBOX_LAYOUT_MAP: Lazy<RwLock<HashMap<&'static str, ControllerButtons>>> =
@@ -218,16 +222,29 @@ pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
 
 // --- 核心逻辑函数 (ﾉ>ω<)ﾉ ---
 
+/// 设置相对 全局配置目录 的映射配置文件路径。
+pub fn set_mapping_file_path(path: PathBuf) {
+    let mut lock = MAPPING_FILE_PATH.write().unwrap();
+    *lock = path;
+}
+
+/// 设置相对 全局配置目录 的映射配置文件路径。
+pub fn get_mapping_file_path() -> PathBuf {
+    MAPPING_FILE_PATH.read().unwrap().clone()
+}
+
+
+
 /// 内部加载映射配置的实现，从文件读取。
 fn load_mappings_internal() -> Vec<Mapping> {
-    let mappings_path = xeno_utils::get_config_path(MAPPINGS_FILE);
+    let mappings_path = xeno_utils::get_config_path(get_mapping_file_path().to_str().unwrap());
 
     if !mappings_path.exists() {
-        log::warn!("映射配置文件不存在，将创建空文件");
+        log::warn!("映射配置文件不存在，将创建空文件: {mappings_path:#?}");
         // 创建空映射文件
         let mapping_file = MappingFile { mappings: vec![] };
         if let Err(e) = xeno_utils::write_toml_file(&mappings_path, &mapping_file) {
-            log::error!("创建空映射文件失败: {}", e);
+            log::error!("创建空映射文件失败: {e}");
         }
         return vec![];
     }
@@ -238,7 +255,7 @@ fn load_mappings_internal() -> Vec<Mapping> {
             mapping_file.mappings
         }
         Err(e) => {
-            log::error!("加载映射配置失败: {}", e);
+            log::error!("加载映射配置失败: {e}");
             vec![]
         }
     }
@@ -256,7 +273,7 @@ pub fn save_mappings() {
     xeno_utils::ensure_config_dir();
 
     let mappings = get_mappings_internal();
-    let mappings_path = xeno_utils::get_config_path(MAPPINGS_FILE);
+    let mappings_path = xeno_utils::get_config_path(get_mapping_file_path().to_str().unwrap());
 
     let mapping_file = MappingFile {
         mappings: mappings.clone(),
@@ -351,8 +368,8 @@ pub fn add_mapping(composed_button: String, composed_shortcut_key: String) -> bo
 
 /// Tauri 命令：根据 ID 删除一个映射配置。
 #[tauri::command]
-pub fn delete_mapping(id: u64) -> bool {
-    log::debug!("请求删除 id {} 的映射配置", id);
+pub async fn delete_mapping(id: u64) -> bool {
+    log::debug!("请求删除 id {id} 的映射配置");
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
     let initial_len = cache.len();
 
@@ -364,9 +381,9 @@ pub fn delete_mapping(id: u64) -> bool {
     if deleted {
         drop(cache);
         save_mappings();
-        log::info!("已成功删除 id {} 的映射", id);
+        log::info!("已成功删除 id {id} 的映射");
     } else {
-        log::warn!("尝试删除一个不存在的映射 id: {}", id);
+        log::warn!("尝试删除一个不存在的映射 id: {id}");
     }
 
     deleted
