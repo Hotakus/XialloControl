@@ -175,7 +175,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" id="cancel-btn" @click="closeButtonMapModal()">取消</button>
-          <button class="btn btn-primary" id="confirm-btn" @click="saveButtonMap()">确认</button>
+          <button class="btn btn-primary" id="confirm-btn" @click="mappingsConfirm()">确认</button>
         </div>
       </div>
     </div>

@@ -82,6 +82,66 @@ export async function addButtonMap() {
     await openButtonMapModal();
 }
 
+
+export function formatKeyDisplay(rawKey: string): string {
+    return rawKey.split('+').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+}
+
+export async function mappingsConfirm() {
+    const composed_button = state.selectedButton;
+
+    // 从 state.currentKeys 构建用于后端的原始快捷键字符串
+    const shortcut_parts = [];
+    if (state.currentKeys.ctrl) shortcut_parts.push('Control');
+    if (state.currentKeys.shift) shortcut_parts.push('Shift');
+    if (state.currentKeys.alt) shortcut_parts.push('Alt');
+    if (state.currentKeys.meta) shortcut_parts.push('Meta');
+    if (state.currentKeys.key) shortcut_parts.push(state.currentKeys.key);
+    const raw_shortcut_key = shortcut_parts.join('+'); // 这就是后端需要的英文值
+
+    stopKeyDetection();
+
+    state.modalErrorVisible = false;
+    state.modalErrorMessage = '';
+
+    if (!composed_button) {
+        state.modalErrorMessage = '请选择手柄按键';
+        state.modalErrorVisible = true;
+        return;
+    }
+
+    if (!raw_shortcut_key) { // 使用新生成的原始值进行校验
+        state.modalErrorMessage = '请设置键盘映射按键';
+        state.modalErrorVisible = true;
+        return;
+    }
+
+    let result = false;
+    if (state.editingMappingId) {
+        result = await invoke("update_mapping", {
+            id: state.editingMappingId, // 'id' is the same in both cases
+            composedButton: composed_button,
+            composedShortcutKey: raw_shortcut_key,
+        });
+        updateStatusMessage('按键映射已更新');
+    } else {
+        result = await invoke("add_mapping", {
+            composedButton: composed_button,
+            composedShortcutKey: raw_shortcut_key,
+        });
+        updateStatusMessage('按键映射已添加');
+    }
+
+    if (result) {
+        // 保存成功，重新加载映射列表
+        await queryMappings();
+    } else {
+        updateStatusMessage('按键映射操作失败', true);
+    }
+
+    await closeButtonMapModal();
+}
+
 // 特殊键的显示名称映射
 const keyDisplayNames: Record<string, string> = {
     ' ': '空格键',
