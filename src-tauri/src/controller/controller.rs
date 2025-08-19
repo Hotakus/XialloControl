@@ -482,30 +482,27 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     ];
 
     for (pressed, button, name) in buttons {
-        if pressed {
-            log::debug!("{} 键被按下", name);
-        }
         let mut controller_data = CONTROLLER_DATA.write().unwrap();
         controller_data.set_button(button, pressed);
     }
 
-    log::debug!("---------------- {:#?}", gamepad.id());
-    let left_stick_x = gamepad.axis_data(Axis::LeftStickX).unwrap().value();
-    let left_stick_y = gamepad.axis_data(Axis::LeftStickY).unwrap().value();
-    log::debug!(
-        "Left Stick X: {:#?}, Left Stick Y: {:#?}",
-        left_stick_x,
-        left_stick_y
-    );
-
-    let right_stick_x = gamepad.axis_data(Axis::RightStickX).unwrap().value();
-    let right_stick_y = gamepad.axis_data(Axis::RightStickY).unwrap().value();
-    log::debug!(
-        "Right Stick X: {:#?}, Right Stick Y: {:#?}",
-        right_stick_x,
-        right_stick_y
-    );
-    log::debug!("----------------");
+    // log::debug!("---------------- {:#?}", gamepad.id());
+    // let left_stick_x = gamepad.axis_data(Axis::LeftStickX).unwrap().value();
+    // let left_stick_y = gamepad.axis_data(Axis::LeftStickY).unwrap().value();
+    // log::debug!(
+    //     "Left Stick X: {:#?}, Left Stick Y: {:#?}",
+    //     left_stick_x,
+    //     left_stick_y
+    // );
+    //
+    // let right_stick_x = gamepad.axis_data(Axis::RightStickX).unwrap().value();
+    // let right_stick_y = gamepad.axis_data(Axis::RightStickY).unwrap().value();
+    // log::debug!(
+    //     "Right Stick X: {:#?}, Right Stick Y: {:#?}",
+    //     right_stick_x,
+    //     right_stick_y
+    // );
+    // log::debug!("----------------");
 }
 
 /// 轮询非Xbox控制器状态
@@ -518,6 +515,7 @@ fn poll_other_controllers(device: &DeviceInfo) {
         let vid = format!("{:04x}", gamepad.vendor_id().unwrap());
         let pid = format!("{:04x}", gamepad.product_id().unwrap());
 
+        // TODO: 需要更加健壮的匹配规则，以适应更多的同品牌控制器
         // 匹配当前设备
         if vid.eq_ignore_ascii_case(&device.vendor_id)
             && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap())
@@ -530,9 +528,37 @@ fn poll_other_controllers(device: &DeviceInfo) {
 /// 根据控制器类型分发轮询任务
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
-        // ControllerType::Xbox => poll_other_controllers(device),
-        ControllerType::Xbox => xbox::poll_xbox_controller(device),
-        _ => poll_other_controllers(device),
+        // Xbox控制器特殊处理
+        ControllerType::Xbox => {
+            #[cfg(target_os = "windows")]
+            {
+                // windows下，若 UUID 非法，则特殊处理轮询
+                if device.uuid_is_invalid {
+                    xbox::poll_xbox_controller(device)
+                } else {
+                    poll_other_controllers(device)
+                }
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                poll_other_controllers(device)
+            }
+        }
+        _ => {
+            if device.uuid_is_invalid {
+                // TODO：未知控制器处理方法，windows 下拟调用xbox方法，其他平台报错
+                #[cfg(target_os = "windows")] {
+                    xbox::poll_xbox_controller(device)
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    log::error("不受支持的控制器：{device:#?}");
+                    disconnect_device();
+                }
+            } else {
+                poll_other_controllers(device)
+            }
+        },
     }
 }
 
@@ -605,13 +631,6 @@ pub fn listen() {
             thread::sleep(Duration::from_secs_f32(time_interval));
         }
     });
-}
-
-pub fn _disconnect_device() {
-    log::debug!("尝试断开设备连接");
-    let mut current_device = CURRENT_DEVICE.write().unwrap();
-    *current_device = default_devices()[0].clone();
-    log::info!("✅ 已断开当前设备");
 }
 
 /// 初始化 Gilrs 事件监听线程
