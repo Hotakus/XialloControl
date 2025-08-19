@@ -77,6 +77,7 @@ num-traits = "0.2.19"
 cfg-if = "1.0.1"
 tauri-plugin-os = "2"
 tauri-plugin-log = { version = "2", features = ["colored"] }
+uuid = { version = "1.17.0", features = ["v4"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2"
