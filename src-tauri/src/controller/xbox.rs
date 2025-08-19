@@ -88,9 +88,6 @@ fn _poll_xbox_controller_state(state: XInputState) {
     ];
 
     for (pressed, button, label) in buttons {
-        if pressed {
-            log::debug!("{label} 被按下");
-        }
         controller_data.set_button(button, pressed);
     }
 
