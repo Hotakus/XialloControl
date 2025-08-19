@@ -164,6 +164,7 @@ pub fn run() {
             controller::controller::query_devices,
             controller::controller::use_device,
             controller::controller::disconnect_device,
+            controller::controller::physical_disconnect_device,
             controller::controller::set_frequency,
             controller::controller::get_controller_data,
             controller::logic::controller_stick_drift_sampling,

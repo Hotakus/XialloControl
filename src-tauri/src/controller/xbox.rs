@@ -9,7 +9,7 @@ use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::controller::logic;
 use tauri::Emitter;
 
-use crate::controller::controller::_disconnect_device;
+use crate::controller::controller::physical_disconnect_device;
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputState;
 
@@ -164,8 +164,8 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
 
     if !got_device {
         // 控制器断开处理
-        log::error!("Xbox 控制器断开连接");
-        _disconnect_device();
+        log::warn!("Xbox 控制器断开连接");
+        physical_disconnect_device();
     }
 }
 
