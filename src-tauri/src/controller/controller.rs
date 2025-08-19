@@ -384,7 +384,7 @@ pub fn physical_disconnect_device() -> bool {
 /// - 采样率
 /// - 时间间隔
 #[tauri::command]
-pub async fn set_frequency(freq: u32) {
+pub fn set_frequency(freq: u32) {
     let freq = freq.clamp(1, 8000);
     let mut global_freq = FREQ.write().unwrap();
     let mut time_interval = TIME_INTERVAL.write().unwrap();
@@ -632,9 +632,13 @@ pub fn gilrs_listen() {
                     if event == EventType::Disconnected {
                         #[cfg(target_os = "windows")]
                         {
-                            let device = CURRENT_DEVICE.read().unwrap();
-                            if device.controller_type != ControllerType::Xbox {
-                                _disconnect_device();
+                            let controller_type = {
+                                let device = CURRENT_DEVICE.read().unwrap();
+                                device.controller_type
+                            };
+
+                            if controller_type != ControllerType::Xbox {
+                                physical_disconnect_device();
                             }
                         }
 
