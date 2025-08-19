@@ -227,36 +227,46 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
         }
     };
 
-    let mut supported_devices = Vec::new();
+    let mut connected_devices = Vec::new();
+    let gilrs_guard = GLOBAL_GILRS.lock().unwrap();
+    let gilrs = gilrs_guard.as_ref().unwrap();
+
+    for (id, gamepad) in gilrs.gamepads() {
+        let vid_opt = gamepad.vendor_id();
+        let pid_opt = gamepad.product_id();
+
+        if let (Some(vid), Some(pid)) = (vid_opt, pid_opt) {
+            let vid_str = format!("{vid:04x}");
+            let pid_str = format!("{pid:04x}");
+            let uuid = Uuid::from_bytes(gamepad.uuid());
+
+
+            let device_info = DeviceInfo {
+                name: gamepad.name().to_string(),
+                vendor_id: vid_str.clone(),
+                product_id: Some(pid_str),
+                sub_product_id: None,
+                uuid_is_invalid: uuid.is_nil(),
+                device_path: Some(format!("{id:?}")),
+                controller_type: detect_controller_type(&vid_str),
+            };
+            connected_devices.push(device_info);
+        }
+    }
 
     // 遍历所有检测到的HID设备
     for device in api.device_list() {
         let vid = format!("{:04x}", device.vendor_id());
         let pid = format!("{:04x}", device.product_id());
 
-        // 在配置中查找匹配项
-        let matched = config.iter().find(|d| {
-            d.vendor_id.eq_ignore_ascii_case(&vid)
-                && match &d.product_id {
-                    Some(pid_cfg) => pid_cfg.eq_ignore_ascii_case(&pid),
-                    None => true,
-                }
-        });
-
-        if let Some(_supported) = matched {
-            // 构建完整的设备信息
-            let device_info = DeviceInfo {
-                name: device.product_string().unwrap_or("未知设备").to_string(),
-                vendor_id: vid.clone(),
-                product_id: Some(pid.clone()),
-                device_path: Some(device.path().to_string_lossy().to_string()),
-                controller_type: detect_controller_type(&vid),
-            };
-            supported_devices.push(device_info);
+        for d in connected_devices.iter_mut() {
+            if d.vendor_id.eq_ignore_ascii_case(&vid) {
+                d.sub_product_id = Some(pid.clone());
+            }
         }
     }
 
-    supported_devices
+    connected_devices
 }
 
 // ---------------------- 工具函数 ----------------------
