@@ -125,6 +125,7 @@ fn _poll_xbox_controller_state(state: XInputState) {
         *global_controller_data = controller_data;
 
         let app_handle = get_app_handle();
+        // TODO: 发送精简数据
         app_handle
             .emit("update_controller_data", controller_data)
             .expect("TODO: panic message");
@@ -149,7 +150,7 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
                 let pid = format!("{:04x}", xinput_caps_ex.product_id);
 
                 if vid.eq_ignore_ascii_case(&_device.vendor_id)
-                    && pid.eq_ignore_ascii_case(_device.product_id.as_deref().unwrap())
+                    && pid.eq_ignore_ascii_case(_device.sub_product_id.as_deref().unwrap())
                 {
                     got_device = true;
                     _poll_xbox_controller_state(state);
