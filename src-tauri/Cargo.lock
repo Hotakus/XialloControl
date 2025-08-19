@@ -6234,7 +6234,7 @@ dependencies = [
 
 [[package]]
 name = "xenocontrol"
-version = "0.16.5"
+version = "0.17.1"
 dependencies = [
  "anyhow",
  "cfg-if",

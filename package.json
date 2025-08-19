@@ -1,7 +1,7 @@
 {
   "name": "xenocontrol",
   "private": true,
-  "version": "0.16.5",
+  "version": "0.17.1",
   "type": "module",
   "scripts": {
     "dev": "vite",

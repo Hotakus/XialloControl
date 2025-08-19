@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "xenocontrol",
-  "version": "0.16.5",
+  "version": "0.17.1",
   "identifier": "com.hotakus.xenocontrol",
   "build": {
     "beforeDevCommand": "pnpm dev",
