@@ -44,76 +44,79 @@ jobs:
           owner: 'Hotakus'
           repo: 'XenoControl'
           mode: 'PR'  # [PR, COMMIT, HYBRID]
-
-  # ----------------------------------------------------
-  # 步骤 2: 修改你原来的 Job，让它依赖上面的 Job
-  # ----------------------------------------------------
-  publish-tauri:
-    # 依赖 generate-changelog Job
-    needs: generate-changelog
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: "ubuntu-latest"
-            args: ""
-          - platform: "windows-latest"
-            args: ""
-    #          - platform: "macos-latest"
-    #            args: "--target x86_64-apple-darwin"
-    #          - platform: "macos-latest"
-    #            args: "--target aarch64-apple-darwin"
-
-    runs-on: ${{ matrix.platform }}
-    steps:
-      # Checkout
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      # Node + pnpm
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: Install frontend dependencies
-        run: pnpm install
-
-      # Rust
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.platform == 'macos-latest' && matrix.args != '' && matrix.args || '' }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          cache-on-failure: true
-          workspaces: |
-            src-tauri -> ../../target
-
-      # System dependencies (Ubuntu)
-      - name: Install system dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-latest'
+      - name: Print Changelog
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
+          echo "Changelog: ${{ steps.changelog_builder.outputs.changelog }}"
 
-      # ！！！！ 注意：Changelog 生成步骤已经移走了 ！！！！
-
-      # Tauri build + release
-      - uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
-        with:
-          # 这里 tagName 的逻辑可以简化一下，只在 tag push 时才使用 __VERSION__ 占位符
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && 'v__VERSION__' || '' }}
-          releaseName: "Release v__VERSION__"
-          # 从上游 Job 的 outputs 中获取 changelog！
-          releaseBody: ${{ needs.generate-changelog.outputs.changelog }}
-          releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
-          prerelease: true
-          updaterJsonKeepUniversal: true
-          args: ${{ matrix.args }}
+#  # ----------------------------------------------------
+#  # 步骤 2: 修改你原来的 Job，让它依赖上面的 Job
+#  # ----------------------------------------------------
+#  publish-tauri:
+#    # 依赖 generate-changelog Job
+#    needs: generate-changelog
+#    permissions:
+#      contents: write
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        include:
+#          - platform: "ubuntu-latest"
+#            args: ""
+#          - platform: "windows-latest"
+#            args: ""
+#    #          - platform: "macos-latest"
+#    #            args: "--target x86_64-apple-darwin"
+#    #          - platform: "macos-latest"
+#    #            args: "--target aarch64-apple-darwin"
+#
+#    runs-on: ${{ matrix.platform }}
+#    steps:
+#      # Checkout
+#      - uses: actions/checkout@v4
+#        with:
+#          submodules: recursive
+#
+#      # Node + pnpm
+#      - uses: actions/setup-node@v4
+#        with:
+#          node-version: lts/*
+#      - name: Install pnpm
+#        run: npm install -g pnpm
+#      - name: Install frontend dependencies
+#        run: pnpm install
+#
+#      # Rust
+#      - uses: dtolnay/rust-toolchain@stable
+#        with:
+#          targets: ${{ matrix.platform == 'macos-latest' && matrix.args != '' && matrix.args || '' }}
+#      - uses: Swatinem/rust-cache@v2
+#        with:
+#          cache-on-failure: true
+#          workspaces: |
+#            src-tauri -> ../../target
+#
+#      # System dependencies (Ubuntu)
+#      - name: Install system dependencies (Ubuntu only)
+#        if: matrix.platform == 'ubuntu-latest'
+#        run: |
+#          sudo apt-get update
+#          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
+#
+#      # ！！！！ 注意：Changelog 生成步骤已经移走了 ！！！！
+#
+#      # Tauri build + release
+#      - uses: tauri-apps/tauri-action@v0
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
+#          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+#        with:
+#          # 这里 tagName 的逻辑可以简化一下，只在 tag push 时才使用 __VERSION__ 占位符
+#          tagName: ${{ startsWith(github.ref, 'refs/tags/') && 'v__VERSION__' || '' }}
+#          releaseName: "Release v__VERSION__"
+#          # 从上游 Job 的 outputs 中获取 changelog！
+#          releaseBody: ${{ needs.generate-changelog.outputs.changelog }}
+#          releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+#          prerelease: true
+#          updaterJsonKeepUniversal: true
+#          args: ${{ matrix.args }}
