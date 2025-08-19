@@ -107,12 +107,16 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
         WebviewUrl::App("index.html".into()),
     )
     .title("XenoControl")
-    .min_inner_size(1130.0, 770.0)
+    .min_inner_size(1130.0, 740.0)
     .resizable(true)
     .fullscreen(false)
     .decorations(decorations)
     .transparent(true)
     .maximizable(false)
+    .auto_resize()
+    .center()
+    .enable_clipboard_access()
+    .devtools(cfg!(debug_assertions))
     .build()
     .expect("Failed to create main window")
 }
