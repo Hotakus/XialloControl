@@ -2,6 +2,7 @@
 import {reactive, nextTick} from "vue";
 import {getCurrentWindow} from "@tauri-apps/api/window";
 import {invoke} from "@tauri-apps/api/core";
+import {DeviceInfo} from "@/ts/LeftPanel.ts";
 
 let appWindow = getCurrentWindow();
 
@@ -24,6 +25,8 @@ export const state = reactive({
     pollingFrequency: 125,
     previousPreset: "default",
 
+    connectButtonDisabled: false,
+
     // 按键映射模态窗口相关
     showMappingModal: false,
     modalErrorVisible: false,
@@ -35,10 +38,16 @@ export const state = reactive({
     selectedButton: "",
     isMouseKey: false,
 
+    isScanning: false,
+
+    buttonsText: [{value: '', text: ''}],
+
     // main.js 原有的状态
     hasUserSelectedDevice: false,
-    currentDevices: [] as string[],
-    deviceSelected: null as string | null,
+    currentDevices: [] as DeviceInfo[],
+    deviceSelected: null as DeviceInfo | null,
+    deviceSelectedIndex: "null",
+    connectIcon: "",
 
     isConnected: false,
     deviceType: 'xbox',
