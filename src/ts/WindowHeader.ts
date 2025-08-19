@@ -1,5 +1,5 @@
 // src/windowHeader.ts
-import {uiElements, state, invoke, appWindow} from "@/ts/global_states";
+import {appWindow, invoke, state} from "@/ts/global_states";
 
 // ---------- titlebar 显示隐藏逻辑 ----------
 export async function updateTitlebar() {
@@ -8,7 +8,7 @@ export async function updateTitlebar() {
     if (platform === "windows") {
         state.titlebar_visible = true;
     } else if (platform === "linux") {
-        state.titlebar_visible = false;
+        state.titlebar_visible = true; // TODO: 调整窗口平台差异 false
     } else {
         // TODO: macOS titlebar
         state.titlebar_visible = true;
@@ -16,26 +16,18 @@ export async function updateTitlebar() {
 }
 
 // ---------- 窗口按钮事件 ----------
-export function setupWindowButtons() {
-    let minimizeButton = uiElements['minimize-button'];
-    let maximizeButton = uiElements['maximize-button'];
-    let closeButton  = uiElements['close-button'];
+export async function minimize() {
+    console.log("minimize button clicked");
+    await appWindow.minimize();
+}
 
-    if (!minimizeButton || !closeButton || !maximizeButton) return;
+export async function maximize() {
+    console.log("maximize button clicked");
+    await appWindow.toggleMaximize();
+}
 
-    minimizeButton.addEventListener("click", async () => {
-        console.log("minimize button clicked");
-        await appWindow.minimize();
-    });
-
-    maximizeButton.addEventListener("click", async () => {
-        console.log("maximize button clicked");
-        await appWindow.toggleMaximize();
-    });
-
-    closeButton.addEventListener("click", async () => {
-        console.log("close button clicked");
-        if (state.minimizeToTray) await appWindow.hide();
-        else await appWindow.close();
-    });
+export async function close() {
+    console.log("close button clicked");
+    if (state.minimizeToTray) await appWindow.hide();
+    else await appWindow.close();
 }
