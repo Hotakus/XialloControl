@@ -61,12 +61,13 @@ fn get_platform() -> String {
 }
 
 #[tauri::command]
-fn _create_child_window(app_handle: AppHandle) {
-    let child_window = app_handle.get_webview_window("child");
-    child_window
-        .unwrap()
-        .show()
-        .unwrap_or_else(|e| log::error!("Failed to show child window: {e}"));
+fn open_devtools(webview: tauri::WebviewWindow) {
+    webview.open_devtools();
+}
+
+#[tauri::command]
+fn is_release_env() -> bool {
+    !cfg!(debug_assertions)
 }
 
 fn create_child_window(app_handle: AppHandle) -> WebviewWindow {
@@ -155,7 +156,8 @@ pub fn run() {
             minimize_current_window,
             open_url,
             get_platform,
-            _create_child_window,
+            open_devtools,
+            is_release_env,
             controller::controller::query_devices,
             controller::controller::use_device,
             controller::controller::disconnect_device,
