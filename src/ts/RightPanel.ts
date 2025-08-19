@@ -433,3 +433,7 @@ export function updateControllerButtons() {
 export async function openDevTools() {
     await invoke('open_devtools');
 }
+
+export async function resetSettings() {
+    // TODO: 重置设置
+}

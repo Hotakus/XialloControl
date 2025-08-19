@@ -220,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import {addButtonMap, changeTheme, closeButtonMapModal, deleteButtonMap, detectKey, editButtonMap, formatKeyDisplay, mappingsConfirm, openDevTools, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
+import {addButtonMap, changeTheme, closeButtonMapModal, deleteButtonMap, detectKey, editButtonMap, formatKeyDisplay, mappingsConfirm, openDevTools, resetSettings, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
 import {state} from "@/ts/global_states.ts";
 </script>
 
