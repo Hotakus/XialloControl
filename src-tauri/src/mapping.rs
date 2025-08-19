@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{RwLock, RwLockReadGuard};
 use std::thread;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
@@ -399,7 +399,6 @@ pub fn get_mappings() -> Vec<Mapping> {
     get_mappings_internal()
 }
 
-// --- 按键解析和执行 (ง •_•)ง ---
 
 /// 初始化 Xbox 手柄按键布局映射。
 fn init_if_needed() {
@@ -577,7 +576,10 @@ pub fn initialize() {
 pub fn map(controller_datas: &ControllerDatas) {
     // 获取可写的映射配置和触发状态，以及只读的布局映射
     let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
-    let layout_map = get_xbox_layout_map();
+
+    // TODO: 根据实际情况动态更新布局映射，并抽离更新逻辑
+    let layout_map = get_xbox_layout_map(); 
+
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
 
     // 遍历所有映射
