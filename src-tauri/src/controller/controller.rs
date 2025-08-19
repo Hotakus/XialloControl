@@ -156,41 +156,12 @@ pub fn detect_controller_type(vid: &str) -> ControllerType {
 /// 当配置文件不存在时使用此默认配置
 fn default_devices() -> Vec<DeviceInfo> {
     vec![
-        DeviceInfo {
-            name: "Any Xbox Controller".into(),
-            vendor_id: "045e".into(),
-            product_id: None,
-            device_path: None,
-            controller_type: ControllerType::Xbox,
-        },
-        DeviceInfo {
-            name: "DualShock 4 (PS4)".into(),
-            vendor_id: "054c".into(),
-            product_id: None,
-            device_path: None,
-            controller_type: ControllerType::PlayStation,
-        },
-        DeviceInfo {
-            name: "DualSense (PS5)".into(),
-            vendor_id: "054c".into(),
-            product_id: None,
-            device_path: None,
-            controller_type: ControllerType::PlayStation,
-        },
-        DeviceInfo {
-            name: "Switch Pro".into(),
-            vendor_id: "057e".into(),
-            product_id: None,
-            device_path: None,
-            controller_type: ControllerType::Switch,
-        },
-        DeviceInfo {
-            name: "[ BETOP CONTROLLER ]".into(),
-            vendor_id: "20bc".into(),
-            product_id: Some("1263".into()),
-            device_path: None,
-            controller_type: ControllerType::Other,
-        },
+        DeviceInfo::new("UNKNOWN CONTROLLER".into(), "0000".into(), ControllerType::Other),
+        DeviceInfo::new("Any Xbox Controller".into(), "045e".into(), ControllerType::Xbox),
+        DeviceInfo::new("DualShock 4 (PS4)".into(), "054c".into(), ControllerType::PlayStation),
+        DeviceInfo::new("DualSense (PS5)".into(), "054c".into(), ControllerType::PlayStation),
+        DeviceInfo::new("Switch Pro".into(), "057e".into(), ControllerType::Switch),
+        DeviceInfo::new("[ BETOP CONTROLLER ]".into(), "20bc".into(), ControllerType::Other),
     ]
 }
 
