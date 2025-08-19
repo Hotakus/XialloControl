@@ -61,7 +61,10 @@ fn get_platform() -> String {
 
 #[tauri::command]
 fn open_devtools(webview: tauri::WebviewWindow) {
-    webview.open_devtools();
+    #[cfg(debug_assertions)]
+    {
+        webview.open_devtools();
+    }
 }
 
 #[tauri::command]

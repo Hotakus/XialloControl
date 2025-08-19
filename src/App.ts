@@ -46,8 +46,8 @@ export async function queryMappings() {
 
 async function checkBuildEnv() {
     if (!invoke) return;
-    const env = await invoke("is_release_env");
-    if (env) {
+    state.is_release_env = await invoke("is_release_env");
+    if (state.is_release_env) {
         document.addEventListener('contextmenu', e => e.preventDefault());
     }
 }

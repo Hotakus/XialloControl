@@ -161,7 +161,7 @@
             </div>
           </div>
           <div class="setting-group">
-            <button id="reset-btn" class="btn btn-outline btn-settings" @click="openDevTools()">
+            <button id="reset-btn" class="btn btn-outline btn-settings" v-if="!state.is_release_env" @click="openDevTools()">
               打开开发者工具
             </button>
             <button id="reset-btn" class="btn btn-outline btn-settings" @click="resetSettings()">

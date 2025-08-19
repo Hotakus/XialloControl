@@ -1,5 +1,5 @@
 // src/global_states.ts
-import {reactive, nextTick} from "vue";
+import {nextTick, reactive} from "vue";
 import {getCurrentWindow} from "@tauri-apps/api/window";
 import {invoke} from "@tauri-apps/api/core";
 import {DeviceInfo} from "@/ts/LeftPanel.ts";
@@ -10,6 +10,7 @@ let appWindow = getCurrentWindow();
 // ---------- 响应式应用状态 ----------
 export const state = reactive({
     version: '0.0.0',
+    is_release_env: false,
 
     titlebar_visible: true,
 
