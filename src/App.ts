@@ -3,14 +3,11 @@ import {invoke} from "@tauri-apps/api/core";
 import {appWindow, state} from "@/ts/global_states.ts";
 
 export async function initApp() {
+    await checkBuildEnv();
     await queryGlobalSettings();
     // loadPreset();
 
     await queryMappings();
-    // queryDevice();
-
-    // toggleIndicator(false);
-    // updateControllerButtons();
     updateStatusMessage("请选择一个设备并点击连接按钮");
 }
 
@@ -47,3 +44,10 @@ export async function queryMappings() {
     state.mappings = await invoke("get_mappings");
 }
 
+async function checkBuildEnv() {
+    if (!invoke) return;
+    const env = await invoke("is_release_env");
+    if (env) {
+        document.addEventListener('contextmenu', e => e.preventDefault());
+    }
+}
