@@ -38,7 +38,7 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v5
         with:
           # 注意：这里参数名是 'configuration' 哦
-          configuration: "changelog_config.json"
+          configuration: ".github/workflows/changelog_config.json"
           token: ${{ secrets.GITHUB_TOKEN }}
           failOnError: true
           owner: 'Hotakus'
