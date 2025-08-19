@@ -66,7 +66,7 @@
             </div>
 
             <template v-else>
-              <div class="button-map-item" v-for="mapping in state.mappings" :key="mapping.id">
+              <div class="button-map-item" v-for="mapping in state.mappings" :key="mapping.id" @dblclick="editButtonMap(mapping.id)">
                 <div class="button-icon">{{ mapping.composed_button }}</div>
                 <div class="key-text">映射到</div>
                 <div class="key-value">{{ formatKeyDisplay(mapping.composed_shortcut_key) }}</div>
@@ -160,6 +160,14 @@
               </select>
             </div>
           </div>
+          <div class="setting-group">
+            <button id="reset-btn" class="btn btn-outline btn-settings" @click="openDevTools()">
+              打开开发者工具
+            </button>
+            <button id="reset-btn" class="btn btn-outline btn-settings" @click="resetSettings()">
+              重置设置
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -181,13 +189,12 @@
           <div class="form-group">
             <label><i class="fas fa-gamepad"></i> 选择手柄按键</label>
             <select class="form-control" id="controller-button" v-model="state.selectedButton">
-              <option value="">-- 请选择按键 --</option>
-              <option value="A">A 按钮</option>
-              <option value="B">B 按钮</option>
-              <option value="X">X 按钮</option>
-              <option value="Y">Y 按钮</option>
-              <option value="LB">左肩键 (LB)</option>
-              <option value="RB">右肩键 (RB)</option>
+              <option disabled value="">-- 请选择按键 --</option>
+              <option v-for="btnText in state.buttonsText"
+                      :key="btnText.value"
+                      :value="btnText.value">
+                {{ btnText.text }}
+              </option>
             </select>
           </div>
 
@@ -213,19 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  updateSettings,
-  switchTab,
-  changeTheme,
-  closeButtonMapModal,
-  detectKey,
-  addButtonMap,
-  mappingsConfirm,
-  formatKeyDisplay,
-  editButtonMap,
-  deleteButtonMap,
-  setPollingFrequency
-} from "@/ts/RightPanel.ts";
+import {addButtonMap, changeTheme, closeButtonMapModal, deleteButtonMap, detectKey, editButtonMap, formatKeyDisplay, mappingsConfirm, openDevTools, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
 import {state} from "@/ts/global_states.ts";
 </script>
 

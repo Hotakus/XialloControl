@@ -60,7 +60,7 @@ export async function openButtonMapModal(title = "添加按键映射", selectedB
     state.editingMappingId = mappingId;
 
     // TODO: 显示当前设备按钮映射
-    // updateControllerButtons();
+    updateControllerButtons();
     state.showMappingModal = true;
 }
 
@@ -355,3 +355,81 @@ export async function detectKey() {
     }
 }
 
+
+// TODO: 从后端请求手柄按键映射列表
+// TODO: 也许会添加更多
+const buttonTextMapLists = {
+    xbox: [
+        {value: 'A', text: 'A 按钮'},
+        {value: 'B', text: 'B 按钮'},
+        {value: 'X', text: 'X 按钮'},
+        {value: 'Y', text: 'Y 按钮'},
+        {value: 'LB', text: '左肩键 (LB)'},
+        {value: 'RB', text: '右肩键 (RB)'},
+        {value: 'LT', text: '左扳机 (LT)'},
+        {value: 'RT', text: '右扳机 (RT)'},
+        {value: 'START', text: '开始按钮'},
+        {value: 'SELECT', text: '选择按钮'}
+    ],
+    ps: [
+        {value: 'CROSS', text: '叉按钮 (CROSS)'},
+        {value: 'CIRCLE', text: '圆按钮 (CIRCLE)'},
+        {value: 'SQUARE', text: '方按钮 (SQUARE)'},
+        {value: 'TRIANGLE', text: '三角按钮 (TRIANGLE)'},
+        {value: 'L1', text: '左肩键 (L1)'},
+        {value: 'R1', text: '右肩键 (R1)'},
+        {value: 'L2', text: '左扳机 (L2)'},
+        {value: 'R2', text: '右扳机 (R2)'},
+        {value: 'OPTIONS', text: '选项按钮'},
+        {value: 'SHARE', text: '分享按钮'}
+    ],
+    switchpro: [
+        {value: 'B', text: 'B 按钮'},
+        {value: 'A', text: 'A 按钮'},
+        {value: 'Y', text: 'Y 按钮'},
+        {value: 'X', text: 'X 按钮'},
+        {value: 'L', text: '左肩键 (L)'},
+        {value: 'R', text: '右肩键 (R)'},
+        {value: 'ZL', text: '左扳机 (ZL)'},
+        {value: 'ZR', text: '右扳机 (ZR)'},
+        {value: 'PLUS', text: '加号按钮'},
+        {value: 'MINUS', text: '减号按钮'}
+    ]
+}
+
+// 根据设备类型更新手柄按键选项
+export function updateControllerButtons() {
+    // while (uiElements.controllerButtonSelect.options.length > 1) {
+    //     uiElements.controllerButtonSelect.remove(1);
+    // }
+
+    switch (state.deviceSelected?.controller_type) {
+        case "Xbox": {
+            state.buttonsText = buttonTextMapLists.xbox;
+            break;
+        }
+        case "PlayStation": {
+            state.buttonsText = buttonTextMapLists.ps;
+            break;
+        }
+        case "Switch": {
+            state.buttonsText = buttonTextMapLists.switchpro;
+            break;
+        }
+        default: {
+            state.buttonsText = buttonTextMapLists.xbox;
+            break;
+        }
+    }
+
+    // buttons.forEach(button => {
+    //     const option = document.createElement('option');
+    //     option.value = button.value;
+    //     option.textContent = button.text;
+    //     uiElements.controllerButtonSelect.appendChild(option);
+    // });
+}
+
+export async function openDevTools() {
+    await invoke('open_devtools');
+}
