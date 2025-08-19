@@ -12,14 +12,13 @@
 //       }
 //     ],
 
+use crate::xeno_utils::get_config_path;
 use std::env;
 use tauri::{AppHandle, Manager, WebviewWindow, Window};
-// 👈 引入 Manager 以启用 create_window
-use crate::xeno_utils::get_config_path;
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::fern;
-use tauri_plugin_log::fern::colors::{ColoredLevelConfig};
+use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 
 mod adaptive_sampler;
 mod controller;
