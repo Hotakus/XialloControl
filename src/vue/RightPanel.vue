@@ -172,55 +172,10 @@
       </div>
     </div>
   </div>
-
-
-  <transition name="modal-fade">
-    <div
-        class="modal-overlay"
-        id="mapping-modal" :class="{active: state.showMappingModal}">
-      <div class="modal">
-        <div class="modal-header">
-          <span id="modal-title">
-            {{ state.modalTitle }}
-          </span>
-          <button class="modal-close" id="close-modal" @click="closeButtonMapModal()">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label><i class="fas fa-gamepad"></i> 选择手柄按键</label>
-            <select class="form-control" id="controller-button" v-model="state.selectedButton">
-              <option disabled value="">-- 请选择按键 --</option>
-              <option v-for="btnText in state.buttonsText"
-                      :key="btnText.value"
-                      :value="btnText.value">
-                {{ btnText.text }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group key-detector">
-            <label><i class="fas fa-keyboard"></i> 映射到：</label>
-            <div class="detector-area" :class="{active: state.keyListenerActive}" id="key-detector-area" @click="detectKey()">
-              {{ state.keyDetectorText }}
-            </div>
-            <div class="detector-hint">支持单键或组合键（如 Ctrl+C、Alt+F4）</div>
-            <div class="key-display" id="key-display">{{ state.keyDisplayText }}</div>
-          </div>
-          <div id="modal-error" class="status-message error" style="margin-top: 15px;" v-show="state.modalErrorVisible">
-            {{ state.modalErrorMessage }}
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" id="cancel-btn" @click="closeButtonMapModal()">取消</button>
-          <button class="btn btn-primary" id="confirm-btn" @click="mappingsConfirm()">确认</button>
-        </div>
-      </div>
-    </div>
-  </transition>
 </template>
 
 <script setup lang="ts">
-import {addButtonMap, changeTheme, closeButtonMapModal, deleteButtonMap, detectKey, editButtonMap, formatKeyDisplay, mappingsConfirm, openDevTools, resetSettings, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
+import {addButtonMap, changeTheme, deleteButtonMap, editButtonMap, formatKeyDisplay, openDevTools, resetSettings, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
 import {state} from "@/ts/global_states.ts";
 </script>
 
