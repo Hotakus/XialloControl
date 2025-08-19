@@ -17,6 +17,7 @@ use crate::controller::xbox;
 use crate::setting::get_setting;
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputHandle;
+use uuid::Uuid;
 
 // ---------------------- 结构体定义 ----------------------
 /// 游戏控制器设备信息
@@ -28,10 +29,27 @@ pub struct DeviceInfo {
     pub vendor_id: String,
     /// 产品ID (16进制字符串，可选)
     pub product_id: Option<String>,
+    /// 子产品ID (16进制字符串，可选)
+    pub sub_product_id: Option<String>,
+    pub uuid_is_invalid: bool,
     /// 设备路径 (运行时检测)
     pub device_path: Option<String>,
     /// 控制器类型分类
     pub controller_type: ControllerType,
+}
+
+impl DeviceInfo {
+    pub fn new(name: String, vendor_id: String, controller_type: ControllerType) -> Self {
+        DeviceInfo {
+            name,
+            vendor_id,
+            product_id: None,
+            sub_product_id: None,
+            uuid_is_invalid: false,
+            device_path: None,
+            controller_type,
+        }
+    }
 }
 
 /// 全局应用句柄容器
@@ -78,6 +96,8 @@ pub static CURRENT_DEVICE: Lazy<RwLock<DeviceInfo>> = Lazy::new(|| {
         name: "".into(),
         vendor_id: "".into(),
         product_id: None,
+        sub_product_id: None,
+        uuid_is_invalid: true,
         device_path: None,
         controller_type: ControllerType::Other,
     })
