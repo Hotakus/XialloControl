@@ -3,70 +3,88 @@
   "footer": "\n\n---",
   "categories": [
     {
-      "title": "✨ 新功能",
+      "title": "## ✨ 新功能",
       "labels": ["feat", "feature"],
       "commit_types": ["feat"]
     },
     {
-      "title": "🐛 修复",
-      "labels": ["fix"],
+      "title": "## 🐛 修复",
+      "labels": ["fix", "bug"],
       "commit_types": ["fix"]
     },
     {
-      "title": "📚 文档",
+      "title": "## 📚 文档",
       "labels": ["docs"],
       "commit_types": ["docs"]
     },
     {
-      "title": "🚀 性能优化",
+      "title": "## 🚀 性能优化",
       "labels": ["perf"],
       "commit_types": ["perf"]
     },
     {
-      "title": "💅 样式调整",
+      "title": "## 💅 样式调整",
       "labels": ["style"],
       "commit_types": ["style"]
     },
     {
-      "title": "🔨 重构",
+      "title": "## 🔨 重构",
       "labels": ["refactor"],
       "commit_types": ["refactor"]
     },
     {
-      "title": "🧪 测试",
+      "title": "## 🧪 测试",
       "labels": ["test"],
       "commit_types": ["test"]
     },
     {
-      "title": "📦 构建",
+      "title": "## 📦 构建",
       "labels": ["build"],
       "commit_types": ["build"]
     },
     {
-      "title": "🤖 CI/CD",
+      "title": "## 🤖 CI/CD",
       "labels": ["ci"],
       "commit_types": ["ci"]
     },
     {
-      "title": "📌 其他",
+      "title": "## 📌 其他",
       "labels": [],
       "exhaustive": false
     }
   ],
-  "ignore_labels": ["chore"],
+  "ignore_labels": [
+    "ignore"
+  ],
   "sort": {
-    "order": "DESC",
+    "order": "ASC",
     "on_property": "mergedAt"
   },
-  "pr_template": "PR: ##{{NUMBER}} - {{TITLE}}",
-  "template": "<details>\n<summary>📄 更新日志</summary>\n\n#{{CHANGELOG}}\n\n#{{UNCATEGORIZED}}\n\n</details>",
+  "pr_template": "PR: ##{{NUMBER}} - #{{TITLE}} by #{{AUTHOR}}",
+  "template": "#{{CHANGELOG}}\\n\\n<details>\\n<summary>Uncategorized</summary>\\n\\n#{{UNCATEGORIZED}}\\n</details>",
   "empty_template": "- 暂无改动",
   "trim_values": true,
   "max_tags_to_fetch": 200,
   "max_pull_requests": 200,
   "max_back_track_time_days": 365,
   "tag_resolver": {
-    "method": "semver"
+    "method": "semver",
+    "filter": {
+      "pattern": "v(.+)",
+      "flags": "gu"
+    }
   },
+  "label_extractor": [
+    {
+      "pattern": "(.) (.+)",
+      "target": "$1",
+      "flags": "gu"
+    },
+    {
+      "pattern": "\\[Issue\\]",
+      "on_property": "title",
+      "method": "match"
+    }
+  ],
   "base_branches": ["master"]
 }
