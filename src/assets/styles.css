@@ -17,8 +17,7 @@ body {
     min-height: 100vh;
     -webkit-app-region: nodrag;
     background: linear-gradient(135deg, #1e3c72, #2a5298);
-
-    /* 核心调整：为绝对定位创建上下文 */
+    -webkit-user-select: none;
     position: relative;
 }
 
@@ -28,16 +27,17 @@ body {
     --secondary-bg: #f7f9fb;
     --card-bg: #ffffff;
     --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    --border-radius: 10px;
+    --border-radius: 5px;
     --gap: 20px;
     --active-shadow: 0 0 15px rgba(0, 0, 0, 0.3) inset;
     --overlay-bg: rgba(0, 0, 0, 0.5);
     --modal-bg: #ffffff;
     --modal-width: 500px;
     --danger: #e74c3c;
-    --success: #2ecc71;
-    --indicator-off: #934242;
-    --indicator-on: #00dc72;
+    --success: #65c78e;
+    --indicator-off: #341c1c;
+    --indicator-on: #42d589;
+    --window-header-height: 30px;
 }
 
 * {
@@ -45,7 +45,6 @@ body {
 }
 
 .window {
-    /* 终极修复！强制 .window 容器填满父容器 */
     position: absolute;
     top: 0;
     left: 0;
@@ -65,14 +64,14 @@ body {
 }
 
 .window-header.show {
-    height: 30px;
-
+    height: var(--window-header-height);
+    overflow: hidden;
     background: var(--primary-bg);
     color: var(--primary-text);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 0 0 10px;
     user-select: none;
     /*-webkit-app-region: drag;*/
     border-radius: var(--border-radius) var(--border-radius) 0 0;
@@ -108,12 +107,13 @@ body {
     border: none;
     color: var(--primary-text);
     cursor: pointer;
-    -webkit-app-region: no-drag;
+    /*-webkit-app-region: no-drag;*/
 
     /* 核心调整：设置固定的尺寸和圆角 */
-    width: 30px;      /* 按钮宽度 */
-    height: 30px;     /* 按钮高度，保持和宽度一致就是正方形了 */
-    border-radius: 50%; /* 变成圆形！ */
+    /* 喵把这里改成自适应哒！~ */
+    width: 40px;
+    height: var(--window-header-height);
+    border-radius: 0; /* 变成方形啦！~ */
 
     transition: all 0.15s ease;
 
@@ -122,6 +122,7 @@ body {
     justify-content: center;
     align-items: center;
 }
+
 
 /* 按钮内部的 SVG 样式 */
 .window-header button svg {
@@ -141,8 +142,13 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
+#close-button {
+    /* 喵给关闭按钮加上了圆角适配哦！~ */
+    border-top-right-radius: var(--border-radius);
+}
+
 #close-button:hover {
-    background: #e81123;
+    background: #9c2c37;
     color: white;
 }
 
@@ -165,7 +171,6 @@ body {
     display: flex;
     min-height: 0;
     padding: 0;
-    flex-grow: 1;
 }
 
 .left-panel {
@@ -548,11 +553,11 @@ select:focus {
 
 .indicator {
     width: 100px;
-    height: 14px;
+    height: 12px;
     border-radius: 7px;
-    background-color: #5c0000;
+    background-color: #742020;
     position: relative;
-    transition: all 0.3s ease;
+    transition: all 0.5s ease;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
@@ -584,29 +589,6 @@ select:focus {
     .indicator-container {
         display: none;
     }
-}
-
-.indicator-test-btn {
-    background: rgba(158, 198, 255, 0.2);
-    color: #9ec6ff;
-    border: 1px solid rgba(158, 198, 255, 0.5);
-    border-radius: 4px;
-    padding: 2px 8px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-left: 5px;
-}
-
-.indicator-test-btn:hover {
-    background: rgba(158, 198, 255, 0.3);
-}
-
-.indicator-test-btn:active {
-    transform: scale(0.95);
-    background: rgba(158, 198, 255, 0.4);
-    box-shadow: var(--active-shadow);
-    transition: none;
 }
 
 .device-select-row {
@@ -1096,6 +1078,48 @@ input:checked + .slider:before {
     box-shadow: var(--active-shadow);
 }
 
+.btn-settings {
+    width: 100%;              /* 喵让按钮自动适应父容器宽度啦！~ */
+    padding: 10px 15px;       /* 按钮的内边距 */
+    margin-top: 10px;
+    border-radius: 8px;       /* 圆角让按钮更可爱！~ */
+    font-size: 1.0em;          /* 按钮文字大小 */
+    /*cursor: pointer;          !* 鼠标悬停时的指针样式 *!*/
+    transition: all 0.1s ease-in-out; /* 喵加了一个小小的动画效果！~ */
+    border: 1px solid #e4ebec; /* 边框 */
+    background-color: var(--secondary-bg); /* 背景色 */
+    /*color: var(--primary-text);  !* 文字颜色 *!*/
+
+    display: flex;
+    justify-content: space-between; /* 让文字和箭头分别靠左和靠右 */
+    align-items: center;            /* 垂直居中对齐 */
+    text-align: left;               /* 确保文字左对齐 */
+}
+
+.btn-settings::after {
+    content: '>';
+    font-size: 1.0em;
+    margin-left: 10px;
+    transition: transform 0.1s ease-in-out;
+}
+.btn-settings:hover::after {
+    transform: translateX(5px);
+}
+
+
+/* 鼠标悬停时的可爱效果！~ */
+.btn-settings:hover {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* 按下按钮时的效果！~ */
+.btn-settings:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+
 .key-display {
     font-size: 18px;
     font-weight: bold;
@@ -1138,10 +1162,6 @@ input:checked + .slider:before {
     overflow-y: auto;
 }
 
-:root {
-    --indicator-off: #934242;
-    --indicator-on: #00dc72;
-}
 
 body.theme-light .indicator {
     background-color: var(--indicator-off);
