@@ -552,7 +552,7 @@ fn poll_controller(device: &DeviceInfo) {
                 }
                 #[cfg(not(target_os = "windows"))]
                 {
-                    log::error("不受支持的控制器：{device:#?}");
+                    log::error!("不受支持的控制器：{device:#?}");
                     disconnect_device();
                 }
             } else {
