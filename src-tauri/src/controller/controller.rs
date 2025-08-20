@@ -367,13 +367,17 @@ pub fn disconnect_device() -> bool {
 #[tauri::command]
 pub fn physical_disconnect_device() -> bool {
     log::debug!("------ physical_disconnect_device");
-    disconnect_device();
     let app_handle = get_app_handle();
-    if let Err(e) = app_handle.emit("physical_connect_status", false) {
+    let dname = {
+        let device = CURRENT_DEVICE.read().unwrap();
+        device.name.clone()
+    };
+    log::info!("尝试断开设备: {dname}");
+    if let Err(e) = app_handle.emit("physical_connect_status", dname) {
         log::error!("发送 physical_connect_status 事件失败: {e}");
         return false;
     }
-    true
+    disconnect_device()
 }
 
 /// 设置轮询频率命令 (Tauri 前端调用)
