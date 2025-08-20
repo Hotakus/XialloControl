@@ -1290,10 +1290,11 @@ body.theme-dark .button-map-controls button:hover {
     box-shadow: var(--card-shadow);
     padding: 0;
     position: relative;
-    width: 90%;
-    max-width: 700px;
-    max-height: 90vh;
-    overflow: hidden;
+    /* 移除了固定的宽高限制，让模态框根据内容自动伸缩 */
+    /* width: 90vh; */
+    /* max-width: 700px; */
+    /* max-height: 40vh; */
+    overflow: auto; /* 保持内容可滚动 */
     transform: translateY(20px);
     transition: transform 0.3s ease;
 }
@@ -1335,27 +1336,29 @@ body.theme-dark .button-map-controls button:hover {
 }
 
 .joystick-cali-modal .modal-body {
-    padding: 20px;
+    padding: 15px;
     display: flex;
     flex-direction: row;
-    gap: 20px;
+    /* 移除 flex-wrap，强制子元素横向排列 */
+    /* flex-wrap: wrap; */
+    gap: 15px;
     justify-content: center;
-    align-items: flex-start;
-    flex-wrap: wrap;
+    align-items: center;
+    flex-grow: 1;
     overflow-y: auto;
 }
 
 .joystick-display-group {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    gap: 15px;
+    /*align-items: center;*/
+    gap: 10px;
     padding: 10px;
     border: 1px solid #e0e4eb;
     border-radius: var(--border-radius);
     background: #fdfdfd;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    flex: 1 1 300px;
+    flex: 1 1 auto;
 }
 
 .joystick-area {
@@ -1366,6 +1369,10 @@ body.theme-dark .button-map-controls button:hover {
     position: relative;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
+}
+
+.joystick-graph {
+    align-self: center;
 }
 
 .joystick-handle {
@@ -1383,7 +1390,7 @@ body.theme-dark .button-map-controls button:hover {
 }
 
 .joystick-handle:active {
-    cursor: grabbing;
+    /*cursor: grabbing;*/
 }
 
 .crosshair {
@@ -1406,7 +1413,8 @@ body.theme-dark .button-map-controls button:hover {
     justify-content: center;
     padding-left: 10px;
     border-left: 1px solid #e0e4eb;
-    flex-grow: 1;
+    /*flex-grow: 1;*/
+    align-self: center;
 }
 
 .progress-bar-vertical {
