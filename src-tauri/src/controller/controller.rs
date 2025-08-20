@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 // ---------------------- 结构体定义 ----------------------
 /// 游戏控制器设备信息
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Eq, Serialize, Deserialize, Clone, PartialEq)]
 pub struct DeviceInfo {
     /// 设备显示名称
     pub name: String,
