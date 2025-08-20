@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+# 使用增强版验证脚本
+node .husky/validate-commit-msg.js "$1"
+
+# 如果增强版验证通过，再运行 commitlint 进行更严格的检查
+if [ $? -eq 0 ]; then
+  npx --no-install commitlint --edit "$1"
+else
+  exit 1
+fi
