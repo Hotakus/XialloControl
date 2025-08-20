@@ -3,7 +3,7 @@ description: "报告一个可重现的缺陷或意外行为"
 title: "[BUG] 标题"
 labels: [ "bug" ]
 assignees:
-  - "Hotakus"
+  - ""
 body:
   - type: markdown
     attributes:
