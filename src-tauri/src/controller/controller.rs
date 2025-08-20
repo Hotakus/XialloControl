@@ -195,7 +195,7 @@ pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
             }
         }
     } else {
-        log::info!("🛠️ 配置文件不存在，正在生成默认配置: {:#?}", config_path);
+        log::info!("🛠️ 配置文件不存在，正在生成默认配置: {config_path:#?}");
 
         let default = default_devices();
         let config = SupportedDevicesConfig {
@@ -317,9 +317,7 @@ fn _find_device_by_name(name: &str) -> Option<DeviceInfo> {
 
 #[tauri::command]
 pub fn get_controller_data() -> ControllerDatas {
-    let controller_data = CONTROLLER_DATA.read().unwrap().clone();
-
-    controller_data
+    *CONTROLLER_DATA.read().unwrap()
 }
 
 /// 查询可用设备命令 (Tauri 前端调用)
@@ -518,7 +516,6 @@ fn poll_other_controllers(device: &DeviceInfo) {
         let vid = format!("{:04x}", gamepad.vendor_id().unwrap());
         let pid = format!("{:04x}", gamepad.product_id().unwrap());
 
-        // TODO: 需要更加健壮的匹配规则，以适应更多的同品牌控制器
         // 匹配当前设备
         if vid.eq_ignore_ascii_case(&device.vendor_id)
             && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap())

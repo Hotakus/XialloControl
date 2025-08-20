@@ -277,8 +277,8 @@ pub fn save_mappings() {
     };
 
     match xeno_utils::write_toml_file(&mappings_path, &mapping_file) {
-        Ok(_) => log::info!("映射配置已保存到: {:?}", mappings_path),
-        Err(e) => log::error!("保存映射配置失败: {:#?} {:#?}", e, mappings),
+        Ok(_) => log::info!("映射配置已保存到: {mappings_path:#?}", ),
+        Err(e) => log::error!("保存映射配置失败: {e:#?} {mappings:#?}"),
     }
 }
 
@@ -290,7 +290,7 @@ pub fn get_mappings_internal() -> Vec<Mapping> {
 /// Tauri 命令：设置所有映射配置。
 #[tauri::command]
 pub fn set_mapping(mapping: Vec<Mapping>) {
-    log::debug!("更新映射配置: {:#?}", mapping);
+    log::debug!("更新映射配置: {mapping:#?}");
     {
         let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
         *cache = mapping;
@@ -329,9 +329,7 @@ pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: S
 #[tauri::command]
 pub fn add_mapping(composed_button: String, composed_shortcut_key: String) -> bool {
     log::debug!(
-        "请求添加映射配置: '{}', '{}'",
-        composed_button,
-        composed_shortcut_key
+        "请求添加映射配置: '{composed_button}', '{composed_shortcut_key}'",
     );
     // 调用解析器来生成 Action
     match parse_composed_key_to_action(&composed_shortcut_key) {
@@ -462,13 +460,13 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
             "mouseright" => set_primary(
                 &mut primary_action,
                 PrimaryAction::MouseClick {
-                    button: (enigo::Button::Right),
+                    button: enigo::Button::Right,
                 },
             )?,
             "mousemiddle" => set_primary(
                 &mut primary_action,
                 PrimaryAction::MouseClick {
-                    button: (enigo::Button::Middle),
+                    button: enigo::Button::Middle,
                 },
             )?,
             "mousex1" => set_primary(
@@ -480,7 +478,7 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
             "mousex2" => set_primary(
                 &mut primary_action,
                 PrimaryAction::MouseClick {
-                    button: (enigo::Button::Back),
+                    button: enigo::Button::Back,
                 },
             )?,
 
@@ -502,7 +500,6 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                     s if s.len() == 1 => enigo::Key::Unicode(s.chars().next().unwrap()),
                     _ => return Err(ParseError::UnknownKey(key_str.to_string())),
                 };
-                log::debug!("-----------------{:#?}", key);
                 set_primary(&mut primary_action, PrimaryAction::KeyPress { key })?;
             }
         }
