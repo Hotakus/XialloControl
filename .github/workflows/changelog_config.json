@@ -64,31 +64,11 @@
   "template": "# 更新日志: \n #{{CHANGELOG}}\n #{{UNCATEGORIZED}}",
   "empty_template": "- 暂无改动",
   "trim_values": true,
-  "max_tags_to_fetch": 5,
+  "max_tags_to_fetch": 200,
   "max_pull_requests": 200,
   "max_back_track_time_days": 365,
   "tag_resolver": {
     "method": "semver"
   },
-  "label_extractor": [
-    {
-      "pattern": "^(feat|fix|docs|perf|refactor|style|test|build|ci|chore)(?:\\(.*\\))?:",
-      "on_property": "title",
-      "method": "match",
-      "target": "$1"
-    },
-    {
-      "pattern": "^chore:",
-      "on_property": "title",
-      "method": "match",
-      "target": "other"
-    },
-    {
-      "pattern": "^Merge pull request",
-      "on_property": "title",
-      "method": "match",
-      "target": "other"
-    }
-  ],
   "base_branches": ["master"]
 }
