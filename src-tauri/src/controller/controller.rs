@@ -671,6 +671,7 @@ pub fn gilrs_listen() {
                 }
             }
 
+            // 将采样率设置为基本轮询频率的至少两倍,以保证保证 gilrs 设备数据的准确准时读取
             thread::sleep(Duration::from_secs_f32(
                 1.0 / *SAMPLING_RATE.read().unwrap() as f32,
             ));
