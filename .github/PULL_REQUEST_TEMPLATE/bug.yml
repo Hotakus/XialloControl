@@ -4,39 +4,39 @@ title: "fix: "
 labels:
   - bug
   - fix
-assignees: ["Hotakus"]
+assignees: [ "Hotakus" ]
 
 body:
-- type: textarea
-  id: problem
-  attributes:
-  label: 问题描述
-  description: 描述具体问题
-  placeholder: 软件版本、出错情况等
-  required: true
+  - type: textarea
+    id: problem
+    attributes:
+    label: 问题描述
+    description: 描述具体问题
+    placeholder: 软件版本、出错情况等
+    required: true
 
-- type: textarea
-  id: steps
-  attributes:
-  label: 复现方法
-  description: 描述重现问题的步骤
-  placeholder: 1. first step\n2. second step\n3. third step
-  required: true
+  - type: textarea
+    id: steps
+    attributes:
+    label: 复现方法
+    description: 描述重现问题的步骤
+    placeholder: 1. first step\n2. second step\n3. third step
+    required: true
 
-- type: textarea
-  id: impact
-  attributes:
-  label: 潜在影响
-  description: 仔细检查可能影响的功能
-  placeholder: 说明可能的影响
-  required: false
+  - type: textarea
+    id: impact
+    attributes:
+    label: 潜在影响
+    description: 仔细检查可能影响的功能
+    placeholder: 说明可能的影响
+    required: false
 
-- type: checkboxes
-  id: testing
-  attributes:
-  label: 测试情况
-  description: 确认你已验证以下情况
-  options:
-  - 测试了修复前的情况（重现问题）
-  - 测试了修复后的情况
-  - 最小化修改，验证不影响其他功能
+  - type: checkboxes
+    id: testing
+    attributes:
+    label: 测试情况
+    description: 确认你已验证以下情况
+    options:
+      - 测试了修复前的情况（重现问题）
+      - 测试了修复后的情况
+      - 最小化修改，验证不影响其他功能
