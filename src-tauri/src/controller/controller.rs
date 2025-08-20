@@ -646,23 +646,23 @@ pub fn gilrs_listen() {
         }
 
         loop {
-            // let mut disconnect_event = false;
-
             if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap().as_mut() {
                 // 清空事件队列但不处理
                 while let Some(Event { event, id, .. }) = gilrs.next_event() {
                     let _ = id;
                     if event == EventType::Disconnected {
-                        #[cfg(target_os = "windows")]
-                        {
-                            let controller_type = {
-                                let device = CURRENT_DEVICE.read().unwrap();
-                                device.controller_type
-                            };
+                        let device = CURRENT_DEVICE.read().unwrap().clone();
+                        let controller_type = device.controller_type;
+                        if device.eq(&default_devices()[0].clone()) {
+                            log::warn!("设备已断开，跳过处理");
+                            continue;
+                        }
+                        drop(device);
 
-                            if controller_type != ControllerType::Xbox {
-                                physical_disconnect_device();
-                            }
+                        #[cfg(target_os = "windows")]
+                        if controller_type != ControllerType::Xbox {
+                            log::warn!("---- 检测到设备断开，尝试物理断开设备");
+                            physical_disconnect_device();
                         }
 
                         #[cfg(not(target_os = "windows"))]
