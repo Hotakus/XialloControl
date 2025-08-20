@@ -2,6 +2,8 @@ name: "🚀 功能请求"
 description: "为项目提议一个新的功能或改进"
 title: "[FEATURE] 标题"
 labels: [ "enhancement" ]
+assignees:
+  - "Hotakus"
 body:
   - type: markdown
     attributes:

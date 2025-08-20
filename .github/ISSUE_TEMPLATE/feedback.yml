@@ -2,6 +2,8 @@ name: "💬 反馈与建议"
 description: "分享您的使用体验、建议或任何想法"
 title: "[FEEDBACK] 标题"
 labels: [ "feedback" ]
+assignees:
+  - "Hotakus"
 body:
   - type: markdown
     attributes:
