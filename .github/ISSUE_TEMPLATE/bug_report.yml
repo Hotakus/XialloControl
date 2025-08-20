@@ -19,13 +19,22 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: soft-version
+    attributes:
+      label: "出现问题的软件版本"
+      description: "例如: v1.0.0"
+      placeholder: "v1.0.0"
+    validations:
+      required: true
+
   - type: textarea
     id: reproduction-steps
     attributes:
       label: "重现步骤"
       description: "清晰描述如何重现这个问题"
       placeholder: |
-        例如
+        例如：
         1. 在终端运行命令 `npm start`
         2. 访问 http://localhost:3000
         3. 点击 X 按钮
