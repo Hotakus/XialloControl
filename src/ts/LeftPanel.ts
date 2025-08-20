@@ -27,18 +27,23 @@ export const connectStatusIcons = {
 };
 
 // 断开当前设备
-export async function disconnectCurrentDevice() {
+export async function disconnectCurrentDevice(deferInvoke = false) {
     if (!state.isConnected || !state.deviceSelected) return true;
 
     const deviceName = state.deviceSelected.name;
     updateStatusMessage(`正在断开设备: ${deviceName}...`);
 
     try {
-        await invoke("disconnect_device", {deviceName});
-        updateStatusMessage(`设备已断开`);
-        state.isConnected = false;
-        state.connectIcon = connectStatusIcons.disconnected;
-        return true;
+        let res = await invoke("disconnect_device", {deviceName});
+        if (res) {
+            updateStatusMessage(`设备已断开`);
+            state.isConnected = false;
+            state.connectIcon = connectStatusIcons.disconnected;
+            return true;
+        } else {
+            updateStatusMessage(`断开失败`, true);
+            return false;
+        }
     } catch (error) {
         console.log("断开连接失败:", error);
         updateStatusMessage(`断开失败`, true);
@@ -256,11 +261,14 @@ export async function toggleDeviceConnection() {
 }
 
 appWindow.listen("physical_connect_status", async (event) => {
-    if (event.payload === false) {
-        await disconnectCurrentDevice();
-        console.log(`手柄 ${state.deviceSelected?.name} 物理断开连接`);
-        updateStatusMessage(`手柄 ${state.deviceSelected?.name} 物理断开连接!`, true);
-        resetDevice();
-        await queryDevice();
-    }
+    let name = event.payload;
+
+    state.isConnected = false;
+    state.connectIcon = connectStatusIcons.disconnected;
+
+    console.log(`手柄 ${name} 物理断开连接`);
+    updateStatusMessage(`手柄 ${name} 物理断开连接!`, true);
+
+    resetDevice();
+    await queryDevice();
 })
