@@ -1,6 +1,6 @@
 name: "Bug 报告"
 description: "报告一个可重现的缺陷或意外行为"
-title: "[BUG] {{ body | split: '\n' | first | strip_html }}"
+title: "[BUG] 标题"
 labels: ["bug"]
 assignees:
   - "Hotakus"
