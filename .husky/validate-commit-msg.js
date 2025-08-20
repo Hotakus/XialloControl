@@ -53,7 +53,10 @@ function validateCommitMessage(parsed) {
     }
 
     // 检查类型是否有效
-    const validTypes = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'revert'];
+    const validTypes = [
+        'feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'revert',
+        'build', 'ci'
+    ];
     if (!validTypes.includes(parsed.type)) {
         errors.push(`类型 "${parsed.type}" 无效。允许的类型: ${validTypes.join(', ')}`);
     }
@@ -121,7 +124,9 @@ function main() {
   • refactor: 代码重构
   • perf:     性能优化
   • test:     测试相关
-  • chore:    构建过程或辅助工具变动
+  • ci:       CI/CD
+  • chore:    杂项
+  • build:    构建过程或辅助工具变动
   • revert:   回退提交
 
 💡 提示:

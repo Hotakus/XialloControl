@@ -20,7 +20,9 @@ export default {
                 'refactor', // 重构
                 'perf',     // 性能优化
                 'test',     // 测试
-                'chore',    // 构建/辅助工具
+                'chore',    // 杂项
+                'ci',       // CI/CD
+                'build',    // 构建/辅助工具
                 'revert'    // 回退
             ]
         ],
