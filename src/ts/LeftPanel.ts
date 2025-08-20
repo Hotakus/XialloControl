@@ -27,7 +27,7 @@ export const connectStatusIcons = {
 };
 
 // 断开当前设备
-export async function disconnectCurrentDevice(deferInvoke = false) {
+export async function disconnectCurrentDevice() {
     if (!state.isConnected || !state.deviceSelected) return true;
 
     const deviceName = state.deviceSelected.name;
@@ -189,15 +189,6 @@ export async function scanDevices() {
 
     updateStatusMessage(`扫描完成！发现${state.currentDevices.length}个可用设备`);
     state.isScanning = false;
-}
-
-
-// 根据设备名称确定设备类型
-function detectDeviceType(deviceName: string) {
-    if (deviceName.includes('Xbox')) return 'xbox';
-    if (deviceName.includes('PS') || deviceName.includes('PlayStation')) return 'ps';
-    if (deviceName.includes('Switch')) return 'switchpro';
-    return 'xbox';
 }
 
 

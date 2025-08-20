@@ -59,7 +59,6 @@ export async function openButtonMapModal(title = "添加按键映射", selectedB
 
     state.editingMappingId = mappingId;
 
-    // TODO: 显示当前设备按钮映射
     updateControllerButtons();
     state.showMappingModal = true;
 }
@@ -91,7 +90,6 @@ export async function editButtonMap(id: number) {
 }
 
 export async function deleteButtonMap(id: number) {
-    // TODO: 删除按钮映射
     invoke('delete_mapping', {id: id})
         .then(success => {
             if (success) {
@@ -110,7 +108,6 @@ export async function deleteButtonMap(id: number) {
 
 
 export async function addButtonMap() {
-    // TODO: 添加按钮映射
     await openButtonMapModal();
 }
 

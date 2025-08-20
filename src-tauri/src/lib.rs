@@ -14,7 +14,7 @@
 
 use crate::xeno_utils::get_config_path;
 use std::env;
-use tauri::{AppHandle, Manager, WebviewWindow, Window};
+use tauri::{AppHandle, WebviewWindow, Window};
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::fern;
@@ -138,8 +138,10 @@ pub fn run() {
                         file_name: None,
                     },
                 ))
-                .level(log::LevelFilter::Debug)
+                .level(log::LevelFilter::Info)
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
+                .max_file_size(1024 * 512 /* bytes */)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
                 .with_colors(
                     ColoredLevelConfig::new()
                         .error(fern::colors::Color::BrightRed)
