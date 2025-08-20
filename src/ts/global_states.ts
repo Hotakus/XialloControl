@@ -38,8 +38,9 @@ export const state = reactive({
     keyDisplayText: '',
     selectedButton: "",
     isMouseKey: false,
-
     isScanning: false,
+
+    showCaliModal: false,
 
     buttonsText: [{value: '', text: ''}],
 

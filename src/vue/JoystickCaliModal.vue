@@ -1,5 +1,5 @@
 <template>
-  <div class="joystick-cali-overlay" id="joystick-cali-modal">
+  <div class="joystick-cali-overlay" :class="{active: state.showCaliModal}" id="joystick-cali-modal">
     <div class="joystick-cali-modal">
       <div class="modal-header">
         摇杆校准
@@ -15,7 +15,7 @@
             </div>
             <div class="cali-btn-group">
               <button class="btn btn-primary" id="calibrate-left-stick">校准左摇杆</button>
-              <div>推荐死区: <span id="deadzone-cali-left">0</span>%</div>
+<!--              <div>推荐死区: <span id="deadzone-cali-left">0</span>%</div>-->
             </div>
           </div>
           <div class="progress-bars-container">
@@ -37,7 +37,7 @@
         </div>
 
         <div class="joystick-display-group">
-          <div style="text-align:center;">
+          <div class="joystick-graph" style="text-align:center;">
             <label>右摇杆</label>
             <div class="joystick-area" id="joystick-right">
               <div class="crosshair"></div>
@@ -45,7 +45,7 @@
             </div>
             <div class="cali-btn-group">
               <button class="btn btn-primary" id="calibrate-right-stick">校准右摇杆</button>
-              <div>推荐死区: <span id="deadzone-cali-right">0</span>%</div>
+<!--              <div>推荐死区: <span id="deadzone-cali-right">0</span>%</div>-->
             </div>
           </div>
           <div class="progress-bars-container">
@@ -67,7 +67,7 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" id="cancel-joystick-cali-btn">取消</button>
+        <button class="btn btn-outline" id="cancel-joystick-cali-btn" @click="closeCaliModal()">取消</button>
         <button class="btn btn-primary" id="save-joystick-cali-btn">保存</button>
       </div>
     </div>
@@ -76,6 +76,8 @@
 
 <script setup lang="ts">
 // 可以写组件逻辑
+import {state} from "@/ts/global_states.ts";
+import {closeCaliModal} from "@/ts/JoystickCaliModal.ts";
 </script>
 
 <style scoped>
