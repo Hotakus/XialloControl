@@ -240,7 +240,6 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
             let pid_str = format!("{pid:04x}");
             let uuid = Uuid::from_bytes(gamepad.uuid());
 
-
             let device_info = DeviceInfo {
                 name: gamepad.name().to_string(),
                 vendor_id: vid_str.clone(),
