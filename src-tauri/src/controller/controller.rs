@@ -550,7 +550,8 @@ fn poll_controller(device: &DeviceInfo) {
         _ => {
             if device.uuid_is_invalid {
                 // TODO：未知控制器处理方法，windows 下拟调用xbox方法，其他平台报错
-                #[cfg(target_os = "windows")] {
+                #[cfg(target_os = "windows")]
+                {
                     xbox::poll_xbox_controller(device)
                 }
                 #[cfg(not(target_os = "windows"))]
@@ -561,7 +562,7 @@ fn poll_controller(device: &DeviceInfo) {
             } else {
                 poll_other_controllers(device)
             }
-        },
+        }
     }
 }
 
