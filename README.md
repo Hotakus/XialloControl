@@ -1,7 +1,7 @@
 <h1 align="center">XenoControl</h1>
 
 <p align="center">
-  <strong>🎨 为创意工作者设计的手柄控制解决方案</strong>
+  <strong>高通用性手柄映射软件（支持各种主流手柄 Xbox、PS、SwitchPro）</strong>
 </p>
 
 <p align="center">
@@ -11,7 +11,7 @@
 <a href="https://www.rust-lang.org">
     <img src="https://img.shields.io/github/actions/workflow/status/hotakus/XenoControl/app.yml?style=flat-square" alt="Rust">
   </a>
-  <a href="LICENSE">
+  <a href="LICENSE.txt">
     <img src="https://img.shields.io/badge/License-MPL%202.0-orange?style=flat-square" alt="License">
   </a>
   <a href="https://github.com/hotakus/XenoControl">
@@ -33,36 +33,36 @@
   <a href="#功能特点">功能特点</a> •
   <a href="#界面预览">界面预览</a> •
   <a href="#快速开始">快速开始</a> •
-  <a href="#技术栈">技术栈</a> •
   <a href="#许可证">许可证</a>
 </p>
 
 ---
 
-### 🎨 项目简介
+### 功能特点：
 
-XenoControl 是一款为创意工作者设计的手柄控制软件，让您可以将普通游戏手柄转变为高效的工作工具。无论是数字绘画、3D建模还是视频编辑，XenoControl都能帮助您摆脱键盘的束缚，实现更直观、更流畅的操作体验。
+### **XenoControl** 是一款：
 
----
-
-### ✨ 功能特点
-
-#### 🎮 创意工作优化
-
-- **按键映射**：将手柄按键映射为画笔、橡皮擦、撤销等常用功能
-- **摇杆控制**：使用摇杆控制画笔大小、画布缩放等操作
-- **多预设方案**：保存和导入多个预设配置，适应不同软件和工作流程
+#### 🎨 设计：
+- **开源跨平台 （windows、linux）**
+- **极简**：程序精简，windows 安装包仅有 **2 MB** 左右
+- **美观**程度高，卡片式UI设计，操作界面一目了然！
+- **高性能**服务提供！后端采用 Rust 语言设计，高效操作，丝滑无比！
 
 #### ⚙️ 高级控制
+- **支持**自定义摇杆死区范围，优化操作精度，提供校准功能
+- **支持**市面多种手柄，如 Xbox、PS、SwitchPro 等（实测杂牌手柄也行XD）
+- **高度**自定义手柄键位映射（支持鼠标、键盘映射、键盘鼠标按键和滚轮混合映射，
+  支持各种快捷键，如：Shift+Alt+鼠标滚轮等复杂混合映射，满足多场景支持）
 
-- **死区调整**：自定义摇杆死区范围，优化操作精度
-- **轮询频率**：调整手柄轮询频率（1-16000Hz）确保响应灵敏（默认125Hz，推荐1000hz，高于1khz以上可能会影响性能，并且手柄必须支持高频）
-- **主题切换**：提供浅色、深色及系统跟随三种视觉主题
+#### 🎮 创意工作优化
+- **灵敏**度可调，适应各种用户各种手感！
+- **支持**摇杆映射（支持摇杆死区调整，支持摇杆映射为鼠标移动、画笔大小、画布缩放等操作）
+- **支持**多预设方案（保存和导入多个预设配置，适应不同软件和工作流程）
 
 #### 🚀 效率提升
-
-- **开机自启**：随系统启动，随时可用（可选）
-- **托盘运行**：最小化到系统托盘，不干扰创作过程 （可选）
+- **支持**开机自启，在设置开启后，下一次开机自启，甚至可调自动连接手柄，让你开机后的工作顺滑无比！
+- **支持**托盘运行，最小化到系统托盘，不干扰创作过程！
+- **安全**卸载，卸载后不影响手柄正常功能，您可以放心使用
 
 ---
 
@@ -80,11 +80,12 @@ XenoControl 是一款为创意工作者设计的手柄控制软件，让您可�
 
 1. **下载安装**
     - 前往 [Releases页面](https://github.com/hotakus/XenoControl/releases) 下载最新版本
-    - 解压后运行 `XenoControl.exe`
+    - Windows 用户下载 `XenoControl.exe`
 
 2. **连接设备**
-    - 连接您的手柄设备
     - 点击"重新扫描"按钮检测设备
+    - 从下拉列表选择你的手柄
+    - 连接您的手柄设备
 
 3. **配置映射**
     - 在"按键映射"标签页配置手柄按键功能
@@ -96,15 +97,6 @@ XenoControl 是一款为创意工作者设计的手柄控制软件，让您可�
 
 ---
 
-### ⚙️ 技术栈
-
-- **核心框架**: Tauri (Rust + Web)
-- **开发工具**:
-    - Rust 2024 Edition
-    - Web前端技术 (HTML/CSS/JS)
-
----
-
 ### 📜 许可证
 
-本项目采用 [Mozilla Public License 2.0](LICENSE)
+本项目采用 [Mozilla Public License 2.0](LICENSE.txt)
