@@ -1,9 +1,9 @@
 name: "Bug 报告"
 description: "报告一个可重现的缺陷或意外行为"
-title: "[BUG] 标题"
-labels: [ "bug" ]
+title: "[BUG] {{ body | split: '\n' | first | strip_html }}"
+labels: ["bug"]
 assignees:
-  - ""
+  - "Hotakus"
 body:
   - type: markdown
     attributes:
@@ -19,22 +19,13 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: os-version
-    attributes:
-      label: "出现问题的该软件版本"
-      description: "例如: Windows 11 22H2, Ubuntu 20.04"
-      placeholder: "Windows 11 22H2"
-    validations:
-      required: true
-
   - type: textarea
     id: reproduction-steps
     attributes:
       label: "重现步骤"
       description: "清晰描述如何重现这个问题"
       placeholder: |
-        例如：
+        例如
         1. 在终端运行命令 `npm start`
         2. 访问 http://localhost:3000
         3. 点击 X 按钮
