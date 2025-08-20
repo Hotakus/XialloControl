@@ -1,0 +1,38 @@
+name: "💬 反馈与建议"
+description: "分享您的使用体验、建议或任何想法"
+title: "[FEEDBACK] 标题"
+labels: [ "feedback" ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您的分享反馈！。
+
+  - type: dropdown
+    id: feedback-type
+    attributes:
+      label: "反馈类型"
+      description: "请选择最符合您反馈的类别"
+      options:
+        - "🙏 一般性反馈"
+        - "💡 新功能建议"
+        - "😕 使用中遇到的困惑"
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: "您的想法"
+      description: "请详细描述您的反馈或建议。如果是新功能，请解释它为什么有用。"
+      placeholder: "例如：我觉得这里如果XXX，会方便很多，因为..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: "确认"
+      options:
+        - label: "我已按照格式填写标题"
+          required: true

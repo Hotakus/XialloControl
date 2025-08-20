@@ -1,0 +1,44 @@
+name: "🚀 功能请求"
+description: "为项目提议一个新的功能或改进"
+title: "[FEATURE] 标题"
+labels: [ "enhancement" ]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **在提交前，请先搜索现有的 Issue，确保该功能尚未被提议。**
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "您遇到的问题/您的需求"
+      description: "清晰而精确地描述您遇到的问题，或者您希望满足的需求。"
+      placeholder: "作为一个 [类型的用户]，我希望能 [达成某个目标]，以便我可以 [实现某种价值]。"
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "提议的解决方案"
+      description: "清晰而精确地描述您希望看到的功能实现方式。"
+      placeholder: "我建议增加一个 XXX 功能，操作流程是..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "考虑过的备选方案"
+      description: "描述您考虑过的其他解决方案或变通方法。"
+      placeholder: "我目前通过手动XXX来临时解决，但这很麻烦。"
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: "确认"
+      options:
+        - label: "我已按照格式填写标题"
+          required: true
+        - label: "我已确认这是一个新功能请求，而非 Bug 报告。"
+          required: true
