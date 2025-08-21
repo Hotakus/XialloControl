@@ -123,6 +123,18 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
     .expect("Failed to create main window")
 }
 
+#[tauri::command]
+fn get_locale() -> String {
+    let locale = tauri_plugin_os::locale();
+    if let Some(locale) = locale {
+        log::info!("成功获取到系统语言: {locale:#?}");
+        locale
+    } else {
+        log::warn!("无法获取系统语言，使用默认语言 zh-CN");
+        "zh-CN".to_string()
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -166,6 +178,7 @@ pub fn run() {
             get_platform,
             open_devtools,
             is_release_env,
+            get_locale,
             controller::controller::query_devices,
             controller::controller::use_device,
             controller::controller::disconnect_device,

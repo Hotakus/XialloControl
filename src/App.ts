@@ -1,6 +1,7 @@
 import {updateStatusMessage} from "@/ts/LeftPanel.ts";
 import {invoke} from "@tauri-apps/api/core";
 import {appWindow, state} from "@/ts/global_states.ts";
+import {locale} from "@tauri-apps/plugin-os";
 
 export async function initApp() {
     await checkBuildEnv();
@@ -9,6 +10,8 @@ export async function initApp() {
 
     await queryMappings();
     updateStatusMessage("请选择一个设备并点击连接按钮");
+
+    state.locale = await invoke("get_locale");
 }
 
 export async function queryGlobalSettings() {

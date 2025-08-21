@@ -3,6 +3,7 @@ import {nextTick, reactive} from "vue";
 import {getCurrentWindow} from "@tauri-apps/api/window";
 import {invoke} from "@tauri-apps/api/core";
 import {DeviceInfo} from "@/ts/LeftPanel.ts";
+import { locale } from "@tauri-apps/plugin-os";
 
 let appWindow = getCurrentWindow();
 
@@ -11,6 +12,7 @@ let appWindow = getCurrentWindow();
 export const state = reactive({
     version: '0.0.0',
     is_release_env: false,
+    locale: 'zh-CN',
 
     titlebar_visible: true,
 

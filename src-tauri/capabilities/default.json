@@ -17,6 +17,8 @@
     "core:window:allow-start-dragging",
     "autostart:allow-enable",
     "autostart:allow-disable",
-    "autostart:allow-is-enabled"
+    "autostart:allow-is-enabled",
+    "os:allow-locale",
+    "os:default"
   ]
 }
