@@ -455,22 +455,12 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     controller_data.left_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
     controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
 
-    // let a = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
-    // let b = gamepad.is_pressed(gilrs::Button::RightTrigger2);
-
-
-    let a = gamepad.axis_data(Axis::LeftZ)
-                   .map(|data| data.value())
-                   .unwrap_or(0.0);
-    let b = gamepad.axis_data(Axis::RightZ)
-                   .map(|data| data.value())
-                   .unwrap_or(0.0);
-    log::info!("Axis: ({:#?}, {:#?})", a, b);
-
-
-    // let a = gamepad.axis_data(Axis::DPadX).unwrap();
-    // let b = gamepad.axis_data(Axis::DPadY).unwrap();
-    // log::info!("DPAD: ({:.2}, {:.2})", a.value(), b.value());
+    controller_data.left_trigger.value = gamepad.button_data(gilrs::Button::LeftTrigger2)
+                                           .map(|data| data.value())
+                                           .unwrap_or(0.0);
+    controller_data.right_trigger.value = gamepad.button_data(gilrs::Button::RightTrigger2)
+                                           .map(|data| data.value())
+                                           .unwrap_or(0.0);
 
     // TODO: 统计 拥有Dpadx 的手柄
     // let mut dpadx = gamepad.axis_data(Axis::DPadX).unwrap().value();
@@ -642,6 +632,9 @@ pub fn gilrs_listen() {
                     }
                     // if let EventType::AxisChanged(axis, value, code) = event {
                     //     log::info!("Axis {:?} changed: {}", axis, value);
+                    // }
+                    // if let EventType::ButtonChanged(b, v, code) = event {
+                    //     log::info!("Button {:#?}, value {:#?} ({:#?})", b, v, code);
                     // }
                 }
             }
