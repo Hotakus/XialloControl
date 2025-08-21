@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Mutex, RwLock};
 use std::time::Instant;
 use std::{thread, time::Duration};
-use enigo::Key::N;
 use tauri::{AppHandle, Emitter};
 
 use crate::controller::xbox;
