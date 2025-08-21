@@ -4,13 +4,14 @@
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::{mapping, xeno_utils};
-use gilrs::{Axis, Button, Event, EventType, Gamepad, Gilrs};
+use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::sync::{Mutex, RwLock};
 use std::time::Instant;
 use std::{thread, time::Duration};
+use enigo::Key::N;
 use tauri::{AppHandle, Emitter};
 
 use crate::controller::xbox;
@@ -408,102 +409,74 @@ pub fn set_frequency(freq: u32) {
 
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
+    let mut controller_data = CONTROLLER_DATA.write().unwrap();
 
     let buttons = [
-        (
-            gamepad.is_pressed(Button::South),
-            ControllerButtons::South,
-            "South",
-        ),
-        (
-            gamepad.is_pressed(Button::East),
-            ControllerButtons::East,
-            "East",
-        ),
-        (
-            gamepad.is_pressed(Button::West),
-            ControllerButtons::West,
-            "West",
-        ),
-        (
-            gamepad.is_pressed(Button::North),
-            ControllerButtons::North,
-            "North",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadDown),
-            ControllerButtons::Down,
-            "DPadDown",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadLeft),
-            ControllerButtons::Left,
-            "DPadLeft",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadRight),
-            ControllerButtons::Right,
-            "DPadRight",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadUp),
-            ControllerButtons::Up,
-            "DPadUp",
-        ),
-        (
-            gamepad.is_pressed(Button::LeftTrigger),
-            ControllerButtons::LB,
-            "LB",
-        ),
-        (
-            gamepad.is_pressed(Button::RightTrigger),
-            ControllerButtons::RB,
-            "RB",
-        ),
-        (
-            gamepad.is_pressed(Button::LeftThumb),
-            ControllerButtons::LStick,
-            "LStick",
-        ),
-        (
-            gamepad.is_pressed(Button::RightThumb),
-            ControllerButtons::RStick,
-            "RStick",
-        ),
-        (
-            gamepad.is_pressed(Button::Select),
-            ControllerButtons::Back,
-            "Select",
-        ),
-        (
-            gamepad.is_pressed(Button::Start),
-            ControllerButtons::Start,
-            "Start",
-        ),
+        (gamepad.is_pressed(gilrs::Button::South), ControllerButtons::South, "South",),
+        (gamepad.is_pressed(gilrs::Button::East), ControllerButtons::East, "East",),
+        (gamepad.is_pressed(gilrs::Button::West), ControllerButtons::West, "West",),
+        (gamepad.is_pressed(gilrs::Button::North), ControllerButtons::North, "North",),
+        (gamepad.is_pressed(gilrs::Button::DPadDown), ControllerButtons::Down, "DPadDown",),
+        (gamepad.is_pressed(gilrs::Button::DPadLeft), ControllerButtons::Left, "DPadLeft",),
+        (gamepad.is_pressed(gilrs::Button::DPadRight), ControllerButtons::Right, "DPadRight",),
+        (gamepad.is_pressed(gilrs::Button::DPadUp), ControllerButtons::Up, "DPadUp",),
+        (gamepad.is_pressed(gilrs::Button::LeftTrigger), ControllerButtons::LB, "LB",),
+        (gamepad.is_pressed(gilrs::Button::RightTrigger), ControllerButtons::RB, "RB",),
+        (gamepad.is_pressed(gilrs::Button::LeftThumb), ControllerButtons::LStick, "LStick",),
+        (gamepad.is_pressed(gilrs::Button::RightThumb), ControllerButtons::RStick, "RStick",),
+        (gamepad.is_pressed(gilrs::Button::Select), ControllerButtons::Back, "Select",),
+        (gamepad.is_pressed(gilrs::Button::Start), ControllerButtons::Start, "Start",),
+        (gamepad.is_pressed(gilrs::Button::Mode), ControllerButtons::Guide, "Guide",),
     ];
 
     for (pressed, button, name) in buttons {
-        let mut controller_data = CONTROLLER_DATA.write().unwrap();
+        if pressed {
+            log::info!("{name:#?} 按键按下");
+        }
         controller_data.set_button(button, pressed);
     }
 
-    // log::debug!("---------------- {:#?}", gamepad.id());
-    // let left_stick_x = gamepad.axis_data(Axis::LeftStickX).unwrap().value();
-    // let left_stick_y = gamepad.axis_data(Axis::LeftStickY).unwrap().value();
-    // log::debug!(
-    //     "Left Stick X: {:#?}, Left Stick Y: {:#?}",
-    //     left_stick_x,
-    //     left_stick_y
-    // );
-    //
-    // let right_stick_x = gamepad.axis_data(Axis::RightStickX).unwrap().value();
-    // let right_stick_y = gamepad.axis_data(Axis::RightStickY).unwrap().value();
-    // log::debug!(
-    //     "Right Stick X: {:#?}, Right Stick Y: {:#?}",
-    //     right_stick_x,
-    //     right_stick_y
-    // );
-    // log::debug!("----------------");
+    controller_data.left_stick.x = gamepad.axis_data(Axis::LeftStickX)
+                                          .map(|data| data.value())
+                                          .unwrap_or(0.0);
+    controller_data.left_stick.y = gamepad.axis_data(Axis::LeftStickY)
+                                          .map(|data| data.value())
+                                          .unwrap_or(0.0);
+
+    controller_data.right_stick.x = gamepad.axis_data(Axis::RightStickX)
+                                           .map(|data| data.value())
+                                           .unwrap_or(0.0);
+    controller_data.right_stick.y = gamepad.axis_data(Axis::RightStickY)
+                                           .map(|data| data.value())
+                                           .unwrap_or(0.0);
+
+    controller_data.right_stick.is_pressed = gamepad.is_pressed(gilrs::Button::RightThumb);
+    controller_data.left_stick.is_pressed = gamepad.is_pressed(gilrs::Button::LeftThumb);
+
+    controller_data.left_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
+    controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
+
+    // let a = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
+    // let b = gamepad.is_pressed(gilrs::Button::RightTrigger2);
+
+
+    let a = gamepad.axis_data(Axis::LeftZ)
+                   .map(|data| data.value())
+                   .unwrap_or(0.0);
+    let b = gamepad.axis_data(Axis::RightZ)
+                   .map(|data| data.value())
+                   .unwrap_or(0.0);
+    log::info!("Axis: ({:#?}, {:#?})", a, b);
+
+
+    // let a = gamepad.axis_data(Axis::DPadX).unwrap();
+    // let b = gamepad.axis_data(Axis::DPadY).unwrap();
+    // log::info!("DPAD: ({:.2}, {:.2})", a.value(), b.value());
+
+    // TODO: 统计 拥有Dpadx 的手柄
+    // let mut dpadx = gamepad.axis_data(Axis::DPadX).unwrap().value();
+    // let mut dpady = gamepad.axis_data(Axis::DPadY).unwrap().value();
+    // log::info!("DPAD: ({}, {})", dpadx, dpady);
 }
 
 /// 轮询非Xbox控制器状态
@@ -602,15 +575,15 @@ pub fn listen() {
                     last_device = Some(current_device.clone());
                 }
                 (true, true)
-                    if last_device.as_ref().unwrap().device_path != current_device.device_path =>
-                {
-                    log::info!(
+                if last_device.as_ref().unwrap().device_path != current_device.device_path =>
+                    {
+                        log::info!(
                         "🔄 设备切换: {} → {}",
                         last_device.as_ref().unwrap().name,
                         current_device.name
                     );
-                    last_device = Some(current_device.clone());
-                }
+                        last_device = Some(current_device.clone());
+                    }
                 (true, false) => {
                     if let Some(device) = &last_device {
                         log::info!("❌ 设备断开: {}", device.name);
@@ -643,7 +616,10 @@ pub fn gilrs_listen() {
         }
 
         loop {
-            if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap().as_mut() {
+            if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap_or_else(|poisoned| {
+                log::warn!("GLOBAL_GILRS 互斥锁已被污染，正在恢复...");
+                poisoned.into_inner()
+            }).as_mut() {
                 // 清空事件队列但不处理
                 while let Some(Event { event, id, .. }) = gilrs.next_event() {
                     let _ = id;
@@ -665,6 +641,9 @@ pub fn gilrs_listen() {
                         #[cfg(not(target_os = "windows"))]
                         physical_disconnect_device();
                     }
+                    // if let EventType::AxisChanged(axis, value, code) = event {
+                    //     log::info!("Axis {:?} changed: {}", axis, value);
+                    // }
                 }
             }
 
