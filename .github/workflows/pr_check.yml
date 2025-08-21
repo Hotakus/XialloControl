@@ -12,24 +12,27 @@ jobs:
       # 1️⃣ 获取代码
       - uses: actions/checkout@v4
 
-      # 2️⃣ 设置 Node.js 环境
+      # 2️⃣ 先安装 pnpm（官方推荐方式）
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10  # 指定 pnpm 版本（可选）
+
+      # 3️⃣ 设置 Node.js 环境（此时 pnpm 已可用）
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'  # 缓存 node_modules，加快依赖安装
+          cache: 'pnpm'  # 使用 pnpm 缓存
 
-      # 3️⃣ 全局安装 pnpm
-      - run: npm install -g pnpm
-
-      # 4️⃣ 确认 pnpm 可用
+      # 4️⃣ 确认环境
+      - run: node --version
       - run: pnpm --version
 
-      # 5️⃣ 安装前端依赖
+      # 5️⃣ 安装依赖
       - run: pnpm install --frozen-lockfile
 
       # 6️⃣ 前端检查
-      - run: pnpm run lint      # ESLint
-      - run: pnpm run build     # Vite 构建
+      - run: pnpm run lint
+      - run: pnpm run build
 
       # 7️⃣ 设置 Rust 环境
       - uses: actions-rs/toolchain@v1
@@ -38,6 +41,6 @@ jobs:
           override: true
 
       # 8️⃣ Rust 检查
-      - run: cargo fmt -- --check          # 格式检查
-      - run: cargo clippy -- -D warnings   # 静态分析
-      - run: cargo test --workspace --all-features   # 单元测试
+      - run: cargo fmt -- --check
+      - run: cargo clippy -- -D warnings
+      - run: cargo test --workspace --all-features
