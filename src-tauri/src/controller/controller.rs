@@ -456,11 +456,11 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
 
     controller_data.left_trigger.value = gamepad.button_data(gilrs::Button::LeftTrigger2)
-                                           .map(|data| data.value())
-                                           .unwrap_or(0.0);
+                                                .map(|data| data.value())
+                                                .unwrap_or(0.0);
     controller_data.right_trigger.value = gamepad.button_data(gilrs::Button::RightTrigger2)
-                                           .map(|data| data.value())
-                                           .unwrap_or(0.0);
+                                                 .map(|data| data.value())
+                                                 .unwrap_or(0.0);
 
     // TODO: 统计 拥有Dpadx 的手柄
     // let mut dpadx = gamepad.axis_data(Axis::DPadX).unwrap().value();
