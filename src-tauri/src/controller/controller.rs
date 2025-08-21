@@ -461,7 +461,6 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     controller_data.right_trigger.value = gamepad.button_data(gilrs::Button::RightTrigger2)
                                            .map(|data| data.value())
                                            .unwrap_or(0.0);
-    log::info!("Axis: ({:#?})", controller_data);
 
     // TODO: 统计 拥有Dpadx 的手柄
     // let mut dpadx = gamepad.axis_data(Axis::DPadX).unwrap().value();
