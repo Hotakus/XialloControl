@@ -40,7 +40,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           failOnError: true
           owner: 'Hotakus'
-          repo: 'XenoControl'
+          repo: 'XialloControl'
           mode: 'PR'  # [PR, COMMIT, HYBRID]
       - name: Print Changelog
         run: |
@@ -109,7 +109,7 @@ jobs:
         with:
           # 这里 tagName 的逻辑可以简化一下，只在 tag push 时才使用 __VERSION__ 占位符
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && 'v__VERSION__' || '' }}
-          releaseName: "XenoControl Release v__VERSION__"
+          releaseName: "XialloControl Release v__VERSION__"
           # 从上游 Job 的 outputs 中获取 changelog！
           releaseBody: ${{ needs.generate-changelog.outputs.changelog }}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}

@@ -32,7 +32,7 @@ const openGithubLink = () => {
 
 async function v() {
   state.version = await getVersion()
-  console.log("XenoControl Version: ", state.version)
+  console.log("XialloControl Version: ", state.version)
 }
 
 onMounted(() => {

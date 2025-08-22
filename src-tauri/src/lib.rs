@@ -1,7 +1,7 @@
 // "windows": [
 //       {
 //         "label": "main",
-//         "title": "XenoControl",
+//         "title": "XialloControl",
 //         "fullscreen": false,
 //         "decorations": true,
 //         "width": 1080,
@@ -109,7 +109,7 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
         "main",
         WebviewUrl::App("index.html".into()),
     )
-    .title("XenoControl")
+    .title("XialloControl")
     .min_inner_size(1130.0, 740.0)
     .resizable(true)
     .fullscreen(false)
