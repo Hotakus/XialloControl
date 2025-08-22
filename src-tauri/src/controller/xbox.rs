@@ -99,15 +99,31 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
                 let vid = format!("{:04x}", xinput_caps_ex.vendor_id);
                 let pid = format!("{:04x}", xinput_caps_ex.product_id);
 
-                if vid.eq_ignore_ascii_case(&_device.vendor_id)
-                    && pid.eq_ignore_ascii_case(_device.sub_product_id.as_deref().unwrap())
+                // log::warn!("{vid:#?}/{pid:#?} - {:#?}/{:#?}/{:#?}",
+                //     _device.vendor_id,
+                //     _device.product_id.as_deref().unwrap(),
+                //     _device.sub_product_id.as_deref().unwrap());
+
+                let d_vid = &_device.vendor_id;
+                let d_pid = &_device.product_id.as_deref().unwrap();
+                let d_sub_pid = &_device.sub_product_id.as_deref().unwrap();
+
+                if vid.eq_ignore_ascii_case(d_vid)
+                    && (pid.eq_ignore_ascii_case(d_pid) || pid.eq_ignore_ascii_case(d_sub_pid))
                 {
                     got_device = true;
                     _poll_xbox_controller_state(state);
                     break;
+                } else {
+                    // 错误
+                    log::error!("Xbox 控制器连接错误，数据不匹配 ({vid:#?}/{pid:#?}) - ({:#?}/{:#?})",
+                        _device.vendor_id,
+                        _device.sub_product_id.as_deref().unwrap()
+                    );
                 }
             }
             Err(_) => {
+                log::error!("Xbox 控制器连接错误，设备索引 {i} 不存在");
                 got_device = false;
             }
         }
