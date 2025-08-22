@@ -6,7 +6,7 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "shell:allow-open",
+    "opener:allow-open-url",
     "core:window:default",
     "core:window:allow-close",
     "core:window:allow-hide",
