@@ -101,7 +101,8 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
     #[cfg(target_os = "windows")]
     let decorations = false;
     #[cfg(not(target_os = "windows"))]
-    let decorations = true;
+    // let decorations = true;
+    let decorations = false;
 
     WebviewWindowBuilder::new(
         &app_handle.clone(),
@@ -150,7 +151,7 @@ pub fn run() {
                         file_name: None,
                     },
                 ))
-                .level(log::LevelFilter::Info)
+                .level(log::LevelFilter::Debug)
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
                 .max_file_size(1024 * 512 /* bytes */)
                 .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)

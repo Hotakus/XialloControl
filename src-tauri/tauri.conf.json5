@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "xenocontrol",
+  "productName": "xiallocontrol",
   "version": "0.17.1",
-  "identifier": "com.hotakus.xenocontrol",
+  "identifier": "com.hotakus.xiallocontrol",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",

@@ -13,5 +13,5 @@ pub mod xeno_utils;
 fn main() {
     // simple_logger::init_with_level(log::Level::Debug).unwrap();
     xeno_utils::initialize();
-    xenocontrol_lib::run();
+    xiallocontrol_lib::run();
 }

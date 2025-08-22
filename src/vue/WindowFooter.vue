@@ -6,10 +6,10 @@
     </div>
 
     <div>
-      <span>© 2025 XenoControl {{ state.version }}</span>
+      <span>© 2025 XialloControl {{ state.version }}</span>
       <a
           id="github-link"
-          href="https://github.com/Hotakus/XenoControl"
+          href="https://github.com/Hotakus/XialloControl"
           target="_blank"
           rel="noopener noreferrer"
           title="GitHub 仓库"
@@ -27,7 +27,7 @@ import {state} from "@/ts/global_states.ts";
 import {invoke} from "@tauri-apps/api/core";
 
 const openGithubLink = () => {
-  invoke("open_url", { url: "https://github.com/Hotakus/XenoControl" });
+  invoke("open_url", { url: "https://github.com/Hotakus/XialloControl" });
 };
 
 async function v() {
