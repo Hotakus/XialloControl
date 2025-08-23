@@ -9,7 +9,7 @@ use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::controller::logic;
 use tauri::Emitter;
 
-use crate::controller::controller::physical_disconnect_device;
+use crate::controller::controller::{pack_and_send_data, physical_disconnect_device};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputState;
 
@@ -18,8 +18,9 @@ const MAX_XINPUT_DEVICES: usize = 4;
 /// Xbox控制器状态轮询处理 (Windows)
 #[cfg(target_os = "windows")]
 fn _poll_xbox_controller_state(state: XInputState) {
-    let mut controller_data = ControllerDatas::new();
-
+    // let mut controller_data = ControllerDatas::new();
+    let mut controller_data = CONTROLLER_DATA.write().unwrap();
+    
     // 按钮状态检测
     let buttons = [
         (state.south_button(), ControllerButtons::South, "Xbox A 键（South）"),
@@ -70,17 +71,18 @@ fn _poll_xbox_controller_state(state: XInputState) {
 
     controller_data.left_trigger.has_pressure = true;
 
-    let mut global_controller_data = CONTROLLER_DATA.write().unwrap();
-    if *global_controller_data != controller_data {
-        *global_controller_data = controller_data;
+    // let mut global_controller_data = CONTROLLER_DATA.write().unwrap();
+    // if *global_controller_data != controller_data {
+    //     *global_controller_data = controller_data;
+    // 
+    //     let app_handle = get_app_handle();
+    //     // TODO: 发送精简数据
+    //     app_handle
+    //         .emit("update_controller_data", controller_data)
+    //         .expect("TODO: panic message");
+    // }
 
-        let app_handle = get_app_handle();
-        // TODO: 发送精简数据
-        app_handle
-            .emit("update_controller_data", controller_data)
-            .expect("TODO: panic message");
-    }
-    // println!("({lx}, {ly}) - ({rx}, {ry}) {}, {}", state.left_trigger(), state.left_trigger_bool());
+    pack_and_send_data(&controller_data);
 }
 
 /// Xbox控制器轮询入口 (Windows)

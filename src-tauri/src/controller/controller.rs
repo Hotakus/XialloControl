@@ -412,10 +412,30 @@ pub fn set_frequency(freq: u32) {
     );
 }
 
+#[tauri::command]
+pub fn need_rumble() {
+
+}
+
 // ---------------------- 设备轮询 ----------------------
 
 pub fn pack_and_send_data(controller_data: &ControllerDatas) {
-    let mut compact_data = controller_data.as_compact();
+    let mut prev_controller_data = PREV_CONTROLLER_DATA.write().unwrap();
+    if controller_data.eq(&prev_controller_data) {
+        // 无变化，不发送数据
+        return;
+    }
+
+    // 数据有变化则进一步比较具体值
+    // 按键数据变化
+    let app_handle = get_app_handle();
+    let compact_data = controller_data.as_compact();
+    if let Err(e) = app_handle.emit("update_controller_compact_datas", compact_data) {
+        log::error!("按键数据发送失败: {e}");
+    }
+    drop(app_handle);
+
+    *prev_controller_data = *controller_data;
 }
 
 fn _poll_other_controllers(gamepad: Gamepad) {
@@ -479,22 +499,7 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     // let mut dpady = gamepad.axis_data(Axis::DPadY).unwrap().value();
     // log::info!("DPAD: ({}, {})", dpadx, dpady);
 
-    let mut prev_controller_data = PREV_CONTROLLER_DATA.write().unwrap();
-    if controller_data.eq(&prev_controller_data) {
-        // 无变化，不发送数据
-        return;
-    }
-
-    // 数据有变化则进一步比较具体值
-    // 按键数据变化
-    let app_handle = get_app_handle();
-    let compact_data = controller_data.as_compact();
-    if let Err(e) = app_handle.emit("update_controller_compact_datas", compact_data) {
-        log::error!("按键数据发送失败: {e}");
-    }
-    drop(app_handle);
-
-    *prev_controller_data = *controller_data;
+    pack_and_send_data(&controller_data);
 }
 
 /// 轮询非Xbox控制器状态
