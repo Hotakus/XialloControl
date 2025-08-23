@@ -33,15 +33,18 @@
       </div>
     </div>
 
-    <div class="card controller-image"></div>
+    <div class="card controller-image">
+      <component :is="currentControllerSvg" class="controller-svg"/>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 // 可以写组件逻辑
-import {state} from "@/ts/global_states.ts";
+import {appWindow, state} from "@/ts/global_states.ts";
 import {connectStatusIcons, onDeviceSelected, scanDevices, toggleDeviceConnection} from "@/ts/LeftPanel.ts";
 import {onMounted} from "vue";
+import {currentControllerSvg, test} from "@/ts/ControllerGraph.ts";
 
 onMounted(() => {
   state.connectIcon = connectStatusIcons.disconnected;
