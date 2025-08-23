@@ -44,7 +44,7 @@
 import {appWindow, state} from "@/ts/global_states.ts";
 import {connectStatusIcons, onDeviceSelected, scanDevices, toggleDeviceConnection} from "@/ts/LeftPanel.ts";
 import {onMounted} from "vue";
-import {currentControllerSvg, test} from "@/ts/ControllerGraph.ts";
+import {currentControllerSvg} from "@/ts/ControllerGraph.ts";
 
 onMounted(() => {
   state.connectIcon = connectStatusIcons.disconnected;
