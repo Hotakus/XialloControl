@@ -151,6 +151,69 @@ impl ControllerDatas {
     pub fn button_is_pressed(&self, button: ControllerButtons) -> bool {
         self.get_button(button)
     }
+
+    pub fn as_compact(self) -> CompactControllerDatas {
+        let mut d = CompactControllerDatas::new();
+        d.buttons = self.buttons;
+        d.pressure.left_stick_x = self.left_stick.x;
+        d.pressure.left_stick_y = self.left_stick.y;
+        d.pressure.right_stick_x = self.right_stick.x;
+        d.pressure.right_stick_y = self.right_stick.y;
+        d.pressure.left_trigger = self.left_trigger.value;
+        d.pressure.right_trigger = self.right_trigger.value;
+        d
+    }
+
+    pub fn as_compact_pressure(self) -> CompactPressureDatas {
+        CompactPressureDatas {
+            left_stick_x: self.left_stick.x,
+            left_stick_y: self.left_stick.y,
+            right_stick_x: self.right_stick.x,
+            right_stick_y: self.right_stick.y,
+            left_trigger: self.left_trigger.value,
+            right_trigger: self.right_trigger.value,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct CompactPressureDatas {
+    pub left_stick_x: f32,
+    pub left_stick_y: f32,
+
+    pub right_stick_x: f32,
+    pub right_stick_y: f32,
+
+    pub left_trigger: f32,
+    pub right_trigger: f32,
+}
+
+impl CompactPressureDatas {
+    pub fn new() -> CompactPressureDatas {
+        Self {
+            left_stick_x: 0.0,
+            left_stick_y: 0.0,
+            right_stick_x: 0.0,
+            right_stick_y: 0.0,
+            left_trigger: 0.0,
+            right_trigger: 0.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct CompactControllerDatas {
+    pub buttons: u32,
+    pub pressure: CompactPressureDatas
+}
+
+impl CompactControllerDatas {
+    pub fn new() -> Self {
+        CompactControllerDatas {
+            buttons: 0,
+            pressure: CompactPressureDatas::new()
+        }
+    }
 }
 
 pub fn initialize() {

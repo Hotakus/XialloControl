@@ -2,7 +2,7 @@
 
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
-use crate::controller::datas::{ControllerButtons, ControllerDatas};
+use crate::controller::datas::{CompactPressureDatas, ControllerButtons, ControllerDatas};
 use crate::{mapping, xeno_utils};
 use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
 use hidapi::HidApi;
@@ -106,6 +106,14 @@ pub static CURRENT_DEVICE: Lazy<RwLock<DeviceInfo>> = Lazy::new(|| {
 /// 当前控制器采样数据（高频读取，偶尔写入）
 pub static CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
     Lazy::new(|| RwLock::new(ControllerDatas::new()));
+
+pub static PREV_CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
+    Lazy::new(|| RwLock::new(ControllerDatas::new()));
+pub static PREV_BTN_DATA: Lazy<RwLock<u32>> =
+    Lazy::new(|| RwLock::new(0));
+
+pub static PREV_PRESSURE_DATA: Lazy<RwLock<CompactPressureDatas>> =
+    Lazy::new(|| RwLock::new(CompactPressureDatas::new()));
 
 /// 自适应采样器实例（结构复杂，保持 Mutex）
 #[allow(dead_code)]
@@ -406,6 +414,10 @@ pub fn set_frequency(freq: u32) {
 
 // ---------------------- 设备轮询 ----------------------
 
+pub fn pack_and_send_data(controller_data: &ControllerDatas) {
+    let mut compact_data = controller_data.as_compact();
+}
+
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
     let mut controller_data = CONTROLLER_DATA.write().unwrap();
@@ -466,6 +478,23 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     // let mut dpadx = gamepad.axis_data(Axis::DPadX).unwrap().value();
     // let mut dpady = gamepad.axis_data(Axis::DPadY).unwrap().value();
     // log::info!("DPAD: ({}, {})", dpadx, dpady);
+
+    let mut prev_controller_data = PREV_CONTROLLER_DATA.write().unwrap();
+    if controller_data.eq(&prev_controller_data) {
+        // 无变化，不发送数据
+        return;
+    }
+
+    // 数据有变化则进一步比较具体值
+    // 按键数据变化
+    let app_handle = get_app_handle();
+    let compact_data = controller_data.as_compact();
+    if let Err(e) = app_handle.emit("update_controller_compact_datas", compact_data) {
+        log::error!("按键数据发送失败: {e}");
+    }
+    drop(app_handle);
+
+    *prev_controller_data = *controller_data;
 }
 
 /// 轮询非Xbox控制器状态
