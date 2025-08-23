@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "XialloControl"
-version = "0.17.1"
+version = "0.18.1"
 dependencies = [
  "anyhow",
  "cfg-if",
