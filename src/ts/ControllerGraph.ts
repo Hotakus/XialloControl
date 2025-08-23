@@ -10,13 +10,12 @@ const controllerSvgs = import.meta.glob('/src/assets/controller/*.svg', {eager: 
  * 根据名称获取预加载的SVG组件
  * @param name - SVG文件的名字 (例如 "xbox")
  */
-function getSvgComponent(name: string = "default") {
+function getSvgComponent(name: string = "xbox") {
     // 构造在 import.meta.glob 结果中的 key
     const key = `/src/assets/controller/${name.toLowerCase()}.svg`;
 
     // 尝试获取对应的SVG，如果找不到，就返回一个默认的 (比如xbox)
-    const defaultKey = '/src/assets/controller/xbox.svg';
-    return controllerSvgs[key] || controllerSvgs[defaultKey];
+    return controllerSvgs[key];
 }
 
 // ✨ 这就是魔法发生的地方！✨
@@ -25,7 +24,7 @@ export const currentControllerSvg = computed(() => {
     // 1. 如果设备未连接，或者没有设备类型信息
     if (!state.isConnected || !state.deviceSelected?.controller_type) {
         console.log("未连接，显示默认Xbox SVG");
-        return getSvgComponent('xbox'); // 返回默认的 Xbox SVG
+        return getSvgComponent(); // 返回默认的 Xbox SVG
     }
 
     // 2. 如果已连接，根据设备类型动态返回对应的SVG
@@ -78,7 +77,7 @@ const controllerSvgsBtnElements = {
     'svg-gamepad-btn-rightstick': ControllerButtons.RStick,
     'svg-gamepad-btn-lb': ControllerButtons.LB,
     'svg-gamepad-btn-rb': ControllerButtons.RB,
-    // 'svg-gamepad-btn-guide': ControllerButtons.Guide,
+    'svg-gamepad-btn-guide': ControllerButtons.Guide,
     'svg-gamepad-dpad-up': ControllerButtons.Up,
     'svg-gamepad-dpad-right': ControllerButtons.Right,
     'svg-gamepad-dpad-down': ControllerButtons.Down,
@@ -113,8 +112,6 @@ export function checkBit(num: number, bit: number): boolean {
 }
 
 watch(() => state.current_controller_datas, async (newVal) => {
-    console.log("watch: state.current_controller_datas 发生变化了喵！");
-
     await nextTick();
 
     // 确保 SVG 容器和它的子元素已经渲染完成
