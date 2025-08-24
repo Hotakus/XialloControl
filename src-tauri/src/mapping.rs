@@ -403,37 +403,85 @@ pub fn get_mappings() -> Vec<Mapping> {
 /// 创建 Xbox 手柄的按键布局映射。
 fn create_xbox_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut xbox_map = HashMap::new();
-    xbox_map.insert("Y", ControllerButtons::North);
-    xbox_map.insert("X", ControllerButtons::West);
-    xbox_map.insert("A", ControllerButtons::South);
-    xbox_map.insert("B", ControllerButtons::East);
-    xbox_map.insert("RB", ControllerButtons::RB);
-    xbox_map.insert("LB", ControllerButtons::LB);
-    xbox_map
+        xbox_map.insert("Y", ControllerButtons::North);
+        xbox_map.insert("X", ControllerButtons::West);
+        xbox_map.insert("A", ControllerButtons::South);
+        xbox_map.insert("B", ControllerButtons::East);
+        xbox_map.insert("RB", ControllerButtons::RB);
+        xbox_map.insert("LB", ControllerButtons::LB);
+        xbox_map.insert("LeftStick", ControllerButtons::LStick);
+        xbox_map.insert("RightStick", ControllerButtons::RStick);
+        xbox_map.insert("Back", ControllerButtons::Back);
+        xbox_map.insert("Start", ControllerButtons::Start);
+        xbox_map.insert("Guide", ControllerButtons::Guide);
+        xbox_map.insert("DPadUp", ControllerButtons::Up);
+        xbox_map.insert("DPadDown", ControllerButtons::Down);
+        xbox_map.insert("DPadLeft", ControllerButtons::Left);
+        xbox_map.insert("DPadRight", ControllerButtons::Right);
+        xbox_map
 }
 
 /// 创建 PlayStation 手柄的按键布局映射。
 fn create_playstation_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut ps_map = HashMap::new();
-    ps_map.insert("Triangle", ControllerButtons::North);
-    ps_map.insert("Square", ControllerButtons::West);
-    ps_map.insert("Cross", ControllerButtons::South);
-    ps_map.insert("Circle", ControllerButtons::East);
-    ps_map.insert("R1", ControllerButtons::RB);
-    ps_map.insert("L1", ControllerButtons::LB);
-    ps_map
+        ps_map.insert("Triangle", ControllerButtons::North);
+        ps_map.insert("Square", ControllerButtons::West);
+        ps_map.insert("Cross", ControllerButtons::South);
+        ps_map.insert("Circle", ControllerButtons::East);
+        ps_map.insert("R1", ControllerButtons::RB);
+        ps_map.insert("L1", ControllerButtons::LB);
+        ps_map.insert("LeftStick", ControllerButtons::LStick);
+        ps_map.insert("RightStick", ControllerButtons::RStick);
+        ps_map.insert("Share", ControllerButtons::Back); // PlayStation 的 Share 键通常对应 Xbox 的 Back 键
+        ps_map.insert("Options", ControllerButtons::Start); // PlayStation 的 Options 键通常对应 Xbox 的 Start 键
+        ps_map.insert("PS", ControllerButtons::Guide); // PlayStation 的 PS 键通常对应 Xbox 的 Guide 键
+        ps_map.insert("DPadUp", ControllerButtons::Up);
+        ps_map.insert("DPadDown", ControllerButtons::Down);
+        ps_map.insert("DPadLeft", ControllerButtons::Left);
+        ps_map.insert("DPadRight", ControllerButtons::Right);
+        ps_map
 }
 
 /// 创建通用手柄的按键布局映射。
 fn create_other_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut other_map = HashMap::new();
-    other_map.insert("Y", ControllerButtons::North);
-    other_map.insert("X", ControllerButtons::West);
-    other_map.insert("A", ControllerButtons::South);
-    other_map.insert("B", ControllerButtons::East);
-    other_map.insert("RB", ControllerButtons::RB);
-    other_map.insert("LB", ControllerButtons::LB);
-    other_map
+        other_map.insert("Y", ControllerButtons::North);
+        other_map.insert("X", ControllerButtons::West);
+        other_map.insert("A", ControllerButtons::South);
+        other_map.insert("B", ControllerButtons::East);
+        other_map.insert("RB", ControllerButtons::RB);
+        other_map.insert("LB", ControllerButtons::LB);
+        other_map.insert("LeftStick", ControllerButtons::LStick);
+        other_map.insert("RightStick", ControllerButtons::RStick);
+        other_map.insert("Back", ControllerButtons::Back);
+        other_map.insert("Start", ControllerButtons::Start);
+        other_map.insert("Guide", ControllerButtons::Guide);
+        other_map.insert("DPadUp", ControllerButtons::Up);
+        other_map.insert("DPadDown", ControllerButtons::Down);
+        other_map.insert("DPadLeft", ControllerButtons::Left);
+        other_map.insert("DPadRight", ControllerButtons::Right);
+        other_map
+}
+
+/// 创建 Nintendo Switch 手柄的按键布局映射。
+fn create_switch_layout_map() -> HashMap<&'static str, ControllerButtons> {
+    let mut switch_map = HashMap::new();
+        switch_map.insert("Y", ControllerButtons::North);
+        switch_map.insert("X", ControllerButtons::West);
+        switch_map.insert("B", ControllerButtons::South); // Switch 的 B 对应 Xbox 的 A
+        switch_map.insert("A", ControllerButtons::East);  // Switch 的 A 对应 Xbox 的 B
+        switch_map.insert("R", ControllerButtons::RB);    // Switch 的 R 对应 Xbox 的 RB
+        switch_map.insert("L", ControllerButtons::LB);    // Switch 的 L 对应 Xbox 的 LB
+        switch_map.insert("LeftStick", ControllerButtons::LStick);
+        switch_map.insert("RightStick", ControllerButtons::RStick);
+        switch_map.insert("Minus", ControllerButtons::Back);   // Switch 的 Minus 对应 Xbox 的 Back
+        switch_map.insert("Plus", ControllerButtons::Start);   // Switch 的 Plus 对应 Xbox 的 Start
+        switch_map.insert("Home", ControllerButtons::Guide);   // Switch 的 Home 对应 Xbox 的 Guide
+        switch_map.insert("DPadUp", ControllerButtons::Up);
+        switch_map.insert("DPadDown", ControllerButtons::Down);
+        switch_map.insert("DPadLeft", ControllerButtons::Left);
+        switch_map.insert("DPadRight", ControllerButtons::Right);
+        switch_map
 }
 
 /// 初始化所有支持的手柄按键布局映射。
@@ -442,6 +490,7 @@ fn init_controller_layout_maps() {
     if map.is_empty() {
         map.insert(ControllerType::Xbox, Arc::new(create_xbox_layout_map()));
         map.insert(ControllerType::PlayStation, Arc::new(create_playstation_layout_map()));
+        map.insert(ControllerType::Switch, Arc::new(create_switch_layout_map())); // 添加 Switch 布局
         map.insert(ControllerType::Other, Arc::new(create_other_layout_map()));
     }
 }

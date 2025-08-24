@@ -290,34 +290,49 @@ const buttonTextMapLists = {
         {value: 'Y', text: 'Y 按钮'},
         {value: 'LB', text: '左肩键 (LB)'},
         {value: 'RB', text: '右肩键 (RB)'},
-        {value: 'LT', text: '左扳机 (LT)'},
-        {value: 'RT', text: '右扳机 (RT)'},
-        {value: 'START', text: '开始按钮'},
-        {value: 'SELECT', text: '选择按钮'}
+        {value: 'LeftStick', text: '左摇杆'},
+        {value: 'RightStick', text: '右摇杆'},
+        {value: 'Back', text: 'Back 按钮'},
+        {value: 'Start', text: 'Start 按钮'},
+        {value: 'Guide', text: 'Guide 按钮'},
+        {value: 'DPadUp', text: '方向键上'},
+        {value: 'DPadDown', text: '方向键下'},
+        {value: 'DPadLeft', text: '方向键左'},
+        {value: 'DPadRight', text: '方向键右'},
     ],
     ps: [
-        {value: 'CROSS', text: '叉按钮 (CROSS)'},
-        {value: 'CIRCLE', text: '圆按钮 (CIRCLE)'},
-        {value: 'SQUARE', text: '方按钮 (SQUARE)'},
-        {value: 'TRIANGLE', text: '三角按钮 (TRIANGLE)'},
+        {value: 'Cross', text: '叉按钮 (Cross)'},
+        {value: 'Circle', text: '圆按钮 (Circle)'},
+        {value: 'Square', text: '方按钮 (Square)'},
+        {value: 'Triangle', text: '三角按钮 (Triangle)'},
         {value: 'L1', text: '左肩键 (L1)'},
         {value: 'R1', text: '右肩键 (R1)'},
-        {value: 'L2', text: '左扳机 (L2)'},
-        {value: 'R2', text: '右扳机 (R2)'},
-        {value: 'OPTIONS', text: '选项按钮'},
-        {value: 'SHARE', text: '分享按钮'}
+        {value: 'LeftStick', text: '左摇杆'},
+        {value: 'RightStick', text: '右摇杆'},
+        {value: 'Share', text: 'Share 按钮'},
+        {value: 'Options', text: 'Options 按钮'},
+        {value: 'PS', text: 'PS 按钮'},
+        {value: 'DPadUp', text: '方向键上'},
+        {value: 'DPadDown', text: '方向键下'},
+        {value: 'DPadLeft', text: '方向键左'},
+        {value: 'DPadRight', text: '方向键右'},
     ],
-    switchpro: [
-        {value: 'B', text: 'B 按钮'},
+    switch: [ // 新增 Switch 布局
         {value: 'A', text: 'A 按钮'},
-        {value: 'Y', text: 'Y 按钮'},
+        {value: 'B', text: 'B 按钮'},
         {value: 'X', text: 'X 按钮'},
+        {value: 'Y', text: 'Y 按钮'},
         {value: 'L', text: '左肩键 (L)'},
         {value: 'R', text: '右肩键 (R)'},
-        {value: 'ZL', text: '左扳机 (ZL)'},
-        {value: 'ZR', text: '右扳机 (ZR)'},
-        {value: 'PLUS', text: '加号按钮'},
-        {value: 'MINUS', text: '减号按钮'}
+        {value: 'LeftStick', text: '左摇杆'},
+        {value: 'RightStick', text: '右摇杆'},
+        {value: 'Minus', text: 'Minus 按钮'},
+        {value: 'Plus', text: 'Plus 按钮'},
+        {value: 'Home', text: 'Home 按钮'},
+        {value: 'DPadUp', text: '方向键上'},
+        {value: 'DPadDown', text: '方向键下'},
+        {value: 'DPadLeft', text: '方向键左'},
+        {value: 'DPadRight', text: '方向键右'},
     ]
 }
 
@@ -336,8 +351,8 @@ export function updateControllerButtons() {
             state.buttonsText = buttonTextMapLists.ps;
             break;
         }
-        case "Switch": {
-            state.buttonsText = buttonTextMapLists.switchpro;
+        case "Switch": { // 添加 Switch case
+            state.buttonsText = buttonTextMapLists.switch;
             break;
         }
         default: {
