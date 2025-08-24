@@ -22,7 +22,7 @@ body {
 }
 
 :root {
-    --primary-bg: #2f3542;
+    --primary-bg: #354350;
     --primary-text: #ffffff;
     --secondary-bg: #f7f9fb;
     --card-bg: #ffffff;
@@ -277,6 +277,7 @@ body {
     flex: 1;
     border-radius: var(--border-radius);
     min-height: 0;
+    position: relative;
 }
 
 .controller-svg {
