@@ -15,7 +15,7 @@ function getSvgComponent(name: string = "xbox") {
     const key = `/src/assets/controller/${name.toLowerCase()}.svg`;
 
     // 尝试获取对应的SVG，如果找不到，就返回一个默认的 (比如xbox)
-    return controllerSvgs[key];
+    return controllerSvgs[key] || controllerSvgs['/src/assets/controller/xbox.svg'];
 }
 
 // ✨ 这就是魔法发生的地方！✨
@@ -71,8 +71,8 @@ const controllerSvgsBtnElements = {
     'svg-gamepad-btn-north-frame': ControllerButtons.North,
     'svg-gamepad-btn-east-frame': ControllerButtons.East,
     'svg-gamepad-btn-south-frame': ControllerButtons.South,
-    'svg-gamepad-btn-select': ControllerButtons.Back,
-    'svg-gamepad-btn-share': ControllerButtons.Start,
+    'svg-gamepad-btn-select': ControllerButtons.Start,
+    'svg-gamepad-btn-share': ControllerButtons.Back,
     'svg-gamepad-btn-leftstick': ControllerButtons.LStick,
     'svg-gamepad-btn-rightstick': ControllerButtons.RStick,
     'svg-gamepad-btn-lb': ControllerButtons.LB,
@@ -87,8 +87,8 @@ const controllerSvgsBtnElements = {
 const controllerSvgsPressureElements = {
     'svg-gamepad-leftstick': ControllerButtons.LStick,
     'svg-gamepad-rightstick': ControllerButtons.RStick,
-    // 'svg-gamepad-lefttrigger': ControllerButtons.LB,
-    // 'svg-gamepad-righttrigger': ControllerButtons.RB // TODO: 扳机绘制
+    'svg-gamepad-lefttrigger': ControllerButtons.LB,
+    'svg-gamepad-righttrigger': ControllerButtons.RB
 }
 
 export function initControllerGraph() {
@@ -106,6 +106,75 @@ export function initControllerGraph() {
     }
 }
 
+
+/**
+ * 更新扳机的视觉效果
+ * @param triggerId
+ * @param value 范围从0 到 1
+ */
+function updateTriggerVisual(triggerId: string, value: number) {
+    const element = document.querySelector<SVGGElement>(`#${triggerId}`);
+    if (!element) {
+        return;
+    }
+
+    const opacity = Math.min(Math.max(value, 0), 1) * 0.6;
+    element.style.fillOpacity = opacity.toString();
+
+    let angle = value * 10; // 最大旋转10度 (可以根据喜好调整)
+
+    let rect = element.getBBox();
+    let pivotX = 0;
+    let pivotY = rect.y / 2 + rect.height * 2.8 / 3; // 底部中心点
+
+    switch (triggerId) {
+        case 'svg-gamepad-lefttrigger': {
+            pivotX = rect.x + rect.width;
+            angle = -angle; // 左扳机向内旋转
+            break;
+        }
+        case 'svg-gamepad-righttrigger': {
+            pivotX = rect.x;
+            break;
+        }
+    }
+
+    element.style.transformOrigin = `${pivotX}px ${pivotY}px`; // 以底部中心为旋转点
+    element.style.transform = `rotate(${angle}deg)`;
+}
+
+
+function updateStickVisual(stickId: string, x: number, y: number) {
+    const element = document.querySelector<SVGGElement>(`#${stickId}`);
+    if (!element) {
+        return;
+    }
+    const opacity = Math.min(Math.max(Math.sqrt(x * x + y * y), 0), 1) * 0.55;
+    element.style.fillOpacity = opacity.toString();
+
+    let groupId = stickId + '-g';
+    let groupElement = document.querySelector<SVGGElement>(`#${groupId}`);
+    if (!groupElement) {
+        return;
+    }
+
+    let groupRect = groupElement.getBBox();
+    let groupCenterX = groupRect.x + groupRect.width / 2;
+    let groupCenterY = groupRect.y + groupRect.height / 2;
+    let groupRadius = Math.min(groupRect.width, groupRect.height) / 2;
+
+    let elementRect = element.getBBox();
+    let elementCenterX = elementRect.x + elementRect.width / 2;
+    let elementCenterY = elementRect.y + elementRect.height / 2;
+    let elementRadius = Math.min(elementRect.width, elementRect.height) / 2;
+
+    let maxOffset = groupRadius - elementRadius;
+
+    let offsetX = x * maxOffset;
+    let offsetY = -y * maxOffset; // Y轴反向
+    element.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+    element.style.transformOrigin = `${elementCenterX}px ${elementCenterY}px`;
+}
 
 export function checkBit(num: number, bit: number): boolean {
     return (num & (1 << bit)) !== 0;
@@ -129,6 +198,14 @@ watch(() => state.current_controller_datas, async (newVal) => {
             element.style.fillOpacity = isPressed ? '0.5' : '0';
         }
     }
+
+    // 更新摇杆和扳机的压力
+    // 设计一个扳机触发函数
+    updateTriggerVisual('svg-gamepad-lefttrigger', newVal.left_trigger.value);
+    updateTriggerVisual('svg-gamepad-righttrigger', newVal.right_trigger.value);
+
+    updateStickVisual('svg-gamepad-leftstick', newVal.left_stick.x, newVal.left_stick.y);
+    updateStickVisual('svg-gamepad-rightstick', newVal.right_stick.x, newVal.right_stick.y);
 }, {deep: true, immediate: true});
 
 
@@ -138,7 +215,6 @@ watch(currentControllerSvg, async (newVal, oldVal) => {
     // 初始化控制器图形
     initControllerGraph();
 }, {immediate: true});
-
 
 
 // CompactPressureDatas 接口
@@ -169,7 +245,7 @@ function update_with_compact_datas(datas: CompactControllerDatas) {
 
 appWindow.listen('update_controller_compact_datas', (event) => {
     let datas = event.payload as CompactControllerDatas;
-    console.log(`update_controller_compact_datas: ${datas}`);
+    // console.log(`update_controller_compact_datas: ${datas}`);
     update_with_compact_datas(datas);
 });
 
