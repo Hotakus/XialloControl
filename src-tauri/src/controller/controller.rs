@@ -14,7 +14,7 @@ use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
 use crate::controller::xbox;
-use crate::setting::get_setting;
+use crate::setting::{self, get_setting, LastConnectedDevice, AppSettings};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputHandle;
 use uuid::Uuid;
@@ -333,7 +333,7 @@ pub fn get_controller_data() -> ControllerDatas {
 ///
 /// 触发 "update_devices" 事件通知前端
 #[tauri::command]
-pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
+pub fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
     let devices = _query_devices();
     if let Err(e) = app.emit("update_devices", devices.clone()) {
         log::error!("发送 update_devices 事件失败: {e}");
@@ -342,16 +342,34 @@ pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
     devices
 }
 
+/// 更新设置中上次连接的设备信息
+fn update_last_connected_device_setting(device_info: Option<DeviceInfo>) {
+    let mut settings = get_setting();
+    settings.last_connected_device = device_info.map(|d| LastConnectedDevice {
+        vid: u16::from_str_radix(&d.vendor_id, 16).unwrap_or(0),
+        pid: u16::from_str_radix(&d.product_id.unwrap_or_default(), 16).unwrap_or(0),
+        sub_pid: u16::from_str_radix(&d.sub_product_id.unwrap_or_default(), 16).unwrap_or(0),
+    });
+    let app_handle = get_app_handle();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = setting::update_settings(app_handle, settings).await {
+            log::error!("保存上次连接设备信息失败: {:?}", e);
+        }
+    });
+}
+
 /// 选择使用指定设备命令 (Tauri 前端调用)
 #[tauri::command]
-pub async fn use_device(device_name: String) -> bool {
+pub fn use_device(device_name: String) -> bool {
     log::debug!("尝试使用设备: {device_name}");
     let device = _find_device_by_name(&device_name);
     match device {
-        Some(device) => {
+        Some(device_info) => {
             let mut current_device = CURRENT_DEVICE.write().unwrap();
-            *current_device = device;
+            *current_device = device_info.clone();
             log::info!("✅ 使用设备: {}", current_device.name);
+            drop(current_device); // 显式释放锁
+            update_last_connected_device_setting(Some(device_info));
             true
         }
         None => {
@@ -367,6 +385,8 @@ pub fn disconnect_device() -> bool {
     let mut current_device = CURRENT_DEVICE.write().unwrap();
     *current_device = default_devices()[0].clone();
     log::info!("✅ 已断开当前设备");
+    drop(current_device); // 显式释放锁
+    update_last_connected_device_setting(None);
     true
 }
 
@@ -386,6 +406,7 @@ pub fn physical_disconnect_device() -> bool {
     }
     disconnect_device()
 }
+
 
 /// 设置轮询频率命令 (Tauri 前端调用)
 ///
@@ -708,4 +729,58 @@ pub fn initialize(app_handle: AppHandle) {
     gilrs_listen();
     listen();
     polling_devices();
+}
+
+/// 尝试自动连接上次连接的设备
+#[tauri::command]
+pub fn try_auto_connect_last_device(app_handle: AppHandle) {
+    let settings = get_setting();
+    if settings.remember_last_connection {
+        if let Some(last_device) = settings.last_connected_device {
+            log::info!("尝试连接上次连接的设备: {:?}", last_device);
+            let devices = query_devices(app_handle.clone()); // query_devices 现在是同步的
+            if let Some(device_info) = devices.into_iter().find(|d| {
+                let last_vid_str = format!("{:04x}", last_device.vid);
+                let last_pid_str = format!("{:04x}", last_device.pid);
+                let last_sub_pid_str = format!("{:04x}", last_device.sub_pid);
+
+                let vid_matches = d.vendor_id == last_vid_str;
+
+                let pid_matches = if last_device.pid == 0 {
+                    true
+                } else {
+                    d.product_id.as_deref().map_or(false, |pid| pid == last_pid_str)
+                };
+
+                let sub_pid_matches = if last_device.sub_pid == 0 {
+                    true
+                } else {
+                    d.sub_product_id.as_deref().map_or(false, |sub_pid| sub_pid == last_sub_pid_str)
+                };
+
+                // log::debug!("匹配检查: DeviceInfo {:?} vs LastConnectedDevice {:?}", d, last_device);
+                // log::debug!("  VID: {} == {} -> {}", d.vendor_id, last_vid_str, vid_matches);
+                // log::debug!("  PID: {:?} == {} -> {}", d.product_id, last_pid_str, pid_matches);
+                // log::debug!("  SubPID: {:?} == {} -> {}", d.sub_product_id, last_sub_pid_str, sub_pid_matches);
+                // log::debug!("  总匹配: {}", vid_matches && (pid_matches || sub_pid_matches));
+
+                vid_matches && (pid_matches || sub_pid_matches)
+            }) {
+                log::info!("找到匹配的设备，尝试连接: {:?}", device_info);
+                if use_device(device_info.name.clone()) { // use_device 现在是同步的
+                    log::info!("成功自动连接上次设备");
+                    if let Err(e) = app_handle.emit("auto_connect_success", device_info) {
+                        log::error!("发送 auto_connect_success 事件失败: {e}");
+                    }
+                    return;
+                } else {
+                    log::error!("自动连接上次设备失败");
+                }
+            } else {
+                log::warn!("未找到上次连接的设备: {:?}", last_device);
+            }
+        } else {
+            log::info!("记住上次连接状态已启用，但没有上次连接的设备信息。");
+        }
+    }
 }

@@ -25,6 +25,8 @@ export async function updateSettings() {
     const newSettings = {
         auto_start: state.autoStart,
         minimize_to_tray: state.minimizeToTray,
+        remember_last_connection: state.rememberLastConnection,
+        last_connected_device: state.lastConnectedDevice,
         theme: state.theme,
         polling_frequency: state.pollingFrequency,
         previous_preset: state.previousPreset

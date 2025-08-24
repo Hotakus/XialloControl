@@ -11,6 +11,8 @@ export async function initApp() {
     await queryMappings();
     updateStatusMessage("请选择一个设备并点击连接按钮");
 
+    await invoke("try_auto_connect_last_device");
+
     state.locale = await invoke("get_locale");
 }
 
@@ -21,6 +23,8 @@ export async function queryGlobalSettings() {
     const settings = await invoke<{
         auto_start: boolean;
         minimize_to_tray: boolean;
+        remember_last_connection: boolean;
+        last_connected_device: { vid: number, pid: number, sub_pid: number } | null;
         theme: string;
         polling_frequency: number;
         previous_preset: string;
@@ -30,6 +34,8 @@ export async function queryGlobalSettings() {
 
     state.autoStart = settings.auto_start || false;
     state.minimizeToTray = settings.minimize_to_tray || false;
+    state.rememberLastConnection = settings.remember_last_connection || false;
+    state.lastConnectedDevice = settings.last_connected_device || null;
     state.theme = settings.theme || "light";
     state.pollingFrequency = settings.polling_frequency || 125;
     state.previousPreset = settings.previous_preset || "default";

@@ -186,6 +186,7 @@ pub fn run() {
             controller::controller::physical_disconnect_device,
             controller::controller::set_frequency,
             controller::controller::get_controller_data,
+            controller::controller::try_auto_connect_last_device,
             controller::logic::controller_stick_drift_sampling,
             controller::logic::check_controller_deadzone,
             setting::get_current_settings,

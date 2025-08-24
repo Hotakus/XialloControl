@@ -7,6 +7,11 @@ import { locale } from "@tauri-apps/plugin-os";
 
 let appWindow = getCurrentWindow();
 
+export interface LastConnectedDevice {
+    vid: number;
+    pid: number;
+    sub_pid: number;
+}
 
 // ---------- 响应式应用状态 ----------
 export const state = reactive({
@@ -24,6 +29,8 @@ export const state = reactive({
 
     autoStart: false,
     minimizeToTray: false,
+    rememberLastConnection: false,
+    lastConnectedDevice: null as LastConnectedDevice | null,
     theme: 'light',
     pollingFrequency: 125,
     previousPreset: "default",
