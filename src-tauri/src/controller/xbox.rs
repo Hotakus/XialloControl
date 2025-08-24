@@ -61,26 +61,13 @@ fn _poll_xbox_controller_state(state: XInputState) {
     // 触发器状态读取
     let lt = state.left_trigger();
     let rt = state.right_trigger();
-    let lt_bool = state.left_trigger_bool();
-    let rt_bool = state.right_trigger_bool();
 
-    controller_data.left_trigger.value = lt as f32;
-    controller_data.right_trigger.value = rt as f32;
-    controller_data.left_trigger.is_pressed = lt_bool;
-    controller_data.right_trigger.is_pressed = rt_bool;
+    controller_data.left_trigger.value = logic::normalize(lt, 0, 255, 0.0, 1.0).unwrap() as f32;
+    controller_data.right_trigger.value = logic::normalize(rt, 0, 255, 0.0, 1.0).unwrap() as f32;
+    controller_data.left_trigger.is_pressed = state.left_trigger_bool();
+    controller_data.right_trigger.is_pressed = state.right_trigger_bool();
 
     controller_data.left_trigger.has_pressure = true;
-
-    // let mut global_controller_data = CONTROLLER_DATA.write().unwrap();
-    // if *global_controller_data != controller_data {
-    //     *global_controller_data = controller_data;
-    // 
-    //     let app_handle = get_app_handle();
-    //     // TODO: 发送精简数据
-    //     app_handle
-    //         .emit("update_controller_data", controller_data)
-    //         .expect("TODO: panic message");
-    // }
 
     pack_and_send_data(&controller_data);
 }
