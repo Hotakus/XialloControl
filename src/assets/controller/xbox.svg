@@ -2,15 +2,15 @@
  <g>
   <g id="svg-gamepad_base_frame">
    <path d="m41.908 62.133s-7.1061 3.8264-11.115 15.67c-4.0086 11.844-20.59 56.849-23.14 72.155-2.5509 15.306-7.6528 43.001-1.6399 57.396s20.772 20.043 20.772 20.043 2.7331 1.6399 8.746-3.2798c6.0129-4.9196 31.158-35.895 31.158-35.895s9.4748-12.39 21.318-12.39h90.375s10.386-0.91105 17.492 4.1908c7.1061 5.1018 37.353 41.908 37.353 41.908l3.8264 3.8264s2.7331 6.0129 14.941-2.5509c12.208-8.5638 13.804-18.864 13.804-18.864s4.896-9.7919 0.51538-37.622c-4.3806-27.83-25.253-95.471-32.726-101.01-7.4728-5.5402-13.572-9.953-27.602-13.415-14.03-3.462-19.314-3.1886-19.314-3.1886s-4.1908 0-6.7417 1.0933c-2.5509 1.0932-89.034 0-89.034 0s-1.6105-1.6254-10.243-0.78797c-8.6323 0.83747-27.889 4.4442-38.746 12.723z" style="fill:none;mix-blend-mode:darken;paint-order:normal;stroke-width:2.065;stroke:#808080"/>
-   <rect x="97.801" y="47.195" width="74.807" height="1.5419" ry="0" style="fill:none;mix-blend-mode:darken;paint-order:normal;stroke-width:2.0719;stroke:#808080"/>
+   <rect x="97.341" y="47.197" width="75.585" height="1.5393" ry="0" style="fill:none;mix-blend-mode:darken;paint-order:normal;stroke-width:2.0809;stroke:#808080"/>
   </g>
   <path id="svg-gamepad-btn-lb" d="m42.646 60.169s3.221-7.8593 14.044-12.626c10.823-4.7671 19.842-5.669 19.842-5.669s3.9941-0.90189 8.3747-0.77305c4.3806 0.12884 10.898 5.2604 10.898 5.2604l0.05337 2.8566h-4.5094s-15.847-5.5402-48.702 10.951z" style="fill-opacity:.49741;fill:#ff9c00;mix-blend-mode:darken;paint-order:normal;stroke-width:2.065;stroke:#808080"/>
   <path id="svg-gamepad-btn-rb" d="m227.65 60.572s-3.221-7.8593-14.044-12.626c-10.823-4.7671-19.842-5.669-19.842-5.669s-3.9941-0.90188-8.3747-0.77304c-4.3806 0.12884-10.898 5.2604-10.898 5.2604l-0.0534 2.8566h4.5094s15.847-5.5402 48.702 10.951z" style="fill-opacity:.49741;fill:#ff9c00;mix-blend-mode:darken;paint-order:normal;stroke-width:2.065;stroke:#808080"/>
-  <g id="svg-gamepad-g-leftstick" style="mix-blend-mode:darken;paint-order:normal">
+  <g id="svg-gamepad-leftstick-g" style="mix-blend-mode:darken;paint-order:normal">
    <ellipse id="svg-gamepad-leftstick" cx="65.875" cy="93.828" rx="10.049" ry="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
    <circle id="svg-gamepad-btn-leftstick" cx="65.875" cy="93.828" r="16.394" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:2.543;stroke:#808080"/>
   </g>
-  <g id="svg-gamepad-g-rightstick" transform="translate(106.17 41.638)" style="mix-blend-mode:darken;paint-order:normal">
+  <g id="svg-gamepad-rightstick-g" transform="translate(106.17 41.638)" style="mix-blend-mode:darken;paint-order:normal">
    <circle id="svg-gamepad-rightstick" cx="65.875" cy="93.828" r="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
    <circle id="svg-gamepad-btn-rightstick" cx="65.875" cy="93.828" r="16.394" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:2.543;stroke:#808080"/>
   </g>
@@ -53,5 +53,7 @@
    <path id="svg-gamepad-dpad-left" d="m76.109 143.77c0 0.6648 0.53513 1.1999 1.1999 1.1999h11.247c0.14716 0 0.28698-0.0279 0.41703-0.076 2e-3 -5.6e-4 3e-3 -9.8e-4 5e-3 -2e-3l0.59428-0.48214 7.767-6.2947-7.8941-6.3097-0.29766-0.23772c-0.0236-0.0134-0.0477-0.026-0.0723-0.0377-0.15685-0.0749-0.33281-0.11678-0.51884-0.11678h-11.247c-0.6648 0-1.1999 0.53512-1.1999 1.1999z" style="fill-opacity:.50259;fill:#ff9c00;stroke-linejoin:round;stroke-miterlimit:0;stroke-width:1.815;stroke:#808080"/>
    <path id="svg-gamepad-dpad-right" d="m118.57 132.46c0-0.6648-0.53513-1.1999-1.1999-1.1999h-11.247c-0.14716 0-0.28698 0.0279-0.41703 0.076-2e-3 5.6e-4 -3e-3 9.8e-4 -5e-3 2e-3l-0.59428 0.48214-7.767 6.2947 7.8941 6.3097 0.29766 0.23772c0.0236 0.0134 0.0477 0.026 0.0723 0.0377 0.15685 0.0749 0.33281 0.11678 0.51884 0.11678h11.247c0.6648 0 1.1999-0.53512 1.1999-1.1999z" style="fill-opacity:.50259;fill:#ff9c00;stroke-linejoin:round;stroke-miterlimit:0;stroke-width:1.815;stroke:#808080"/>
   </g>
+  <path id="svg-gamepad-lefttrigger" d="m32.798 18.403s31.704-3.6442 43.912-0.36442c12.208 3.2798 13.301 10.386 13.301 10.386l-1e-5 6.5595h-19.649s0.36363-3.462-2.3695-6.5595-35.195-5.284-35.195-5.284z" style="fill-opacity:.5;fill:#ff9c00;stroke-linejoin:round;stroke-width:2.026;stroke:#808080"/>
+  <path id="svg-gamepad-righttrigger" d="m238.08 18.403s-31.704-3.6442-43.912-0.36442c-12.208 3.2798-13.301 10.386-13.301 10.386v6.5595h19.649s0.2895-3.462 3.0226-6.5595c2.7331-3.0975 34.542-5.284 34.542-5.284z" style="fill-opacity:.5;fill:#ff9c00;stroke-linejoin:round;stroke-width:2.026;stroke:#808080"/>
  </g>
 </svg>
