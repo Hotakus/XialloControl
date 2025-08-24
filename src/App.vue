@@ -5,7 +5,7 @@
       <LeftPanel/>
       <RightPanel/>
     </div>
-    <WindowFooter/>
+<!--    <WindowFooter/>-->
     <MappingModal/>
     <JoystickCaliModal/>
   </div>
