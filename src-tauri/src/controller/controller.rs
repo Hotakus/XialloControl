@@ -71,6 +71,7 @@ struct SupportedDevicesConfig {
 // ---------------------- 枚举定义 ----------------------
 /// 控制器类型分类
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Hash)]
 pub enum ControllerType {
     /// Xbox 系列控制器
     Xbox,

@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 // --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
+use crate::controller::controller::{CURRENT_DEVICE, ControllerType};
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
@@ -9,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::{RwLock, RwLockReadGuard};
+use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
@@ -204,7 +205,8 @@ pub static MAPPING_FILE_PATH: Lazy<RwLock<PathBuf>> =
     Lazy::new(|| RwLock::from(PathBuf::from(DEFAULT_MAPPINGS_FILE)));
 
 /// 全局手柄按键布局映射，例如将 "Y" 映射到 `ControllerButtons::North`。
-pub static XBOX_LAYOUT_MAP: Lazy<RwLock<HashMap<&'static str, ControllerButtons>>> =
+/// 存储不同类型手柄的布局。
+pub static CONTROLLER_LAYOUT_MAP: Lazy<RwLock<HashMap<ControllerType, Arc<HashMap<&'static str, ControllerButtons>>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// 动态触发状态，存储每个映射的触发状态。
@@ -398,23 +400,63 @@ pub fn get_mappings() -> Vec<Mapping> {
 }
 
 
-/// 初始化 Xbox 手柄按键布局映射。
-fn init_if_needed() {
-    let mut map = XBOX_LAYOUT_MAP.write().unwrap();
+/// 创建 Xbox 手柄的按键布局映射。
+fn create_xbox_layout_map() -> HashMap<&'static str, ControllerButtons> {
+    let mut xbox_map = HashMap::new();
+    xbox_map.insert("Y", ControllerButtons::North);
+    xbox_map.insert("X", ControllerButtons::West);
+    xbox_map.insert("A", ControllerButtons::South);
+    xbox_map.insert("B", ControllerButtons::East);
+    xbox_map.insert("RB", ControllerButtons::RB);
+    xbox_map.insert("LB", ControllerButtons::LB);
+    xbox_map
+}
+
+/// 创建 PlayStation 手柄的按键布局映射。
+fn create_playstation_layout_map() -> HashMap<&'static str, ControllerButtons> {
+    let mut ps_map = HashMap::new();
+    ps_map.insert("Triangle", ControllerButtons::North);
+    ps_map.insert("Square", ControllerButtons::West);
+    ps_map.insert("Cross", ControllerButtons::South);
+    ps_map.insert("Circle", ControllerButtons::East);
+    ps_map.insert("R1", ControllerButtons::RB);
+    ps_map.insert("L1", ControllerButtons::LB);
+    ps_map
+}
+
+/// 创建通用手柄的按键布局映射。
+fn create_other_layout_map() -> HashMap<&'static str, ControllerButtons> {
+    let mut other_map = HashMap::new();
+    other_map.insert("Y", ControllerButtons::North);
+    other_map.insert("X", ControllerButtons::West);
+    other_map.insert("A", ControllerButtons::South);
+    other_map.insert("B", ControllerButtons::East);
+    other_map.insert("RB", ControllerButtons::RB);
+    other_map.insert("LB", ControllerButtons::LB);
+    other_map
+}
+
+/// 初始化所有支持的手柄按键布局映射。
+fn init_controller_layout_maps() {
+    let mut map = CONTROLLER_LAYOUT_MAP.write().unwrap();
     if map.is_empty() {
-        map.insert("Y", ControllerButtons::North);
-        map.insert("X", ControllerButtons::West);
-        map.insert("A", ControllerButtons::South);
-        map.insert("B", ControllerButtons::East);
-        map.insert("RB", ControllerButtons::RB);
-        map.insert("LB", ControllerButtons::LB);
+        map.insert(ControllerType::Xbox, Arc::new(create_xbox_layout_map()));
+        map.insert(ControllerType::PlayStation, Arc::new(create_playstation_layout_map()));
+        map.insert(ControllerType::Other, Arc::new(create_other_layout_map()));
     }
 }
 
-/// 获取 Xbox 手柄按键布局映射的只读锁。
-fn get_xbox_layout_map() -> RwLockReadGuard<'static, HashMap<&'static str, ControllerButtons>> {
-    init_if_needed();
-    XBOX_LAYOUT_MAP.read().unwrap()
+/// 获取当前连接手柄的按键布局映射的只读引用。
+fn get_current_controller_layout_map() -> Arc<HashMap<&'static str, ControllerButtons>> {
+    init_controller_layout_maps();
+    let controller_type = CURRENT_DEVICE.read().unwrap().controller_type;
+    let map_guard = CONTROLLER_LAYOUT_MAP.read().unwrap();
+    map_guard.get(&controller_type)
+        .unwrap_or_else(|| {
+            log::warn!("未找到 {controller_type:?} 对应的布局，使用通用布局");
+            map_guard.get(&ControllerType::Other).unwrap()
+        })
+        .clone()
 }
 
 /// 辅助函数，确保只有一个主操作被设置，防止按键组合解析错误。
@@ -574,8 +616,7 @@ pub fn map(controller_datas: &ControllerDatas) {
     // 获取可写的映射配置和触发状态，以及只读的布局映射
     let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
 
-    // TODO: 根据实际情况动态更新布局映射，并抽离更新逻辑
-    let layout_map = get_xbox_layout_map(); 
+    let layout_map = get_current_controller_layout_map();
 
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
 
