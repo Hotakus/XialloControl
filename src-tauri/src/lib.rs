@@ -193,6 +193,7 @@ pub fn run() {
             setting::update_settings,
             mapping::set_mapping,
             mapping::get_mappings,
+            mapping::get_mapping_by_id,
             mapping::update_mapping,
             mapping::add_mapping,
             mapping::delete_mapping,

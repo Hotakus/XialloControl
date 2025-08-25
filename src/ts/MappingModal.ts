@@ -33,18 +33,30 @@ export async function mappingsConfirm() {
         return;
     }
 
+    // 从全局状态中获取触发器状态
+    const trigger_state = {
+        interval: state.triggerState.initial_interval, // 关键：添加 interval 字段
+        initial_interval: state.triggerState.initial_interval,
+        min_interval: state.triggerState.min_interval,
+        acceleration: state.triggerState.acceleration,
+        // Rust 结构中的 `last_trigger` 是在后端处理的，前端不需要发送
+    };
+
+
     let result = false;
     if (state.editingMappingId) {
         result = await invoke("update_mapping", {
-            id: state.editingMappingId, // 'id' is the same in both cases
+            id: state.editingMappingId,
             composedButton: composed_button,
             composedShortcutKey: raw_shortcut_key,
+            triggerState: trigger_state,
         });
         updateStatusMessage('按键映射已更新');
     } else {
         result = await invoke("add_mapping", {
             composedButton: composed_button,
             composedShortcutKey: raw_shortcut_key,
+            triggerState: trigger_state,
         });
         updateStatusMessage('按键映射已添加');
     }

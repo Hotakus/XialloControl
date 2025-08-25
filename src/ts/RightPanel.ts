@@ -66,7 +66,9 @@ export async function openButtonMapModal(title = "添加按键映射", selectedB
 }
 
 export async function editButtonMap(id: number) {
-    const mapping = state.mappings.find(m => m.id === id);
+    // 从后端直接获取最新的映射数据
+    const mapping: any = await invoke("get_mapping_by_id", {id});
+
     if (mapping) {
         // --- 新增转换和状态恢复逻辑 ---
         const raw_key: string = mapping.composed_shortcut_key; // 获取英文原始值
@@ -84,10 +86,17 @@ export async function editButtonMap(id: number) {
         // 查找不是修饰键的部分作为主键
         state.currentKeys.key = parts.find(p => !['Control', 'Shift', 'Alt', 'Meta'].includes(p)) || null;
 
+        // 3. 恢复 trigger state (假设后端返回的字段名是 snake_case)
+        state.triggerState.initial_interval = mapping.initial_interval ?? 300;
+        state.triggerState.min_interval = mapping.min_interval ?? 100;
+        state.triggerState.acceleration = mapping.acceleration ?? 0.8;
+
         // 使用转换后的中文值和恢复的状态打开模态窗口
         console.log("编辑按钮映射", id);
         await openButtonMapModal("编辑按键映射", mapping.composed_button, display_key, mapping.id);
         // --- 逻辑结束 ---
+    } else {
+        updateStatusMessage(`无法找到 ID 为 ${id} 的映射`, true);
     }
 }
 
@@ -110,6 +119,10 @@ export async function deleteButtonMap(id: number) {
 
 
 export async function addButtonMap() {
+    // 重置 trigger state 为默认值
+    state.triggerState.initial_interval = 300;
+    state.triggerState.min_interval = 100;
+    state.triggerState.acceleration = 0.8;
     await openButtonMapModal();
 }
 

@@ -304,14 +304,19 @@ pub fn set_mapping(mapping: Vec<Mapping>) {
 
 /// Tauri 命令：更新一个已存在的映射配置。
 #[tauri::command]
-pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: String) -> bool {
+pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: String, trigger_state: TriggerState) -> bool {
     match parse_composed_key_to_action(&composed_shortcut_key) {
         Ok(action) => {
             let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
             if let Some(mapping) = cache.iter_mut().find(|m| m.id == id) {
                 mapping.composed_button = composed_button;
                 mapping.composed_shortcut_key = composed_shortcut_key;
-                mapping.action = action; // <-- 更新解析结果
+                mapping.action = action;
+                mapping.trigger_state = trigger_state.clone();
+
+                let mut live_triggers = DYNAMIC_TRIGGER_STATES.write().unwrap();
+                live_triggers.insert(id, trigger_state);
+                drop(live_triggers);
 
                 drop(cache);
                 save_mappings();
@@ -329,7 +334,7 @@ pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: S
 
 /// Tauri 命令：添加一个新的映射配置。
 #[tauri::command]
-pub fn add_mapping(composed_button: String, composed_shortcut_key: String) -> bool {
+pub fn add_mapping(composed_button: String, composed_shortcut_key: String, trigger_state: TriggerState) -> bool {
     log::debug!(
         "请求添加映射配置: '{composed_button}', '{composed_shortcut_key}'",
     );
@@ -348,7 +353,7 @@ pub fn add_mapping(composed_button: String, composed_shortcut_key: String) -> bo
                 composed_button,
                 composed_shortcut_key,
                 action, // <-- 存储解析结果
-                trigger_state: TriggerState::default(),
+                trigger_state, // <-- 使用前端传来的触发状态
             };
 
             cache.push(mapping);
@@ -397,6 +402,13 @@ pub fn save_mapping_config() {
 #[tauri::command]
 pub fn get_mappings() -> Vec<Mapping> {
     get_mappings_internal()
+}
+
+/// Tauri 命令：根据 ID 获取单个映射配置。
+#[tauri::command]
+pub fn get_mapping_by_id(id: u64) -> Option<Mapping> {
+    let cache = GLOBAL_MAPPING_CACHE.read().unwrap();
+    cache.iter().find(|m| m.id == id).cloned()
 }
 
 

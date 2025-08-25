@@ -64,6 +64,12 @@ export const state = reactive({
     deviceType: 'xbox',
     mappings: [] as any[],
     editingMappingId: null as number | null,
+    // 用于模态窗口中的触发状态绑定
+    triggerState: {
+        initial_interval: 300,
+        min_interval: 100,
+        acceleration: 0.8,
+    },
 
     preventNextClick: false,
     currentKeys: {

@@ -11,25 +11,50 @@
           <button class="modal-close" id="close-modal" @click="closeButtonMapModal()">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
-            <label><i class="fas fa-gamepad"></i> 选择手柄按键</label>
-            <select class="form-control" id="controller-button" v-model="state.selectedButton">
-              <option disabled value="">-- 请选择按键 --</option>
-              <option v-for="btnText in state.buttonsText"
-                      :key="btnText.value"
-                      :value="btnText.value">
-                {{ btnText.text }}
-              </option>
-            </select>
-          </div>
+          <div class="modal-content-wrapper">
+            <!-- Left Panel -->
+            <div class="modal-left-panel">
+              <div class="form-group">
+                <label><i class="fas fa-gamepad"></i> 选择手柄按键</label>
+                <select class="form-control" id="controller-button" v-model="state.selectedButton">
+                  <option disabled value="">-- 请选择按键 --</option>
+                  <option v-for="btnText in state.buttonsText"
+                          :key="btnText.value"
+                          :value="btnText.value">
+                    {{ btnText.text }}
+                  </option>
+                </select>
+              </div>
 
-          <div class="form-group key-detector">
-            <label><i class="fas fa-keyboard"></i> 映射到：</label>
-            <div class="detector-area" :class="{active: state.keyListenerActive}" id="key-detector-area" @click="detectKey()">
-              {{ state.keyDetectorText }}
+              <div class="form-group key-detector">
+                <label><i class="fas fa-keyboard"></i> 映射到：</label>
+                <div class="detector-area" :class="{active: state.keyListenerActive}" id="key-detector-area"
+                     @click="detectKey()">
+                  {{ state.keyDetectorText }}
+                </div>
+                <div class="detector-hint">支持单键或组合键（如 Ctrl+C、Alt+F4）</div>
+                <div class="key-display" id="key-display">{{ state.keyDisplayText }}</div>
+              </div>
             </div>
-            <div class="detector-hint">支持单键或组合键（如 Ctrl+C、Alt+F4）</div>
-            <div class="key-display" id="key-display">{{ state.keyDisplayText }}</div>
+
+            <!-- Divider -->
+            <div class="divider"></div>
+
+            <!-- Right Panel -->
+            <div class="modal-right-panel">
+              <div class="form-group">
+                <label for="initial-interval">初始触发间隔 (ms)</label>
+                <input type="number" id="initial-interval" class="form-control" v-model.number="state.triggerState.initial_interval">
+              </div>
+              <div class="form-group">
+                <label for="min-interval">最小触发间隔 (ms)</label>
+                <input type="number" id="min-interval" class="form-control" v-model.number="state.triggerState.min_interval">
+              </div>
+              <div class="form-group">
+                <label for="acceleration">加速因子</label>
+                <input type="number" step="0.01" id="acceleration" class="form-control" v-model.number="state.triggerState.acceleration">
+              </div>
+            </div>
           </div>
           <div id="modal-error" class="status-message error" style="margin-top: 15px;" v-show="state.modalErrorVisible">
             {{ state.modalErrorMessage }}
