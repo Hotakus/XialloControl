@@ -113,7 +113,7 @@
             </div>
           </div>
           <div class="setting-group">
-            <h3>摇杆行为</h3>
+            <h3>摇杆旋转行为</h3>
             <div class="setting-item">
               <label>右摇杆旋转:</label>
             </div>
@@ -131,6 +131,14 @@
               <label for="auto-start">开机自启动:</label>
               <label class="switch">
                 <input type="checkbox" id="auto-start" v-model="state.autoStart" @change="updateSettings()">
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <label for="remember-last-connection">记住上次连接状态:</label>
+              <label class="switch">
+                <input type="checkbox" id="remember-last-connection" v-model="state.rememberLastConnection" @change="updateSettings()">
                 <span class="slider round"></span>
               </label>
             </div>
@@ -167,6 +175,9 @@
             <button id="reset-btn" class="btn btn-outline btn-settings" @click="resetSettings()">
               重置设置
             </button>
+            <button id="github-btn" class="btn btn-outline btn-settings" @click="openGithubLink()">
+              GitHub 项目
+            </button>
           </div>
         </div>
       </div>
@@ -175,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-import {addButtonMap, changeTheme, deleteButtonMap, editButtonMap, formatKeyDisplay, openDevTools, resetSettings, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
+import {addButtonMap, changeTheme, deleteButtonMap, editButtonMap, formatKeyDisplay, openDevTools, openGithubLink, resetSettings, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
 import {state} from "@/ts/global_states.ts";
 import {openCaliModal} from "@/ts/JoystickCaliModal.ts";
 </script>

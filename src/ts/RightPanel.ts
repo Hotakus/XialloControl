@@ -378,3 +378,7 @@ export async function openDevTools() {
 export async function resetSettings() {
     // TODO: 重置设置
 }
+
+export const openGithubLink = () => {
+    invoke("open_url", {url: "https://github.com/Hotakus/XialloControl"});
+};
