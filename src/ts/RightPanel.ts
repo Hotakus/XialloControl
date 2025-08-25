@@ -395,3 +395,16 @@ export async function resetSettings() {
 export const openGithubLink = () => {
     invoke("open_url", {url: "https://github.com/Hotakus/XialloControl"});
 };
+
+export async function saveDeadzoneSettings() {
+    try {
+        await invoke("update_deadzone", {
+            deadzone: state.current_preset.items.deadzone,
+            deadzoneLeft: state.current_preset.items.deadzone_left
+        });
+        updateStatusMessage("摇杆死区已保存", false);
+    } catch (error) {
+        console.error("保存摇杆死区失败:", error);
+        updateStatusMessage(`保存摇杆死区失败: ${error}`, true);
+    }
+}
