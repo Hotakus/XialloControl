@@ -513,7 +513,7 @@ fn get_current_controller_layout_map() -> Arc<HashMap<&'static str, ControllerBu
     let map_guard = CONTROLLER_LAYOUT_MAP.read().unwrap();
     map_guard.get(&controller_type)
         .unwrap_or_else(|| {
-            log::warn!("未找到 {controller_type:?} 对应的布局，使用通用布局");
+            // log::warn!("未找到 {controller_type:?} 对应的布局，使用通用布局");
             map_guard.get(&ControllerType::Other).unwrap()
         })
         .clone()

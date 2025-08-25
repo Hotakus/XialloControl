@@ -52,7 +52,10 @@
               </div>
               <div class="form-group">
                 <label for="acceleration">加速因子</label>
-                <input type="number" step="0.01" id="acceleration" class="form-control" v-model.number="state.triggerState.acceleration">
+                <div class="slider-container">
+                  <input type="range" id="acceleration" min="0.1" max="2" step="0.1" v-model.number="state.triggerState.acceleration">
+                  <span>{{ state.triggerState.acceleration }}</span>
+                </div>
               </div>
             </div>
           </div>
