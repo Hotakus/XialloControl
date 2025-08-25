@@ -28,7 +28,7 @@
     <div class="card">
       <div class="tabs" role="tablist">
         <div class="tab" :class="{active: state.activeTab === 'buttonMapTab'}" role="tab" aria-selected="true" data-tab="buttonMapTab" @click="switchTab('buttonMapTab')">按键映射</div>
-        <div class="tab" :class="{active: state.activeTab ==='stickMapTab'}" role="tab" aria-selected="false" data-tab="stickMapTab" @click="switchTab('stickMapTab')">摇杆映射</div>
+        <div class="tab" :class="{active: state.activeTab ==='stickMapTab'}" role="tab" aria-selected="false" data-tab="stickMapTab" @click="switchTab('stickMapTab')">压力设置</div>
         <div class="tab" :class="{active: state.activeTab ==='settingTab'}" role="tab" aria-selected="false" data-tab="settingTab" @click="switchTab('settingTab')">设置</div>
       </div>
 
@@ -91,15 +91,15 @@
             <div class="setting-item">
               <label for="deadzone">右摇杆死区:</label>
               <div class="slider-container">
-                <input type="range" id="deadzone" min="0" max="30" value="10">
-                <span id="deadzone-value">10%</span>
+                <input type="range" id="deadzone" min="0" max="30" v-model.number="state.current_preset.items.deadzone" @change="saveDeadzoneSettings">
+                <span id="deadzone-value"> {{ state.current_preset.items.deadzone }} %</span>
               </div>
             </div>
             <div class="setting-item">
               <label for="deadzone">左摇杆死区:</label>
               <div class="slider-container">
-                <input type="range" id="deadzone-left" min="0" max="30" value="10">
-                <span id="deadzone-left-value">10%</span>
+                <input type="range" id="deadzone-left" min="0" max="30" v-model.number="state.current_preset.items.deadzone_left" @change="saveDeadzoneSettings">
+                <span id="deadzone-left-value">{{ state.current_preset.items.deadzone_left }}%</span>
               </div>
             </div>
             <div class="stick-buttons-row">
@@ -185,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import {addButtonMap, changeTheme, deleteButtonMap, editButtonMap, formatKeyDisplay, openDevTools, openGithubLink, resetSettings, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
+import {addButtonMap, changeTheme, deleteButtonMap, editButtonMap, formatKeyDisplay, openDevTools, openGithubLink, resetSettings, saveDeadzoneSettings, setPollingFrequency, switchTab, updateSettings} from "@/ts/RightPanel.ts";
 import {state} from "@/ts/global_states.ts";
 import {openCaliModal} from "@/ts/JoystickCaliModal.ts";
 </script>
