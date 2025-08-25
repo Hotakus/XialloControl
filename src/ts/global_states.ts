@@ -13,6 +13,15 @@ export interface LastConnectedDevice {
     sub_pid: number;
 }
 
+export interface Preset {
+    name: string;
+    items: {
+        deadzone: number;
+        deadzone_left: number;
+        mappings: any[];
+    }
+}
+
 // ---------- 响应式应用状态 ----------
 export const state = reactive({
     version: '0.0.0',
@@ -105,7 +114,7 @@ export const state = reactive({
             deadzone_left: 0,
             mappings: []
         }
-    }
+    } as Preset
 });
 
 // ---------- 延迟获取 DOM 元素 ----------

@@ -144,7 +144,7 @@ pub fn preset_test2() {
 
 #[tauri::command]
 pub fn load_preset(name: &str) -> Preset {
-    let mut preset = get_current_preset();
+    let mut preset = CURRENT_PRESET.write().unwrap();
     preset.load(name);
     preset.clone()
 }
@@ -157,7 +157,7 @@ pub fn initialize() {
     log::info!("初始化预设");
     let mut preset = get_current_preset();
     let setting = get_setting();
-    if (preset.load(setting.previous_preset.as_str())) {
+    if preset.load(setting.previous_preset.as_str()) {
         // load mappings
         mapping::set_mapping_file_path(
             PathBuf::from(PRESET_DIR)
@@ -170,3 +170,17 @@ pub fn initialize() {
         );
     }
 }
+
+#[tauri::command]
+pub fn update_deadzone(deadzone: u8, deadzone_left: u8) -> Result<(), String> {
+    let mut preset = CURRENT_PRESET.write().unwrap();
+    preset.set_deadzone(deadzone);
+    preset.set_deadzone_left(deadzone_left);
+    if preset.save() {
+        Ok(())
+    } else {
+        Err("Failed to save preset".to_string())
+    }
+}
+
+

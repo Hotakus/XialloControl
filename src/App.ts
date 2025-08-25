@@ -1,12 +1,12 @@
 import {updateStatusMessage} from "@/ts/LeftPanel.ts";
 import {invoke} from "@tauri-apps/api/core";
-import {appWindow, state} from "@/ts/global_states.ts";
+import {appWindow, Preset, state} from "@/ts/global_states.ts";
 import {locale} from "@tauri-apps/plugin-os";
 
 export async function initApp() {
     await checkBuildEnv();
     await queryGlobalSettings();
-    // loadPreset();
+    await loadPreset();
 
     await queryMappings();
     updateStatusMessage("请选择一个设备并点击连接按钮");
@@ -45,6 +45,23 @@ export async function queryGlobalSettings() {
     }
 
     // await invoke("set_frequency", { freq: state.pollingFrequency });
+}
+
+export async function loadPreset() {
+    if (!invoke) return;
+
+    const presetName = state.previousPreset || "default";
+    try {
+        const preset = await invoke<any>("load_preset", {name: presetName});
+        
+        state.current_preset.name = preset.name;
+        state.current_preset.items.deadzone = preset.deadzone;
+        state.current_preset.items.deadzone_left = preset.deadzone_left;
+        
+        console.log("Loaded preset:", preset);
+    } catch (error) {
+        console.error("Failed to load preset:", error);
+    }
 }
 
 // 加载映射配置
