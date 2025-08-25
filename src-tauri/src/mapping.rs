@@ -411,7 +411,6 @@ pub fn get_mapping_by_id(id: u64) -> Option<Mapping> {
     cache.iter().find(|m| m.id == id).cloned()
 }
 
-
 /// 创建 Xbox 手柄的按键布局映射。
 fn create_xbox_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut xbox_map = HashMap::new();

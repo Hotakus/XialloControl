@@ -2,6 +2,7 @@ import {state} from "@/ts/global_states.ts";
 import {invoke} from "@tauri-apps/api/core";
 import {updateStatusMessage} from "@/ts/LeftPanel.ts";
 import {queryMappings} from "@/App.ts";
+import {Mapping} from "@/ts/global_states.ts";
 
 
 /**
