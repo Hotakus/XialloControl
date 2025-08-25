@@ -1,8 +1,8 @@
 cfg_if::cfg_if! {
     if #[cfg(target_os = "windows")] {
-        use crate::controller::controller::{get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
+        use crate::controller::controller::{self, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA};
     } else if #[cfg(target_os = "linux")] {
-        use crate::controller::controller::{disconnect_device, DeviceInfo, CONTROLLER_DATA};
+        use crate::controller::controller::{self, disconnect_device, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA};
     }
 }
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
@@ -53,10 +53,26 @@ fn _poll_xbox_controller_state(state: XInputState) {
     let (rx, ry) = state.right_stick_raw();
 
     // 归一化处理
-    controller_data.left_stick.x = logic::normalize(lx, -32768, 32767, -1.0, 1.0).unwrap() as f32;
-    controller_data.left_stick.y = logic::normalize(ly, -32768, 32767, -1.0, 1.0).unwrap() as f32;
-    controller_data.right_stick.x = logic::normalize(rx, -32768, 32767, -1.0, 1.0).unwrap() as f32;
-    controller_data.right_stick.y = logic::normalize(ry, -32768, 32767, -1.0, 1.0).unwrap() as f32;
+    let raw_lx = logic::normalize(lx, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+    let raw_ly = logic::normalize(ly, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+    let raw_rx = logic::normalize(rx, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+    let raw_ry = logic::normalize(ry, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+
+    // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
+    {
+        let mut raw_data = crate::controller::controller::RAW_CONTROLLER_DATA.write().unwrap();
+        raw_data.left_stick.x = raw_lx;
+        raw_data.left_stick.y = raw_ly;
+        raw_data.right_stick.x = raw_rx;
+        raw_data.right_stick.y = raw_ry;
+    }
+
+    let (final_lx, final_ly, final_rx, final_ry) = controller::get_calibrated_stick_values(raw_lx, raw_ly, raw_rx, raw_ry);
+
+    controller_data.left_stick.x = final_lx;
+    controller_data.left_stick.y = final_ly;
+    controller_data.right_stick.x = final_rx;
+    controller_data.right_stick.y = final_ry;
 
     // 触发器状态读取
     let lt = state.left_trigger();

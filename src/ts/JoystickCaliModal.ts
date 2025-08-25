@@ -1,126 +1,144 @@
-import {state} from "@/ts/global_states.ts";
+import { reactive, ref } from 'vue';
+import { state } from "@/ts/global_states.ts";
+import { invoke } from "@tauri-apps/api/core";
+import { updateStatusMessage } from "@/ts/LeftPanel.ts";
 
-let current_controller_datas = {
-    buttons: 0,
-    left_stick: {x: 0, y: 0, is_pressed: false},
-    right_stick: {x: 0, y: 0, is_pressed: false},
-    left_trigger: {value: 0, has_pressure: false, is_pressed: false},
-    right_trigger: {value: 0, has_pressure: false, is_pressed: false},
-    left_stick_center: [0, 0],
-    right_stick_center: [0, 0],
-    limits: {
-        sticks_value_min: -0.0,
-        sticks_value_max: 0.0,
-        triggers_value_min: 0.0,
-        triggers_value_max: 0.0,
-    },
-    is_acting: false
-};
+// --- 响应式状态定义 ---
 
-// let leftStickDeadzone = document.querySelector('#deadzone-cali-left');
-// let rightStickDeadzone = document.querySelector('#deadzone-cali-right');
-// let leftStick = document.querySelector('#handle-left');
-// let rightStick = document.querySelector('#handle-right');
-// let leftStickArea = document.querySelector('#joystick-left');
-// let rightStickArea = document.querySelector('#joystick-right');
-//
-// let leftStickCenter = parseFloat(window.getComputedStyle(leftStick).width) / 2;
-// let rightStickCenter = parseFloat(window.getComputedStyle(rightStick).width) / 2;
-// let leftStickAreaCenter = parseFloat(window.getComputedStyle(leftStickArea).width) / 2 - leftStickCenter;
-// let rightStickAreaCenter = parseFloat(window.getComputedStyle(rightStickArea).width) / 2 - rightStickCenter;
-// let cali_ui_is_show = false;
-//
-// // 添加进度条更新函数
-// function updateProgressBar(value, progressId, valueId, axis) {
-//     const progressFill = document.getElementById(progressId);
-//     const progressValue = document.getElementById(valueId);
-//
-//     // 计算填充高度（0-100%）
-//     const fillHeight = Math.abs(value) * 100;
-//
-//     // 关键点：根据正负值调整 transform-origin 和 scaleY 实现正值向上填充，负值向下填充
-//     if (value >= 0) {
-//         progressFill.style.transformOrigin = 'bottom';
-//         progressFill.style.transform = `scaleY(${fillHeight / 100})`;
-//     } else {
-//         progressFill.style.transformOrigin = 'top';
-//         progressFill.style.transform = `scaleY(${fillHeight / 100})`;
-//     }
-//
-//     // 高度固定100%，用 scaleY 控制填充比例
-//     progressFill.style.height = '100%';
-//
-//     // 更新数值显示
-//     progressValue.textContent = `${axis}: ${value.toFixed(2)}`;
-// }
-//
-//
-// appWindow.listen('update_controller_data', async (event) => {
-//     current_controller_datas = event.payload;
-//
-//     if (cali_ui_is_show) {
-//         leftStick.style.left = (leftStickAreaCenter + current_controller_datas.left_stick.x * leftStickAreaCenter) + 'px';
-//         leftStick.style.top = (leftStickAreaCenter - current_controller_datas.left_stick.y * leftStickAreaCenter) + 'px';
-//         rightStick.style.left = (rightStickAreaCenter + current_controller_datas.right_stick.x * rightStickAreaCenter) + 'px';
-//         rightStick.style.top = (rightStickAreaCenter - current_controller_datas.right_stick.y * rightStickAreaCenter) + 'px';
-//
-//         // 更新左摇杆进度条
-//         updateProgressBar(
-//             current_controller_datas.left_stick.x,
-//             'progress-x-left',
-//             'progress-x-left-value',
-//             'X'
-//         );
-//         updateProgressBar(
-//             current_controller_datas.left_stick.y,
-//             'progress-y-left',
-//             'progress-y-left-value',
-//             'Y'
-//         );
-//
-//         // 更新右摇杆进度条
-//         updateProgressBar(
-//             current_controller_datas.right_stick.x,
-//             'progress-x-right',
-//             'progress-x-right-value',
-//             'X'
-//         );
-//         updateProgressBar(
-//             current_controller_datas.right_stick.y,
-//             'progress-y-right',
-//             'progress-y-right-value',
-//             'Y'
-//         );
-//
-//         // console.log(current_controller_datas);
-//         // console.log("---", leftStickCenterPX, rightStickCenterPX);
-//         let controller_deadzone = await invoke("check_controller_deadzone");
-//         leftStickDeadzone.textContent = (controller_deadzone[0] * 100).toFixed(1);
-//         rightStickDeadzone.textContent = (controller_deadzone[1] * 100).toFixed(1);
-//         // console.log("---", a);
-//     }
-// });
-//
-// // 打开模态窗口按钮事件绑定
-// document.getElementById('open-joystick-cali-modal').addEventListener('click', () => {
-//     document.getElementById('joystick-cali-modal').classList.add('active');
-//     cali_ui_is_show = true;
-// });
-// // 关闭模态窗口按钮
-// document.getElementById('close-joystick-cali-modal').addEventListener('click', () => {
-//     document.getElementById('joystick-cali-modal').classList.remove('active');
-//     cali_ui_is_show = false;
-// });
-// document.getElementById('cancel-joystick-cali-btn').addEventListener('click', () => {
-//     document.getElementById('joystick-cali-modal').classList.remove('active');
-//     cali_ui_is_show = false;
-// });
+// 当前正在校准的摇杆 ('left', 'right', 或 'none')
+export const calibratingStick = ref<'left' | 'right' | 'none'>('none');
 
+// 当前校准步骤
+export const currentStep = ref('Idle');
 
-export function openCaliModal(){
+// 后端返回的完整校准状态
+export const calibrationState = reactive({
+    left_stick: { step: 'Idle', stick_center: { 0: 0, 1: 0 }, stick_range: { x_min: 0, x_max: 0, y_min: 0, y_max: 0 } },
+    right_stick: { step: 'Idle', stick_center: { 0: 0, 1: 0 }, stick_range: { x_min: 0, x_max: 0, y_min: 0, y_max: 0 } },
+});
+
+// 用于显示在UI上的提示信息
+export const calibrationHint = ref('请选择一个摇杆开始校准');
+
+let pollInterval: number | null = null;
+
+// --- 私有函数 ---
+
+// 定期从后端获取最新校准状态
+async function pollCalibrationState() {
+    try {
+        const newState = await invoke('get_calibration_state');
+        Object.assign(calibrationState, newState);
+
+        const stick = calibratingStick.value;
+        if (stick !== 'none') {
+            const step = calibrationState[stick === 'left' ? 'left_stick' : 'right_stick'].step;
+            currentStep.value = step;
+            updateHint(step);
+        }
+    } catch (e) {
+        console.error("Failed to poll calibration state:", e);
+    }
+}
+
+// 根据当前步骤更新提示文本
+function updateHint(step: string) {
+    switch (step) {
+        case 'Idle':
+            calibrationHint.value = '请选择一个摇杆开始校准';
+            break;
+        case 'CenterCheck':
+            calibrationHint.value = '第一步：请完全松开摇杆，不要触碰，然后点击“下一步”。';
+            break;
+        case 'RangeDetection':
+            calibrationHint.value = '第二步：请将摇杆推到边缘，并沿着边缘画几圈，然后点击“完成”。';
+            break;
+        case 'Complete':
+            calibrationHint.value = '校准完成！您可以点击“保存”来保存结果，或点击“取消”放弃更改。';
+            break;
+        default:
+            calibrationHint.value = '';
+    }
+}
+
+// 停止状态轮询
+function stopPolling() {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+    }
+}
+
+// --- 导出的公共函数 (供Vue组件使用) ---
+
+export function openCaliModal() {
     state.showCaliModal = true;
 }
 
-export function closeCaliModal(){
+export function closeCaliModal() {
+    if (calibratingStick.value !== 'none') {
+        cancelCalibration();
+    }
     state.showCaliModal = false;
+}
+
+export async function startCalibration(stick: 'left' | 'right') {
+    if (calibratingStick.value !== 'none') return;
+
+    calibratingStick.value = stick;
+    await invoke('start_stick_calibration', { stickSide: stick });
+    
+    if (!pollInterval) {
+        pollInterval = window.setInterval(pollCalibrationState, 100);
+    }
+    await pollCalibrationState();
+}
+
+export async function nextStep() {
+    if (calibratingStick.value === 'none') return;
+    await invoke('next_stick_calibration_step', { stickSide: calibratingStick.value });
+    await pollCalibrationState();
+}
+
+export async function cancelCalibration() {
+    if (calibratingStick.value === 'none') return;
+    
+    await invoke('cancel_stick_calibration', { stickSide: calibratingStick.value });
+    calibratingStick.value = 'none';
+    currentStep.value = 'Idle';
+    updateHint('Idle');
+    stopPolling();
+}
+
+export async function saveCalibration() {
+    if (currentStep.value !== 'Complete') return;
+    
+    try {
+        await invoke('save_current_calibration');
+        updateStatusMessage('校准数据已成功保存！');
+        console.log('校准数据已保存！');
+        
+        calibratingStick.value = 'none';
+        currentStep.value = 'Idle';
+        updateHint('Idle');
+        stopPolling();
+    } catch (e) {
+        const errorMessage = `保存失败: ${e}`;
+        updateStatusMessage(errorMessage, true);
+        console.error("Failed to save calibration:", e);
+    }
+}
+
+export async function resetToDefault() {
+    try {
+        await invoke('reset_calibration_to_default');
+        updateStatusMessage('校准已恢复为默认设置。');
+        console.log('校准已恢复为默认设置。');
+        // 可以在这里选择性地重新加载校准状态以更新UI
+        await pollCalibrationState(); 
+    } catch (e) {
+        const errorMessage = `恢复默认失败: ${e}`;
+        updateStatusMessage(errorMessage, true);
+        console.error("Failed to reset calibration:", e);
+    }
 }

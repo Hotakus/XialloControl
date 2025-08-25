@@ -189,6 +189,12 @@ pub fn run() {
             controller::controller::try_auto_connect_last_device,
             controller::logic::controller_stick_drift_sampling,
             controller::logic::check_controller_deadzone,
+            controller::calibrate::get_calibration_state,
+            controller::calibrate::start_stick_calibration,
+            controller::calibrate::next_stick_calibration_step,
+            controller::calibrate::cancel_stick_calibration,
+            controller::calibrate::save_current_calibration,
+            controller::calibrate::reset_calibration_to_default,
             setting::get_current_settings,
             setting::update_settings,
             mapping::set_mapping,
@@ -199,7 +205,8 @@ pub fn run() {
             mapping::delete_mapping,
             preset::preset_test,
             preset::preset_test2,
-            preset::load_preset
+            preset::load_preset,
+            preset::update_deadzone
         ])
         .setup(|app| {
             let app_handle = app.handle();

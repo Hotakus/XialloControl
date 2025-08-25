@@ -3,7 +3,7 @@
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{CompactPressureDatas, ControllerButtons, ControllerDatas};
-use crate::{mapping, xeno_utils};
+use crate::{mapping, preset, xeno_utils};
 use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
@@ -106,6 +106,10 @@ pub static CURRENT_DEVICE: Lazy<RwLock<DeviceInfo>> = Lazy::new(|| {
 
 /// 当前控制器采样数据（高频读取，偶尔写入）
 pub static CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
+    Lazy::new(|| RwLock::new(ControllerDatas::new()));
+
+/// 原始控制器采样数据，专用于校准
+pub static RAW_CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
     Lazy::new(|| RwLock::new(ControllerDatas::new()));
 
 pub static PREV_CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
@@ -368,6 +372,10 @@ pub fn use_device(device_name: String) -> bool {
             let mut current_device = CURRENT_DEVICE.write().unwrap();
             *current_device = device_info.clone();
             log::info!("✅ 使用设备: {}", current_device.name);
+            
+            // 加载与此设备关联的校准数据
+            crate::controller::calibrate::load_calibration(&device_info);
+
             drop(current_device); // 显式释放锁
             update_last_connected_device_setting(Some(device_info));
             true
@@ -385,6 +393,10 @@ pub fn disconnect_device() -> bool {
     let mut current_device = CURRENT_DEVICE.write().unwrap();
     *current_device = default_devices()[0].clone();
     log::info!("✅ 已断开当前设备");
+
+    // 重置全局校准数据
+    crate::controller::calibrate::reset_calibration();
+
     drop(current_device); // 显式释放锁
     update_last_connected_device_setting(None);
     true
@@ -460,6 +472,26 @@ pub fn pack_and_send_data(controller_data: &ControllerDatas) {
     *prev_controller_data = *controller_data;
 }
 
+pub(crate) fn get_calibrated_stick_values(raw_lx: f32, raw_ly: f32, raw_rx: f32, raw_ry: f32) -> (f32, f32, f32, f32) {
+    let preset = preset::get_current_preset();
+    let cali_data = crate::controller::calibrate::get_current_calibration();
+
+    let (lx, ly) = crate::controller::calibrate::apply_calibration(
+        raw_lx,
+        raw_ly,
+        preset.items.deadzone_left,
+        &cali_data.left_stick,
+    );
+
+    let (rx, ry) = crate::controller::calibrate::apply_calibration(
+        raw_rx,
+        raw_ry,
+        preset.items.deadzone,
+        &cali_data.right_stick,
+    );
+    (lx, ly, rx, ry)
+}
+
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
     let mut controller_data = CONTROLLER_DATA.write().unwrap();
@@ -489,19 +521,26 @@ fn _poll_other_controllers(gamepad: Gamepad) {
         controller_data.set_button(button, pressed);
     }
 
-    controller_data.left_stick.x = gamepad.axis_data(Axis::LeftStickX)
-                                          .map(|data| data.value())
-                                          .unwrap_or(0.0);
-    controller_data.left_stick.y = gamepad.axis_data(Axis::LeftStickY)
-                                          .map(|data| data.value())
-                                          .unwrap_or(0.0);
+    let raw_lx = gamepad.axis_data(Axis::LeftStickX).map_or(0.0, |d| d.value());
+    let raw_ly = gamepad.axis_data(Axis::LeftStickY).map_or(0.0, |d| d.value());
+    let raw_rx = gamepad.axis_data(Axis::RightStickX).map_or(0.0, |d| d.value());
+    let raw_ry = gamepad.axis_data(Axis::RightStickY).map_or(0.0, |d| d.value());
 
-    controller_data.right_stick.x = gamepad.axis_data(Axis::RightStickX)
-                                           .map(|data| data.value())
-                                           .unwrap_or(0.0);
-    controller_data.right_stick.y = gamepad.axis_data(Axis::RightStickY)
-                                           .map(|data| data.value())
-                                           .unwrap_or(0.0);
+    // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
+    {
+        let mut raw_data = RAW_CONTROLLER_DATA.write().unwrap();
+        raw_data.left_stick.x = raw_lx;
+        raw_data.left_stick.y = raw_ly;
+        raw_data.right_stick.x = raw_rx;
+        raw_data.right_stick.y = raw_ry;
+    }
+
+    let (final_lx, final_ly, final_rx, final_ry) = get_calibrated_stick_values(raw_lx, raw_ly, raw_rx, raw_ry);
+
+    controller_data.left_stick.x = final_lx;
+    controller_data.left_stick.y = final_ly;
+    controller_data.right_stick.x = final_rx;
+    controller_data.right_stick.y = final_ry;
 
     controller_data.right_stick.is_pressed = gamepad.is_pressed(gilrs::Button::RightThumb);
     controller_data.left_stick.is_pressed = gamepad.is_pressed(gilrs::Button::LeftThumb);
