@@ -12,7 +12,7 @@
     <img src="https://img.shields.io/github/actions/workflow/status/hotakus/XenoControl/app.yml?style=flat-square" alt="Rust">
   </a>
   <a href="LICENSE.txt">
-    <img src="https://img.shields.io/badge/License-MPL%202.0-orange?style=flat-square" alt="License">
+    <img src="https://img.shields.io/badge/License-GPL%203.0-orange?style=flat-square" alt="License">
   </a>
   <a href="https://github.com/hotakus/XenoControl">
     <img src="https://img.shields.io/github/repo-size/hotakus/XenoControl?style=flat-square" alt="Repo size">

@@ -4,7 +4,7 @@ version = "0.18.1"
 description = "XialloControl by Hotakus"
 authors = ["Hotakus"]
 edition = "2024"
-license = "MPL-2.0"  # 添加许可证
+license = "GPL-3.0"  # 添加许可证
 repository = "https://github.com/Hotakus/XialloControl"  # 添加仓库URL
 homepage = "https://github.com/Hotakus/XialloControl"    # 添加项目主页
 
