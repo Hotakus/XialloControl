@@ -1345,7 +1345,6 @@ body.theme-dark .button-map-controls button:hover {
 .joystick-cali-modal .modal-body {
     padding: 15px;
     display: flex;
-    flex-direction: row;
     /* 移除 flex-wrap，强制子元素横向排列 */
     /* flex-wrap: wrap; */
     gap: 15px;
