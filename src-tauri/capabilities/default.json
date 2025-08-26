@@ -14,7 +14,6 @@
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
     "core:window:allow-internal-toggle-maximize",
-    "core:window:allow-start-dragging",
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
