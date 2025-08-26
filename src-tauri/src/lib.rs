@@ -19,7 +19,10 @@ use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::fern;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
-use tauri_plugin_updater::UpdaterExt;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+use tauri_plugin_updater::{Update, UpdaterExt};
+use url::Url;
 
 mod adaptive_sampler;
 mod controller;
@@ -29,6 +32,9 @@ mod setting;
 mod setup;
 mod tray;
 mod xeno_utils;
+
+static GITHUB_MIRROR_PREFIX: &str = "https://ghfast.top/";
+static UPDATE_CACHE: Lazy<Mutex<Option<Update>>> = Lazy::new(|| Mutex::new(None));
 
 #[tauri::command]
 fn hide_current_window(window: Window) -> Result<(), String> {
@@ -137,8 +143,15 @@ fn get_locale() -> String {
     }
 }
 
+#[derive(Clone, serde::Serialize)]
+struct UpdateInfo {
+    version: String,
+    body: String,
+    date: String,
+}
+
 #[tauri::command]
-async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
+async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
     log::info!("Checking for updates...");
 
     let updater = match app.updater_builder().build() {
@@ -147,12 +160,29 @@ async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
     };
 
     match updater.check().await {
-        Ok(Some(update)) => {
+        Ok(Some(mut update)) => {
             log::info!("Update available: {}", update.version);
-            Ok(Some(update.version.to_string()))
+
+            let locale = get_locale();
+            if locale.starts_with("zh") {
+                let new_url = format!("{}{}", GITHUB_MIRROR_PREFIX, update.download_url);
+                log::info!("Using mirror URL for CN user: {}", new_url);
+                update.download_url = Url::parse(&new_url).map_err(|e| e.to_string())?;
+            }
+
+            let info = UpdateInfo {
+                version: update.version.clone(),
+                body: update.body.clone().unwrap_or_default(),
+                date: update.date.map_or("".to_string(), |d| d.date().to_string()),
+            };
+
+            *UPDATE_CACHE.lock().unwrap() = Some(update);
+
+            Ok(Some(info))
         }
         Ok(None) => {
             log::info!("Update to date");
+            *UPDATE_CACHE.lock().unwrap() = None;
             Ok(None)
         }
         Err(e) => {
@@ -164,14 +194,15 @@ async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
 
 #[tauri::command]
 async fn perform_update(app: AppHandle) -> Result<(), String> {
-    log::info!("Performing update...");
-    let updater = match app.updater_builder().build() {
-        Ok(updater) => updater,
-        Err(e) => return Err(e.to_string()),
-    };
+    log::info!("Performing update from cache...");
 
-    if let Some(update) = updater.check().await.unwrap_or(None) {
-        log::info!("Update found, starting download...");
+    let update_to_install = { UPDATE_CACHE.lock().unwrap().take() };
+
+    if let Some(update) = update_to_install {
+        log::info!("Update found in cache, starting download...");
+        log::info!("Download URL: {}", update.download_url);
+
+        // TODO: 添加下载进度显示
         if let Err(e) = update.download_and_install(|_, _| {}, || {}).await {
             log::error!("Failed to install update: {}", e);
             return Err(e.to_string());
@@ -179,7 +210,7 @@ async fn perform_update(app: AppHandle) -> Result<(), String> {
         log::info!("Update installed, restarting...");
         app.restart();
     } else {
-        log::info!("No update found to perform.");
+        log::info!("No update found in cache to perform.");
     }
 
     Ok(())

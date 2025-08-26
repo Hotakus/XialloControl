@@ -22,13 +22,18 @@ export interface Preset {
     }
 }
 
+export interface UpdateInfo {
+    version: string;
+    body: string;
+    date: string;
+}
+
 // ---------- 响应式应用状态 ----------
 export const state = reactive({
     version: '0.0.0',
     is_release_env: false,
     locale: 'zh-CN',
-    newVersionInfo: null as string | null,
-    showNewVersionButton: false,
+    updateInfo: null as UpdateInfo | null,
 
     titlebar_visible: true,
 

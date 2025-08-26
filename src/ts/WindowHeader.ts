@@ -34,24 +34,6 @@ export async function close() {
 }
 
 // ---------- 更新逻辑 ----------
-export async function checkUpdate() {
-    if (!invoke) return;
-    try {
-        const newVersion = await invoke<string | null>('check_update');
-        if (newVersion) {
-            console.log(`New version available: ${newVersion}`);
-            state.newVersionInfo = newVersion;
-            state.showNewVersionButton = true;
-        } else {
-            console.log('No new version available.');
-            state.showNewVersionButton = false;
-        }
-    } catch (error) {
-        console.error('Check update failed:', error);
-        state.showNewVersionButton = false;
-    }
-}
-
 export async function performUpdate() {
     if (!invoke) return;
     try {
