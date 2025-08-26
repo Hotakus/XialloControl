@@ -27,9 +27,9 @@
       "icons/32x32.png"
     ],
     "windows": {
-      // "wix": {
-      //   "language": ["en-US"]
-      // },
+      "wix": {
+        "language": ["en-US"]
+      },
       "nsis": {
         "languages": ["English", "SimpChinese"],
         "displayLanguageSelector": true

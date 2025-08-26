@@ -66,6 +66,7 @@ anyhow = "1.0.86" # 更新版本
 
 # 日志系统 (使用simple_logger)
 log = "0.4"
+url = "2"
 
 # 实用工具
 once_cell = "1"

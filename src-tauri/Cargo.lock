@@ -28,6 +28,7 @@ dependencies = [
  "tauri-plugin-window-state",
  "tokio",
  "toml 0.8.23",
+ "url",
  "uuid",
 ]
 
