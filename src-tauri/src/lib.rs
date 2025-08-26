@@ -233,7 +233,7 @@ pub fn run() {
                 ))
                 .level(log::LevelFilter::Debug)
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
-                .max_file_size(1024 * 512 /* bytes */)
+                .max_file_size(1024 * 128 /* bytes */)
                 .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
                 .with_colors(
                     ColoredLevelConfig::new()
