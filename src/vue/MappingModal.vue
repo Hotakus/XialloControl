@@ -2,7 +2,7 @@
   <transition name="modal-fade">
     <div
         class="modal-overlay"
-        id="mapping-modal" :class="{active: state.showMappingModal}">
+        id="mapping-modal" :class="{active: state.showMappingModal}" @click.self="closeButtonMapModal()">
       <div class="modal">
         <div class="modal-header">
           <span id="modal-title">

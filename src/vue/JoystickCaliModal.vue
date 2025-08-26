@@ -1,5 +1,5 @@
 <template>
-  <div class="joystick-cali-overlay" :class="{active: state.showCaliModal}" id="joystick-cali-modal">
+  <div class="joystick-cali-overlay" :class="{active: state.showCaliModal}" id="joystick-cali-modal" @click.self="closeCaliModal()">
     <div class="joystick-cali-modal">
       <div class="modal-header">
         摇杆校准
