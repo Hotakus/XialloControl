@@ -7,7 +7,7 @@
         <path d="M18 2h-3.5l-1-1h-5l-1 1H6v2h12V2zm3 7H3v11c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9zM8 12h2v5H8v-5zm6 0h2v5h-2v-5z"/>
       </svg>
       <span>XialloControl</span>
-      <button v-if="state.showNewVersionButton" class="new-update-btn" title="有新版本" @click="state.showUpdateModal = true">New</button>
+      <button v-if="state.updateInfo" class="new-update-btn" title="有新版本" @click="openUpdateModal()">New</button>
     </div>
     <div class="window-controls">
       <button id="minimize-button" @click="minimize()">
@@ -36,7 +36,8 @@
 <script setup lang="ts">
 import {onMounted} from "vue";
 import {initUIElements, state} from "@/ts/global_states";
-import {checkUpdate, close, maximize, minimize, updateTitlebar} from "@/ts/WindowHeader";
+import {close, maximize, minimize, updateTitlebar} from "@/ts/WindowHeader";
+import { openUpdateModal, checkUpdate } from "@/ts/UpdateModal";
 
 onMounted(async () => {
   await initUIElements();      // 获取 DOM 元素
@@ -48,7 +49,7 @@ onMounted(async () => {
 <style scoped>
 /* 如果只作用于这个组件，可以写 scoped 样式 */
 .new-update-btn {
-  background-color: #e53935;
+  background-color: #bb2f2c;
   color: #fff;
   padding: 0 6px;
   height: 18px;
