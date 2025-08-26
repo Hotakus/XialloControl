@@ -19,6 +19,7 @@ use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::fern;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
+use tauri_plugin_updater::UpdaterExt;
 
 mod adaptive_sampler;
 mod controller;
@@ -136,6 +137,54 @@ fn get_locale() -> String {
     }
 }
 
+#[tauri::command]
+async fn check_update(app: AppHandle) -> Result<Option<String>, String> {
+    log::info!("Checking for updates...");
+
+    let updater = match app.updater_builder().build() {
+        Ok(updater) => updater,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    match updater.check().await {
+        Ok(Some(update)) => {
+            log::info!("Update available: {}", update.version);
+            Ok(Some(update.version.to_string()))
+        }
+        Ok(None) => {
+            log::info!("Update to date");
+            Ok(None)
+        }
+        Err(e) => {
+            log::error!("Failed to check for updates: {}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+async fn perform_update(app: AppHandle) -> Result<(), String> {
+    log::info!("Performing update...");
+    let updater = match app.updater_builder().build() {
+        Ok(updater) => updater,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    if let Some(update) = updater.check().await.unwrap_or(None) {
+        log::info!("Update found, starting download...");
+        if let Err(e) = update.download_and_install(|_, _| {}, || {}).await {
+            log::error!("Failed to install update: {}", e);
+            return Err(e.to_string());
+        }
+        log::info!("Update installed, restarting...");
+        app.restart();
+    } else {
+        log::info!("No update found to perform.");
+    }
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -180,6 +229,8 @@ pub fn run() {
             open_devtools,
             is_release_env,
             get_locale,
+            check_update,
+            perform_update,
             controller::controller::query_devices,
             controller::controller::use_device,
             controller::controller::disconnect_device,

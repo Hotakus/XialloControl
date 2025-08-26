@@ -27,6 +27,8 @@ export const state = reactive({
     version: '0.0.0',
     is_release_env: false,
     locale: 'zh-CN',
+    newVersionInfo: null as string | null,
+    showNewVersionButton: false,
 
     titlebar_visible: true,
 
@@ -58,6 +60,7 @@ export const state = reactive({
     isMouseKey: false,
     isScanning: false,
 
+    showUpdateModal: false,
     showCaliModal: false,
 
     buttonsText: [{value: '', text: ''}],

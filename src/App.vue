@@ -8,10 +8,12 @@
 <!--    <WindowFooter/>-->
     <MappingModal/>
     <JoystickCaliModal/>
+    <UpdateModal/>
   </div>
 </template>
 
 <script setup lang="ts">
+import UpdateModal from './vue/UpdateModal.vue'
 import WindowHeader from './vue/WindowHeader.vue'
 import LeftPanel from './vue/LeftPanel.vue'
 import RightPanel from './vue/RightPanel.vue'

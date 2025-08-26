@@ -7,6 +7,7 @@
         <path d="M18 2h-3.5l-1-1h-5l-1 1H6v2h12V2zm3 7H3v11c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9zM8 12h2v5H8v-5zm6 0h2v5h-2v-5z"/>
       </svg>
       <span>XialloControl</span>
+      <button v-if="state.showNewVersionButton" class="new-update-btn" title="有新版本" @click="state.showUpdateModal = true">New</button>
     </div>
     <div class="window-controls">
       <button id="minimize-button" @click="minimize()">
@@ -35,14 +36,40 @@
 <script setup lang="ts">
 import {onMounted} from "vue";
 import {initUIElements, state} from "@/ts/global_states";
-import {close, maximize, minimize, updateTitlebar} from "@/ts/WindowHeader";
+import {checkUpdate, close, maximize, minimize, updateTitlebar} from "@/ts/WindowHeader";
 
 onMounted(async () => {
   await initUIElements();      // 获取 DOM 元素
   await updateTitlebar();      // 更新 titlebar 显示
+  await checkUpdate();         // 检查更新
 });
 </script>
 
 <style scoped>
 /* 如果只作用于这个组件，可以写 scoped 样式 */
+.new-update-btn {
+  background-color: #e53935;
+  color: #fff;
+  padding: 0 6px;
+  height: 18px;
+  line-height: 18px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  margin-left: 8px;
+  user-select: none;
+  box-shadow: none;
+  transition: background-color 120ms ease, opacity 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.new-update-btn:hover {
+  background-color: #d32f2f;
+}
+.new-update-btn:active {
+  background-color: #c62828; /* A slightly darker red for click feedback */
+  transform: none; /* Remove any scaling or movement */
+}
 </style>
