@@ -1,21 +1,21 @@
-<h1 align="center">XenoControl</h1>
+<h1 align="center">XialloControl</h1>
 
 <p align="center">
   <strong>高通用性手柄映射软件（支持各种主流手柄 Xbox、PS、SwitchPro）</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/hotakus/XenoControl/releases/latest">
-    <img src="https://img.shields.io/github/v/release/hotakus/XenoControl?style=flat-square&logo=github" alt="GitHub release">
+  <a href="https://github.com/hotakus/XialloControl/releases/latest">
+    <img src="https://img.shields.io/github/v/release/hotakus/XialloControl?style=flat-square&logo=github" alt="GitHub release">
   </a>
 <a href="https://www.rust-lang.org">
-    <img src="https://img.shields.io/github/actions/workflow/status/hotakus/XenoControl/app.yml?style=flat-square" alt="Rust">
+    <img src="https://img.shields.io/github/actions/workflow/status/hotakus/XialloControl/app.yml?style=flat-square" alt="Rust">
   </a>
   <a href="LICENSE.txt">
     <img src="https://img.shields.io/badge/License-GPL%203.0-orange?style=flat-square" alt="License">
   </a>
-  <a href="https://github.com/hotakus/XenoControl">
-    <img src="https://img.shields.io/github/repo-size/hotakus/XenoControl?style=flat-square" alt="Repo size">
+  <a href="https://github.com/hotakus/XialloControl">
+    <img src="https://img.shields.io/github/repo-size/hotakus/XialloControl?style=flat-square" alt="Repo size">
   </a>
   <br>
   <a href="https://tauri.app">
@@ -40,7 +40,7 @@
 
 ### 功能特点：
 
-### **XenoControl** 是一款：
+### **XialloControl** 是一款：
 
 #### 🎨 设计：
 - **开源跨平台 （windows、linux）**
@@ -69,7 +69,7 @@
 ### 🖼️ 界面预览
 
 <p align="center">
-  <img src="https://via.placeholder.com/800x500/2f3542/ffffff?text=XenoControl+UI+Preview" alt="XenoControl界面预览" width="800">
+  <img src="https://via.placeholder.com/800x500/2f3542/ffffff?text=XialloControl+UI+Preview" alt="XialloControl界面预览" width="800">
 </p>
 
 *优雅的界面设计，直观的功能布局，为您提供舒适的操作体验*
@@ -79,8 +79,8 @@
 ### 🚀 快速开始
 
 1. **下载安装**
-    - 前往 [Releases页面](https://github.com/hotakus/XenoControl/releases) 下载最新版本
-    - Windows 用户下载 `XenoControl.exe`
+    - 前往 [Releases页面](https://github.com/hotakus/XialloControl/releases) 下载最新版本
+    - Windows 用户下载 `XialloControl.exe`
 
 2. **连接设备**
     - 点击"重新扫描"按钮检测设备
