@@ -11,6 +11,12 @@ use std::time::Duration;
 const CALIBRATIONS_DIR: &str = "calibrations";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum StickCaliMode {
+    Circle,
+    Square,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StickTestSteps {
     Idle,
     CenterCheck,
@@ -45,6 +51,7 @@ impl StickRange {
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct StickCalibration {
     pub step: StickTestSteps,
+    pub mode: StickCaliMode,
     pub stick_center: (f32, f32),
     pub stick_range: StickRange,
 }
@@ -53,6 +60,7 @@ impl StickCalibration {
     pub fn new() -> StickCalibration {
         StickCalibration {
             step: StickTestSteps::Idle,
+            mode: StickCaliMode::Square, // 默认为方形
             stick_center: (0.0, 0.0),
             stick_range: StickRange::new(),
         }
@@ -60,6 +68,7 @@ impl StickCalibration {
 
     pub fn reset(&mut self) {
         self.step = StickTestSteps::Idle;
+        self.mode = StickCaliMode::Square;
         self.stick_center = (0.0, 0.0);
         self.stick_range.reset();
     }
@@ -140,6 +149,12 @@ pub fn save_calibration(device: &DeviceInfo, cali_data: &ControllerCalibration) 
 }
 
 pub fn load_calibration(device: &DeviceInfo) {
+    let settings = crate::setting::get_setting();
+    let mode = match settings.calibration_mode.as_str() {
+        "square" => StickCaliMode::Square,
+        _ => StickCaliMode::Circle,
+    };
+
     if let Some(path) = get_calibration_filepath(device) {
         if path.exists() {
             match xeno_utils::read_toml_file::<CalibrationFile>(&path) {
@@ -147,7 +162,10 @@ pub fn load_calibration(device: &DeviceInfo) {
                     let mut cali_data = CONTROLLER_CALIBRATION.write().unwrap();
                     cali_data.left_stick = file_content.left_stick_calibration;
                     cali_data.right_stick = file_content.right_stick_calibration;
-                    log::info!("成功加载设备 {:?} 的校准文件", device.name);
+                    // 从设置加载校准模式
+                    cali_data.left_stick.mode = mode;
+                    cali_data.right_stick.mode = mode;
+                    log::info!("成功加载设备 {:?} 的校准文件，模式为 {:?}", device.name, mode);
                 }
                 Err(e) => {
                     log::error!("读取校准文件失败: {}, 将使用默认值", e);
@@ -282,6 +300,31 @@ pub fn cancel_stick_calibration(stick_side: &str) {
     IS_CALIBRATING.store(false, Ordering::SeqCst);
 }
 
+#[tauri::command]
+pub fn set_calibration_mode(app_handle: tauri::AppHandle, mode: &str) {
+    let new_mode = match mode {
+        "square" => StickCaliMode::Square,
+        _ => StickCaliMode::Circle,
+    };
+
+    // 更新当前校准状态
+    {
+        let mut cali_data = CONTROLLER_CALIBRATION.write().unwrap();
+        cali_data.left_stick.mode = new_mode;
+        cali_data.right_stick.mode = new_mode;
+        log::info!("设置所有摇杆校准模式为: {:?}", new_mode);
+    }
+
+    // 更新并保存应用设置
+    let mut settings = crate::setting::get_setting();
+    settings.calibration_mode = mode.to_string();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = crate::setting::update_settings(app_handle, settings).await {
+            log::error!("保存校准模式设置失败: {:?}", e);
+        }
+    });
+}
+
 fn calibration_listener() {
     log::info!("🔬 校准监听任务已启动");
     while IS_CALIBRATING.load(Ordering::SeqCst) {
@@ -361,21 +404,51 @@ pub fn apply_calibration(
         0.0
     };
 
-    // 3. 应用圆形死区
-    let distance = (scaled_x.powi(2) + scaled_y.powi(2)).sqrt();
+    // 3. 根据校准模式应用不同的死区和塑形
     let deadzone = deadzone_percent as f32 / 100.0;
 
-    if distance < deadzone {
-        return (0.0, 0.0);
-    }
-    
-    // 4. 死区补偿与向量重缩放
-    // 将向量长度从 [deadzone, 1.0] (或可能大于1) 重新映射到 [0, 1.0]
-    let rescale_factor = (distance - deadzone) / (1.0 - deadzone);
-    
-    let final_x = if distance > 0.0 { (scaled_x / distance) * rescale_factor } else { 0.0 };
-    let final_y = if distance > 0.0 { (scaled_y / distance) * rescale_factor } else { 0.0 };
+    let (final_x, final_y) = match calibration.mode {
+        StickCaliMode::Circle => {
+            // --- 圆形模式 ---
+            // 1. 计算到中心的距离
+            let distance = (scaled_x.powi(2) + scaled_y.powi(2)).sqrt();
+            
+            // 2. 应用圆形死区
+            if distance < deadzone {
+                return (0.0, 0.0);
+            }
+            
+            // 3. 死区补偿与向量重缩放
+            // 将向量长度从 [deadzone, 1.0] 重新映射到 [0, 1.0]
+            let rescale_factor = (distance - deadzone) / (1.0 - deadzone);
+            
+            // 4. 保持方向，应用新的长度
+            let x = if distance > 0.0 { (scaled_x / distance) * rescale_factor } else { 0.0 };
+            let y = if distance > 0.0 { (scaled_y / distance) * rescale_factor } else { 0.0 };
+            (x, y)
+        }
+        StickCaliMode::Square => {
+            // --- 方形模式 (最纯粹的轴向处理) ---
+            // 1. 定义轴向死区函数
+            let apply_axial_deadzone = |val: f32| {
+                if val.abs() < deadzone {
+                    0.0
+                } else {
+                    // 死区补偿：将 [deadzone, 1.0] 映射到 [0, 1.0]
+                    (val.abs() - deadzone) / (1.0 - deadzone) * val.signum()
+                }
+            };
+            
+            // 2. 分别对X轴和Y轴应用死区
+            let x = apply_axial_deadzone(scaled_x);
+            let y = apply_axial_deadzone(scaled_y);
+            
+            // 3. 直接返回结果，不进行任何圆形限制或投射
+            (x, y)
+        }
+    };
 
+    // 4. 最终值裁剪
     (
         final_x.clamp(-1.0, 1.0),
         final_y.clamp(-1.0, 1.0),

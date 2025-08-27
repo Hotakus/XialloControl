@@ -1349,7 +1349,7 @@ body.theme-dark .button-map-controls button:hover {
     /* flex-wrap: wrap; */
     gap: 15px;
     justify-content: center;
-    align-items: center;
+    /* align-items: center; */
     flex-grow: 1;
     overflow-y: auto;
 }

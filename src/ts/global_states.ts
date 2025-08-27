@@ -50,6 +50,7 @@ export const state = reactive({
     theme: 'light',
     pollingFrequency: 125,
     previousPreset: "default",
+    calibration_mode: "square",
 
     connectButtonDisabled: false,
 

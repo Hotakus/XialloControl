@@ -33,6 +33,9 @@ pub struct AppSettings {
     pub polling_frequency: u32,
 
     pub previous_preset: String,
+
+    #[serde(default = "default_calibration_mode")]
+    pub calibration_mode: String,
 }
 
 impl Default for AppSettings {
@@ -45,6 +48,7 @@ impl Default for AppSettings {
             theme: "light".to_string(),
             polling_frequency: DEFAULT_POLLING_FREQUENCY,
             previous_preset: "default".to_string(),
+            calibration_mode: "square".to_string(),
         }
     }
 }
@@ -71,6 +75,9 @@ fn default_theme() -> String {
 }
 fn default_polling_frequency() -> u32 {
     DEFAULT_POLLING_FREQUENCY
+}
+fn default_calibration_mode() -> String {
+    "square".to_string()
 }
 
 /// 获取当前设置

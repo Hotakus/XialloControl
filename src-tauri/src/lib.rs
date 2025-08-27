@@ -277,6 +277,7 @@ pub fn run() {
             controller::calibrate::cancel_stick_calibration,
             controller::calibrate::save_current_calibration,
             controller::calibrate::reset_calibration_to_default,
+            controller::calibrate::set_calibration_mode,
             setting::get_current_settings,
             setting::update_settings,
             mapping::set_mapping,

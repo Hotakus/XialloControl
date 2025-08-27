@@ -28,6 +28,7 @@ export async function queryGlobalSettings() {
         theme: string;
         polling_frequency: number;
         previous_preset: string;
+        calibration_mode: string;
     }>("get_current_settings");
 
     console.log("queryGlobalSettings", settings);
@@ -39,6 +40,7 @@ export async function queryGlobalSettings() {
     state.theme = settings.theme || "light";
     state.pollingFrequency = settings.polling_frequency || 125;
     state.previousPreset = settings.previous_preset || "default";
+    state.calibration_mode = settings.calibration_mode || "square";
 
     if (state.minimizeToTray) {
         appWindow?.hide();
