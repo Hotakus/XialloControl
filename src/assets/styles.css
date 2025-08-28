@@ -39,11 +39,11 @@ body {
     --indicator-on: #42d589;
     --window-header-height: 30px;
 
-    --button-base-bg: #6b9bee;
+    --button-base-bg: #6489c9;
     --button-base-bg-hover: #4c86dd;
     --button-base-bg-active: #2a5dbf;
 
-    --button-connected-bg: #3ec780;
+    --button-connected-bg: #3ac2a4;
     --button-connected-hover-bg: #3cbf7a;
     --button-connected-active-bg: #36b66b;
 }
