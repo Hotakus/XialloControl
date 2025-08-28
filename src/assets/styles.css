@@ -44,8 +44,8 @@ body {
     --button-base-bg-active: #2a5dbf;
 
     --button-connected-bg: #3ac2a4;
-    --button-connected-hover-bg: #3cbf7a;
-    --button-connected-active-bg: #36b66b;
+    --button-connected-hover-bg: #37b69a;
+    --button-connected-active-bg: #3bc4a6;
 }
 
 * {
