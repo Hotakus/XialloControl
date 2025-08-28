@@ -180,7 +180,7 @@ function setupDrawing(stick: 'left' | 'right') {
         canvas.width = rect.width;
         canvas.height = rect.height;
         state.ctx = canvas.getContext('2d');
-        
+
         // 创建并设置蓝色离屏缓冲画布
         const blueBuffer = document.createElement('canvas');
         blueBuffer.width = canvas.width;
@@ -196,7 +196,7 @@ function setupDrawing(stick: 'left' | 'right') {
         // 清空状态
         state.points.clear();
         state.lastPos = null;
-        
+
         // 启动渲染循环
         if (state.animationFrameId === null) {
             renderLoop(stick);
@@ -291,7 +291,7 @@ function renderLoop(stick: 'left' | 'right') {
 
 
 /**
- * [重构] 误差计算函数，现在从 drawingState 读取数据
+ * 计算并返回指定摇杆的圆度误差文本
  */
 function calculateCircularityError(stick: 'left' | 'right'): string {
     const pointsMap = drawingState[stick].points;
@@ -302,7 +302,7 @@ function calculateCircularityError(stick: 'left' | 'right'): string {
     }
 
     // 为了简化，我们只计算外圈点的误差
-    const outerPoints = points.filter(p => Math.sqrt(p.x*p.x + p.y*p.y) > CONFIG.MIN_DETECTION_RADIUS);
+    const outerPoints = points.filter(p => Math.sqrt(p.x * p.x + p.y * p.y) > CONFIG.MIN_DETECTION_RADIUS);
     if (outerPoints.length < CONFIG.MIN_DATA_POINTS) {
         return '外圈数据不足';
     }
@@ -310,17 +310,19 @@ function calculateCircularityError(stick: 'left' | 'right'): string {
     let totalDeviation = 0;
     let significantErrorCount = 0;
 
+    // 仅统计超出标准圆范围的点的误差
     for (const point of outerPoints) {
         const distance = Math.sqrt(point.x * point.x + point.y * point.y);
         const deviation = Math.abs(distance - CONFIG.THEORETICAL_RADIUS);
-        
+
         if (deviation > CONFIG.MIN_ERROR_THRESHOLD) {
             totalDeviation += deviation;
             significantErrorCount++;
         }
     }
 
-    const avgDeviation = significantErrorCount > 0 ? totalDeviation / outerPoints.length : 0;
+    // 优化：计算平均偏差时，仅考虑超出阈值的点
+    const avgDeviation = significantErrorCount > 0 ? totalDeviation / significantErrorCount : 0;
     const errorPercentage = avgDeviation * 100;
 
     return `圆度误差: ${errorPercentage.toFixed(2)}%`;
@@ -353,7 +355,7 @@ watch(isCircularityTestEnabled, async (newValue) => {
     } else {
         teardownDrawing('left');
         teardownDrawing('right');
-        
+
         if (errorUpdateInterval) {
             clearInterval(errorUpdateInterval);
             errorUpdateInterval = null;
@@ -427,7 +429,7 @@ function updateJoystickVisualsInModal(stick: 'left' | 'right', x: number, y: num
 // --- 主监听器 ---
 watch(() => state.current_controller_datas, (newData) => {
     if (!state.showCaliModal) return;
-    
+
     // 原有功能
     updateJoystickVisualsInModal('left', newData.left_stick.x, newData.left_stick.y);
     updateJoystickVisualsInModal('right', newData.right_stick.x, newData.right_stick.y);
@@ -439,13 +441,13 @@ watch(() => state.current_controller_datas, (newData) => {
         for (const stick of sticks) {
             const stickData = stick === 'left' ? newData.left_stick : newData.right_stick;
             const pointsMap = drawingState[stick].points;
-            
+
             const radiusSq = stickData.x * stickData.x + stickData.y * stickData.y;
             // 只记录外圈的点，避免中心点干扰
             if (radiusSq > CONFIG.MIN_DETECTION_RADIUS * CONFIG.MIN_DETECTION_RADIUS) {
                 const angle = Math.atan2(stickData.y, stickData.x);
                 const bucketKey = Math.round((angle * 180 / Math.PI) / CONFIG.ANGLE_PRECISION);
-                
+
                 const existing = pointsMap.get(bucketKey);
                 if (!existing || radiusSq > existing.r) {
                     pointsMap.set(bucketKey, { x: stickData.x, y: stickData.y, r: radiusSq });
