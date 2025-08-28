@@ -261,9 +261,15 @@ fn load_mappings_internal() -> Vec<Mapping> {
 }
 
 /// 将映射配置加载到全局缓存中。
-pub fn load_mappings() {
+pub fn load_mappings() -> Vec<Mapping> {
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
     *cache = load_mappings_internal();
+    cache.clone()
+}
+
+#[tauri::command]
+pub fn refresh_mappings() -> Vec<Mapping> {
+    load_mappings()
 }
 
 /// 将全局映射缓存保存到文件中。

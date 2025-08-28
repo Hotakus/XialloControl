@@ -80,4 +80,17 @@ import {closeButtonMapModal, detectKey, mappingsConfirm} from "@/ts/MappingModal
 
 <style scoped>
 /* 如果只作用于这个组件，可以写 scoped 样式 */
+.modal-left-panel {
+  flex: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.modal-right-panel {
+  flex: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
 </style>
