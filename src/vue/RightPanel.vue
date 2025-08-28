@@ -1,28 +1,48 @@
 <template>
   <div class="right-panel">
     <div class="card preset-card">
-      <label for="preset">📂 预设方案:</label>
+      <label for="preset">预设方案:</label>
       <div class="preset-header">
-        <select id="preset" class="preset-select" v-model="state.previousPreset" @change="switchPreset()">
+        <!-- 正常模式：显示下拉框 -->
+        <select v-if="!state.isCreatingNewPreset" id="preset" class="preset-select" v-model="state.previousPreset"
+          @change="switchPreset()">
+          <option disabled value="">-- 请选择预设方案 --</option>
           <option v-for="preset in state.presets" :key="preset" :value="preset">
             {{ preset }}
           </option>
         </select>
-        <div class="preset-controls">
-          <button id="save-preset" title="保存方案" class="icon-button" @click="savePreset()">
-            <svg t="1753597230725" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
-              p-id="20689" width="200" height="200">
+
+        <!-- 新建模式：显示输入框 -->
+        <div v-else class="preset-input-container">
+          <input type="text" v-model="state.newPresetName" placeholder="输入方案名称" class="preset-input"
+            @keyup.enter="confirmNewPreset()" @keyup.escape="cancelNewPreset()" ref="presetInput" />
+          <button class="icon-button confirm-btn" @click="confirmNewPreset()" title="确认">
+            <svg t="1756401635650" viewBox="0 0 1024 1024" width="16" height="16">
               <path
-                d="M72.902194 16.295914h800.074322a23.563011 23.563011 0 0 1 18.773333 8.874667l117.561807 142.974623c3.721634 4.525419 5.527398 9.568344 5.527398 15.437076v764.080172c0 40.145204-32.745978 72.902194-72.902194 72.902193H72.913204C32.745978 1020.564645 0 987.807656 0 947.662452V89.198108C0 49.041892 32.745978 16.295914 72.902194 16.295914z m37.854967 516.217118a4.866753 4.866753 0 0 0-4.855742 4.877764v363.795269c0 2.664602 2.180129 4.844731 4.855742 4.844731h795.449807a4.844731 4.844731 0 0 0 4.855742-4.844731v-363.795269a4.877763 4.877763 0 0 0-4.855742-4.877764H110.757161zM228.616258 124.64172a4.877763 4.877763 0 0 0-4.855742 4.866753V354.105806c0 2.686624 2.180129 4.866753 4.855742 4.866753h557.606538a4.866753 4.866753 0 0 0 4.855742-4.866753V129.508473a4.877763 4.877763 0 0 0-4.855742-4.866753H228.616258z"
-                fill="#ffffff" p-id="20690"></path>
+                d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474c-6-7.7-15.3-12.2-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1.4-12.8-6.3-12.8z"
+                fill="#ffffff" />
             </svg>
           </button>
-          <button id="import-preset" title="导入方案" class="icon-button" @click="importPreset()">
-            <svg t="1753597486869" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
-              p-id="22279" width="64" height="64">
+          <button class="icon-button cancel-btn" @click="cancelNewPreset()" title="取消">
+            <svg t="1756401635650" viewBox="0 0 1024 1024" width="16" height="16">
               <path
-                d="M601.152 708.288 400 568 344 568l0 112-224 0 0 112 224 0 0 112L400 904l201.152-140.288C624 749.504 624 722.496 601.152 708.288L601.152 708.288zM891.264 331.2 638.656 76.864C630.528 68.608 619.456 64 607.936 64L232 64C196.032 64 176 83.712 176 120L176 512 288 512 288 176l280 0 0 168c0 24.192 32 56 56 56l168 0 0.768 448L624 848 624 960l224 0c35.968 0 56-19.712 56-56L904 362.176C904 350.528 899.392 339.392 891.264 331.2L891.264 331.2z"
-                p-id="22280" fill="#ffffff"></path>
+                d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"
+                fill="#ffffff" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="preset-controls">
+          <button v-if="!state.isCreatingNewPreset" id="save-preset" title="新建方案" class="icon-button"
+            @click="newPreset()">
+            <svg t="1756401635650" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
+              p-id="4604" width="200" height="200">
+              <path
+                d="M914.181742 251.621027L672.174208 10.295205A34.085568 34.085568 0 0 0 645.587465 0.069535H134.303944a34.085568 34.085568 0 0 0-34.085569 34.085568v954.395906a34.085568 34.085568 0 0 0 34.085569 34.085568h755.336188a34.085568 34.085568 0 0 0 34.085569-34.085568V272.754079a34.085568 34.085568 0 0 0-9.543959-21.133052z m-92.712746 3.408557H666.720517V100.962816zM168.389512 954.465441V68.240671h430.159869v220.874481a34.085568 34.085568 0 0 0 34.085568 34.085568h222.919615V954.465441z"
+                fill="#ffffff" p-id="4605"></path>
+              <path
+                d="M713.758601 545.438624H548.10274V379.782763a34.085568 34.085568 0 0 0-68.171136 0V545.438624H304.731784a34.085568 34.085568 0 0 0-34.085568 34.085568 33.403857 33.403857 0 0 0 4.771979 16.361073 34.085568 34.085568 0 0 0 31.358723 21.133052h170.427841v170.42784a34.085568 34.085568 0 1 0 68.171136 0V618.38174h170.42784a34.085568 34.085568 0 0 0 34.085568-34.085568 33.403857 33.403857 0 0 0-4.771979-16.361073A34.085568 34.085568 0 0 0 713.758601 545.438624z"
+                fill="#ffffff" p-id="4606"></path>
             </svg>
           </button>
         </div>
@@ -239,10 +259,58 @@ import {
   updateSettings,
   savePreset,
   importPreset,
-  switchPreset
+  switchPreset,
+  newPreset,
+  confirmNewPreset,
+  cancelNewPreset
 } from "@/ts/RightPanel.ts";
 import { state } from "@/ts/global_states.ts";
 import { onMounted } from "vue";
 </script>
 
-<style scoped></style>
+<style scoped>
+.preset-input-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* border: 1px solid #dce2eb; */
+  /* border-radius: 8px; */
+  padding-right: 5px;
+  /* height: 48px; */
+}
+
+.preset-input {
+  flex: 1;
+  border: none;
+  /* background: transparent; */
+  border-radius: 8px;
+  border: 1px solid #c5cad1;
+  padding: 10px;
+  margin-right: 10px;
+  font-size: 14px;
+  outline: none;
+  color: #2f3542;
+  background: #F8F9FA;
+}
+
+.preset-input::placeholder {
+  color: #7a859e;
+}
+
+.preset-input-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-button cancel-btn {
+  /* color: #7a859e; */
+  /* cursor: pointer; */
+  /* font-size: 14px; */
+  /* padding-left: 10px; */
+}
+
+.cancel-btn:hover {
+  color: #2f3542;
+}
+</style>

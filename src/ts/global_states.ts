@@ -126,6 +126,10 @@ export const state = reactive({
     } as Preset,
 
     presets: [] as string[],
+    
+    // 新建预设相关状态
+    isCreatingNewPreset: false,
+    newPresetName: "",
 });
 
 // ---------- 延迟获取 DOM 元素 ----------

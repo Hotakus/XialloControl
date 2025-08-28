@@ -1,7 +1,8 @@
-import {Preset, state} from "@/ts/global_states.ts";
-import {invoke} from "@tauri-apps/api/core";
-import {updateStatusMessage} from "@/ts/LeftPanel.ts";
-import {queryMappings, refreshMappings} from "@/App.ts";
+import { Preset, state } from "@/ts/global_states.ts";
+import { invoke } from "@tauri-apps/api/core";
+import { updateStatusMessage } from "@/ts/LeftPanel.ts";
+import { queryMappings, refreshMappings } from "@/App.ts";
+import { nextTick } from "vue";
 
 
 /**
@@ -14,7 +15,7 @@ export function switchTab(tabName: string) {
 
 
 export async function setPollingFrequency() {
-    await invoke("set_frequency", {freq: state.pollingFrequency});
+    await invoke("set_frequency", { freq: state.pollingFrequency });
     await updateSettings();
 }
 
@@ -33,7 +34,7 @@ export async function updateSettings() {
     };
 
     try {
-        await invoke("update_settings", {newSettings});
+        await invoke("update_settings", { newSettings });
     } catch (error) {
         console.error("保存设置失败:", error);
     }
@@ -67,7 +68,7 @@ export async function openButtonMapModal(title = "添加按键映射", selectedB
 
 export async function editButtonMap(id: number) {
     // 从后端直接获取最新的映射数据
-    const mapping: any = await invoke("get_mapping_by_id", {id});
+    const mapping: any = await invoke("get_mapping_by_id", { id });
 
     if (mapping) {
         // --- 新增转换和状态恢复逻辑 ---
@@ -78,7 +79,7 @@ export async function editButtonMap(id: number) {
 
         // 2. 反向解析原始值，恢复 state.currentKeys 状态
         const parts = raw_key.split(' + ');
-        state.currentKeys = {ctrl: false, shift: false, alt: false, meta: false, key: null}; // 重置
+        state.currentKeys = { ctrl: false, shift: false, alt: false, meta: false, key: null }; // 重置
         state.currentKeys.ctrl = parts.includes('Control');
         state.currentKeys.shift = parts.includes('Shift');
         state.currentKeys.alt = parts.includes('Alt');
@@ -101,7 +102,7 @@ export async function editButtonMap(id: number) {
 }
 
 export async function deleteButtonMap(id: number) {
-    invoke('delete_mapping', {id: id})
+    invoke('delete_mapping', { id: id })
         .then(success => {
             if (success) {
                 updateStatusMessage('映射已删除');
@@ -283,7 +284,7 @@ export function startKeyDetection() {
     if (state.keyListenerActive) return;
     state.preventNextClick = false;
     state.keyListenerActive = true;
-    state.currentKeys = {ctrl: false, shift: false, alt: false, meta: false, key: null};
+    state.currentKeys = { ctrl: false, shift: false, alt: false, meta: false, key: null };
 
     state.keyDetectorText = '请按下键盘按键、鼠标按键或滚动滚轮...';
     state.keyDisplayText = '';
@@ -299,55 +300,55 @@ export function startKeyDetection() {
 // TODO: 也许会添加更多
 const buttonTextMapLists = {
     xbox: [
-        {value: 'A', text: 'A 按钮'},
-        {value: 'B', text: 'B 按钮'},
-        {value: 'X', text: 'X 按钮'},
-        {value: 'Y', text: 'Y 按钮'},
-        {value: 'LB', text: '左肩键 (LB)'},
-        {value: 'RB', text: '右肩键 (RB)'},
-        {value: 'LeftStick', text: '左摇杆'},
-        {value: 'RightStick', text: '右摇杆'},
-        {value: 'Back', text: 'Back 按钮'},
-        {value: 'Start', text: 'Start 按钮'},
-        {value: 'Guide', text: 'Guide 按钮'},
-        {value: 'DPadUp', text: '方向键上'},
-        {value: 'DPadDown', text: '方向键下'},
-        {value: 'DPadLeft', text: '方向键左'},
-        {value: 'DPadRight', text: '方向键右'},
+        { value: 'A', text: 'A 按钮' },
+        { value: 'B', text: 'B 按钮' },
+        { value: 'X', text: 'X 按钮' },
+        { value: 'Y', text: 'Y 按钮' },
+        { value: 'LB', text: '左肩键 (LB)' },
+        { value: 'RB', text: '右肩键 (RB)' },
+        { value: 'LeftStick', text: '左摇杆' },
+        { value: 'RightStick', text: '右摇杆' },
+        { value: 'Back', text: 'Back 按钮' },
+        { value: 'Start', text: 'Start 按钮' },
+        { value: 'Guide', text: 'Guide 按钮' },
+        { value: 'DPadUp', text: '方向键上' },
+        { value: 'DPadDown', text: '方向键下' },
+        { value: 'DPadLeft', text: '方向键左' },
+        { value: 'DPadRight', text: '方向键右' },
     ],
     ps: [
-        {value: 'Cross', text: '叉按钮 (Cross)'},
-        {value: 'Circle', text: '圆按钮 (Circle)'},
-        {value: 'Square', text: '方按钮 (Square)'},
-        {value: 'Triangle', text: '三角按钮 (Triangle)'},
-        {value: 'L1', text: '左肩键 (L1)'},
-        {value: 'R1', text: '右肩键 (R1)'},
-        {value: 'LeftStick', text: '左摇杆'},
-        {value: 'RightStick', text: '右摇杆'},
-        {value: 'Share', text: 'Share 按钮'},
-        {value: 'Options', text: 'Options 按钮'},
-        {value: 'PS', text: 'PS 按钮'},
-        {value: 'DPadUp', text: '方向键上'},
-        {value: 'DPadDown', text: '方向键下'},
-        {value: 'DPadLeft', text: '方向键左'},
-        {value: 'DPadRight', text: '方向键右'},
+        { value: 'Cross', text: '叉按钮 (Cross)' },
+        { value: 'Circle', text: '圆按钮 (Circle)' },
+        { value: 'Square', text: '方按钮 (Square)' },
+        { value: 'Triangle', text: '三角按钮 (Triangle)' },
+        { value: 'L1', text: '左肩键 (L1)' },
+        { value: 'R1', text: '右肩键 (R1)' },
+        { value: 'LeftStick', text: '左摇杆' },
+        { value: 'RightStick', text: '右摇杆' },
+        { value: 'Share', text: 'Share 按钮' },
+        { value: 'Options', text: 'Options 按钮' },
+        { value: 'PS', text: 'PS 按钮' },
+        { value: 'DPadUp', text: '方向键上' },
+        { value: 'DPadDown', text: '方向键下' },
+        { value: 'DPadLeft', text: '方向键左' },
+        { value: 'DPadRight', text: '方向键右' },
     ],
     switch: [ // 新增 Switch 布局
-        {value: 'A', text: 'A 按钮'},
-        {value: 'B', text: 'B 按钮'},
-        {value: 'X', text: 'X 按钮'},
-        {value: 'Y', text: 'Y 按钮'},
-        {value: 'L', text: '左肩键 (L)'},
-        {value: 'R', text: '右肩键 (R)'},
-        {value: 'LeftStick', text: '左摇杆'},
-        {value: 'RightStick', text: '右摇杆'},
-        {value: 'Minus', text: 'Minus 按钮'},
-        {value: 'Plus', text: 'Plus 按钮'},
-        {value: 'Home', text: 'Home 按钮'},
-        {value: 'DPadUp', text: '方向键上'},
-        {value: 'DPadDown', text: '方向键下'},
-        {value: 'DPadLeft', text: '方向键左'},
-        {value: 'DPadRight', text: '方向键右'},
+        { value: 'A', text: 'A 按钮' },
+        { value: 'B', text: 'B 按钮' },
+        { value: 'X', text: 'X 按钮' },
+        { value: 'Y', text: 'Y 按钮' },
+        { value: 'L', text: '左肩键 (L)' },
+        { value: 'R', text: '右肩键 (R)' },
+        { value: 'LeftStick', text: '左摇杆' },
+        { value: 'RightStick', text: '右摇杆' },
+        { value: 'Minus', text: 'Minus 按钮' },
+        { value: 'Plus', text: 'Plus 按钮' },
+        { value: 'Home', text: 'Home 按钮' },
+        { value: 'DPadUp', text: '方向键上' },
+        { value: 'DPadDown', text: '方向键下' },
+        { value: 'DPadLeft', text: '方向键左' },
+        { value: 'DPadRight', text: '方向键右' },
     ]
 }
 
@@ -393,7 +394,7 @@ export async function resetSettings() {
 }
 
 export const openGithubLink = () => {
-    invoke("open_url", {url: "https://github.com/Hotakus/XialloControl"});
+    invoke("open_url", { url: "https://github.com/Hotakus/XialloControl" });
 };
 
 export async function saveDeadzoneSettings() {
@@ -434,6 +435,43 @@ export async function savePreset() {
     }
 }
 
+export async function confirmNewPreset() {
+    if (!state.newPresetName.trim()) {
+        updateStatusMessage("方案名称不能为空", true);
+        return;
+    }
+
+    if (state.presets.includes(state.newPresetName)) {
+        updateStatusMessage("方案名称已存在", true);
+        return;
+    }
+
+    try {
+        // 调用后端创建新预设
+        await invoke<Preset>("create_preset", { name: state.newPresetName });
+        state.presets.push(state.newPresetName);
+        state.previousPreset = state.newPresetName;
+        await switchPreset();
+        updateStatusMessage(`方案 "${state.newPresetName}" 创建成功`, false);
+    } catch (error) {
+        state.previousPreset = "default";
+        await switchPreset();
+        console.error("创建预设失败:", error);
+        updateStatusMessage(`创建预设失败: ${error}`, true);
+    } finally {
+        // 无论成功失败都重置状态
+        state.isCreatingNewPreset = false;
+        state.newPresetName = "";
+        // 刷新映射列表
+        await refreshMappings();
+    }
+}
+
+export function cancelNewPreset() {
+    state.isCreatingNewPreset = false;
+    state.newPresetName = "";
+}
+
 export async function importPreset() {
     try {
         // TODO: 实现导入预设功能
@@ -442,5 +480,24 @@ export async function importPreset() {
     } catch (error) {
         console.error("导入预设失败:", error);
         updateStatusMessage(`导入预设失败: ${error}`, true);
+    }
+}
+
+
+export async function newPreset() {
+    try {
+        // 启动新建预设模式
+        state.isCreatingNewPreset = true;
+        state.newPresetName = "";
+
+        // 等待 Vue 更新 DOM 后聚焦输入框
+        await nextTick();
+        const input = document.querySelector('.preset-input') as HTMLInputElement;
+        if (input) {
+            input.focus();
+        }
+    } catch (error) {
+        console.error("新建预设失败:", error);
+        updateStatusMessage(`新建预设失败: ${error}`, true);
     }
 }
