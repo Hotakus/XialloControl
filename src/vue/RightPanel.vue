@@ -146,16 +146,6 @@
                 <span id="deadzone-left-value">{{ state.current_preset.items.deadzone_left }}%</span>
               </div>
             </div>
-            <div class="stick-buttons-row">
-              <button id="open-joystick-cali-modal" class="icon-button" @click="openCaliModal()">
-                <svg t="1754895524804" viewBox="0 0 24 24" width="20" height="20">
-                  <path
-                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13.5v6l5.25 3.15.75-1.23-4.5-2.67v-5.25z"
-                    fill="currentColor" />
-                </svg>
-                校准
-              </button>
-            </div>
           </div>
           <div class="setting-group">
             <h3>摇杆旋转行为</h3>
@@ -252,7 +242,6 @@ import {
   switchPreset
 } from "@/ts/RightPanel.ts";
 import { state } from "@/ts/global_states.ts";
-import { openCaliModal } from "@/ts/JoystickCaliModal.ts";
 import { onMounted } from "vue";
 </script>
 
