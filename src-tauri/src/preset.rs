@@ -142,16 +142,23 @@ pub fn preset_test2() {
 
 /// 创建新的预设
 #[tauri::command]
-pub fn create_preset(name: &str) -> Result<(), String> {
+pub fn create_preset(name: &str) -> Result<Preset, String> {
     if name.is_empty() {
         return Err("预设名称不能为空".to_string());
     }
 
-    let mut preset = Preset::new(name.to_string(), vec![]);
-    if preset.save() {
-        Ok(())
+    // 创建，然后返回最新
+    let preset = Preset::new(name.to_string(), vec![]);
+    let mut presets = CURRENT_PRESET_LIST.write().unwrap();
+    if presets.iter().any(|p| p.name == name) {
+        return Err("预设名称已存在".to_string());
     } else {
-        Err("保存预设失败".to_string())
+        if preset.save() {
+            presets.push(preset.clone());
+            Ok(preset)
+        } else {
+            Err("创建预设失败".to_string())
+        }
     }
 }
 
