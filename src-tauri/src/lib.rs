@@ -289,7 +289,12 @@ pub fn run() {
             preset::preset_test,
             preset::preset_test2,
             preset::load_preset,
-            preset::update_deadzone
+            preset::update_deadzone,
+            preset::check_presets_list,
+            preset::create_preset,
+            preset::delete_preset,
+            preset::rename_preset,
+            preset::switch_to_preset
         ])
         .setup(|app| {
             let app_handle = app.handle();

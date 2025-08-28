@@ -1,19 +1,41 @@
-import {updateStatusMessage} from "@/ts/LeftPanel.ts";
-import {invoke} from "@tauri-apps/api/core";
-import {appWindow, Preset, state} from "@/ts/global_states.ts";
-import {locale} from "@tauri-apps/plugin-os";
+import { updateStatusMessage } from "@/ts/LeftPanel.ts";
+import { invoke } from "@tauri-apps/api/core";
+import { appWindow, Preset, state } from "@/ts/global_states.ts";
+import { locale } from "@tauri-apps/plugin-os";
 
 export async function initApp() {
+    await queryLocale();
     await checkBuildEnv();
     await queryGlobalSettings();
-    await loadPreset();
-
+    await queryPresetList();
+    // await loadPreset();
     await queryMappings();
     updateStatusMessage("请选择一个设备并点击连接按钮");
 
     await invoke("try_auto_connect_last_device");
+}
 
+async function queryLocale() {
+    if (!invoke) return;
     state.locale = await invoke("get_locale");
+}
+
+// 预设管理功能
+export async function queryPresetList() {
+    try {
+        const presets: string[] = await invoke("check_presets_list");
+        state.presets = presets;
+        if (!state.presets.includes(state.previousPreset)) {
+            state.previousPreset = "default";
+        }
+
+        const preset = await invoke<Preset>("load_preset", { name: state.previousPreset });
+        state.current_preset = preset;
+
+        console.log("预设列表:", preset);
+    } catch (error) {
+        console.error("加载预设列表失败:", error);
+    }
 }
 
 export async function queryGlobalSettings() {
@@ -49,27 +71,17 @@ export async function queryGlobalSettings() {
     // await invoke("set_frequency", { freq: state.pollingFrequency });
 }
 
-export async function loadPreset() {
-    if (!invoke) return;
-
-    const presetName = state.previousPreset || "default";
-    try {
-        const preset = await invoke<any>("load_preset", {name: presetName});
-        
-        state.current_preset.name = preset.name;
-        state.current_preset.items.deadzone = preset.deadzone;
-        state.current_preset.items.deadzone_left = preset.deadzone_left;
-        
-        console.log("Loaded preset:", preset);
-    } catch (error) {
-        console.error("Failed to load preset:", error);
-    }
-}
-
 // 加载映射配置
 export async function queryMappings() {
     if (!invoke) return;
     state.mappings = await invoke("get_mappings");
+    console.log("Loaded mappings:", state.mappings);
+}
+
+export async function refreshMappings() {
+    if (!invoke) return;
+    state.mappings = await invoke("refresh_mappings");
+    console.log("Refreshed mappings:", state.mappings);
 }
 
 async function checkBuildEnv() {

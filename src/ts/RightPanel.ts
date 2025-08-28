@@ -1,7 +1,7 @@
-import {state} from "@/ts/global_states.ts";
+import {Preset, state} from "@/ts/global_states.ts";
 import {invoke} from "@tauri-apps/api/core";
 import {updateStatusMessage} from "@/ts/LeftPanel.ts";
-import {queryMappings} from "@/App.ts";
+import {queryMappings, refreshMappings} from "@/App.ts";
 
 
 /**
@@ -406,5 +406,41 @@ export async function saveDeadzoneSettings() {
     } catch (error) {
         console.error("保存摇杆死区失败:", error);
         updateStatusMessage(`保存摇杆死区失败: ${error}`, true);
+    }
+}
+
+
+export async function switchPreset() {
+    if (!invoke) return;
+
+    try {
+        const preset = await invoke<Preset>("switch_to_preset", { name: state.previousPreset });
+        state.current_preset = preset;
+        await refreshMappings();
+        console.log("Switched to preset:", preset);
+    } catch (error) {
+        console.error("Failed to switch preset:", error);
+    }
+}
+
+export async function savePreset() {
+    try {
+        // TODO: 实现保存预设功能
+        console.log("保存预设");
+        updateStatusMessage("预设已保存", false);
+    } catch (error) {
+        console.error("保存预设失败:", error);
+        updateStatusMessage(`保存预设失败: ${error}`, true);
+    }
+}
+
+export async function importPreset() {
+    try {
+        // TODO: 实现导入预设功能
+        console.log("导入预设");
+        updateStatusMessage("预设已导入", false);
+    } catch (error) {
+        console.error("导入预设失败:", error);
+        updateStatusMessage(`导入预设失败: ${error}`, true);
     }
 }

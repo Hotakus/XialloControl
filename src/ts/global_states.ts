@@ -123,7 +123,9 @@ export const state = reactive({
             deadzone_left: 0,
             mappings: []
         }
-    } as Preset
+    } as Preset,
+
+    presets: [] as string[],
 });
 
 // ---------- 延迟获取 DOM 元素 ----------
