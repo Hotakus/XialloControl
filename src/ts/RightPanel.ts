@@ -504,3 +504,19 @@ export async function newPreset() {
         updateStatusMessage(`新建预设失败: ${error}`, true);
     }
 }
+
+
+export async function deletePreset() {
+    if (!state.previousPreset) return;
+
+    try {
+        await invoke("delete_preset", { name: state.previousPreset });
+        state.presets = state.presets.filter(preset => preset !== state.previousPreset);
+        updateStatusMessage(`方案 "${state.previousPreset}" 删除成功`, false);
+        state.previousPreset = "default";
+        await switchPreset();
+    } catch (error) {
+        console.error("删除预设失败:", error);
+        updateStatusMessage(`删除预设失败: ${error}`, true);
+    }
+}
