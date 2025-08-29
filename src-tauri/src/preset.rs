@@ -169,12 +169,21 @@ pub fn delete_preset(name: &str) -> Result<(), String> {
         return Err("不能删除默认预设".to_string());
     }
 
-    let preset_dir = PathBuf::from(PRESET_DIR).join(name);
-    if preset_dir.exists() {
-        if let Err(e) = fs::remove_dir_all(preset_dir) {
-            log::error!("删除预设失败：{e}");
-            return Err("删除预设失败".to_string());
+    let preset_dir = ensure_dir(&PathBuf::from(PRESET_DIR));
+    if let Some(preset_path) = preset_dir {
+        let target_dir = preset_path.join(name);
+        if !target_dir.exists() {
+            return Err(format!("预设 {target_dir:#?} 不存在"));
         }
+
+        if let Err(e) = fs::remove_dir_all(&target_dir) {
+            log::error!("删除预设失败：{e}");
+            return Err(format!("删除预设失败：{e}"));
+        }
+
+        // 从全局列表中移除
+        let mut presets = CURRENT_PRESET_LIST.write().unwrap();
+        presets.retain(|p| p.name != name);
     }
     Ok(())
 }
