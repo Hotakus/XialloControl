@@ -298,7 +298,7 @@ import {
 }
 
 .btn-switch.active {
-  background-color: #4c8bf5;
+  background-color: var(--button-base-bg);
   color: white;
 }
 
@@ -370,7 +370,7 @@ import {
 }
 
 input:checked + .slider {
-    background-color: #4c8bf5;
+    background-color: var(--button-base-bg);
 }
 
 input:checked + .slider:before {

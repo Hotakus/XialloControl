@@ -30,4 +30,10 @@ onMounted(() => {
 
 <style>
 @import './assets/styles.css'; /* 全局样式 */
+
+.divider {
+  width: 10px;
+  margin-top: 2%;
+  margin-bottom: 2%;
+}
 </style>
