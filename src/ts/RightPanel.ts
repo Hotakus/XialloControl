@@ -419,6 +419,9 @@ export async function switchPreset() {
         state.current_preset = preset;
         await refreshMappings();
         console.log("Switched to preset:", preset);
+
+        // 保存当前预设到设置中，以便下次启动时恢复
+        await updateSettings();
     } catch (error) {
         console.error("Failed to switch preset:", error);
     }
