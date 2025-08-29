@@ -33,7 +33,7 @@ body {
     --overlay-bg: rgba(0, 0, 0, 0.5);
     --modal-bg: #ffffff;
     --modal-width: 800px;
-    --danger: #e74c3c;
+    --danger: #d3685c;
     --success: #65c78e;
     --indicator-off: #341c1c;
     --indicator-on: #42d589;
@@ -488,7 +488,7 @@ body {
 }
 
 .item-action-btn.delete {
-    color: #e74c3c;
+    color: var(--danger);
 }
 
 .item-action-btn:active {

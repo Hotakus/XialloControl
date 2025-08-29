@@ -303,11 +303,8 @@ import { onMounted } from "vue";
   gap: 4px;
 }
 
-.icon-button cancel-btn {
-  /* color: #7a859e; */
-  /* cursor: pointer; */
-  /* font-size: 14px; */
-  /* padding-left: 10px; */
+.icon-button.delete-preset-btn {
+  background-color: var(--danger);
 }
 
 .cancel-btn:hover {
