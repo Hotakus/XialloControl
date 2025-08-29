@@ -92,13 +92,13 @@ n<template>
                   :class="['btn-switch', { 'active': calibrationMode === 'circle' }]"
                   @click="setCalibrationMode('circle')"
                   :disabled="calibratingStick !== 'none'">
-                  圆形范围
+                  圆形
                 </button>
                 <button
                   :class="['btn-switch', { 'active': calibrationMode === 'square' }]"
                   @click="setCalibrationMode('square')"
                   :disabled="calibratingStick !== 'none'">
-                  方形范围
+                  方形
                 </button>
               </div>
             </div>
@@ -281,6 +281,7 @@ import {
   border: 1px solid #ccc;
   border-radius: 6px;
   overflow: hidden;
+  margin-left: 10px;
 }
 
 .btn-switch {
