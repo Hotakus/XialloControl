@@ -4,7 +4,7 @@
       <label for="device">🎮 选择设备:</label>
       <div class="device-select-row">
         <select id="device" v-model="state.deviceSelectedIndex" @change="onDeviceSelected()">
-          <option disabled value="null">请选择设备</option>
+          <option disabled value="null">-- 请选择设备 --</option>
           <!-- 用 v-for 渲染设备 -->
           <option v-for="(device, index) in state.currentDevices" :key="device.device_path ?? index" :value="index">
             {{ index }}: {{ device.name }}
