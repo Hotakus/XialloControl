@@ -957,7 +957,7 @@ input:checked + .slider:before {
 .modal-header {
     background: var(--primary-bg);
     color: var(--primary-text);
-    padding: 15px 20px;
+    padding: 10px 10px;
     font-size: 18px;
     font-weight: bold;
     display: flex;
