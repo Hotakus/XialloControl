@@ -68,6 +68,7 @@ export const state = reactive({
 
     showUpdateModal: false,
     showCaliModal: false,
+    showPresetEditModal: false,
 
     buttonsText: [{value: '', text: ''}],
 

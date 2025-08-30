@@ -520,3 +520,7 @@ export async function deletePreset() {
         updateStatusMessage(`删除预设失败: ${error}`, true);
     }
 }
+
+export async function editPreset() {
+    state.showPresetEditModal = true;
+}

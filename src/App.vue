@@ -1,14 +1,15 @@
 <template>
   <div class="window theme-light">
-    <WindowHeader/>
+    <WindowHeader />
     <div class="window-body">
-      <LeftPanel/>
-      <RightPanel/>
+      <LeftPanel />
+      <RightPanel />
     </div>
-<!--    <WindowFooter/>-->
-    <MappingModal/>
-    <JoystickCaliModal/>
-    <UpdateModal/>
+    <!--    <WindowFooter/>-->
+    <MappingModal />
+    <JoystickCaliModal />
+    <UpdateModal />
+    <PresetEditModal />
   </div>
 </template>
 
@@ -20,8 +21,9 @@ import RightPanel from './vue/RightPanel.vue'
 import WindowFooter from './vue/WindowFooter.vue'
 import MappingModal from './vue/MappingModal.vue'
 import JoystickCaliModal from './vue/JoystickCaliModal.vue'
-import {onMounted} from "vue";
-import {initApp} from "@/App.ts";
+import { onMounted } from "vue";
+import { initApp } from "@/App.ts";
+import PresetEditModal from './vue/PresetEditModal.vue'
 
 onMounted(() => {
   initApp();
@@ -29,11 +31,6 @@ onMounted(() => {
 </script>
 
 <style>
-@import './assets/styles.css'; /* 全局样式 */
-
-.divider {
-  width: 10px;
-  margin-top: 2%;
-  margin-bottom: 2%;
-}
+/* 全局样式 */
+@import './assets/styles.css';
 </style>
