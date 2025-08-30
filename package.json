@@ -17,6 +17,7 @@
     "@tauri-apps/plugin-os": "~2",
     "@tauri-apps/plugin-updater": "~2.9.0",
     "@tauri-apps/plugin-window-state": "~2.4.0",
+    "marked": "^16.2.1",
     "vite-svg-loader": "^5.1.0",
     "vue": "^3.5.13"
   },
@@ -24,6 +25,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@tauri-apps/cli": "^2.7.1",
+    "@types/marked": "^6.0.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "husky": "^9.1.7",
     "typescript": "~5.9.2",
