@@ -49,7 +49,7 @@ onMounted(async () => {
 <style scoped>
 /* 如果只作用于这个组件，可以写 scoped 样式 */
 .new-update-btn {
-  background-color: #bb2f2c;
+  background-color: #c15552;
   color: #fff;
   padding: 0 6px;
   height: 18px;
