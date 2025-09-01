@@ -1,6 +1,6 @@
 [package]
 name = "XialloControl"
-version = "0.18.2"
+version = "0.20.1"
 description = "XialloControl by Hotakus"
 authors = ["Hotakus"]
 edition = "2024"
