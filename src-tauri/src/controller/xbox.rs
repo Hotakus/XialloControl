@@ -1,8 +1,8 @@
 cfg_if::cfg_if! {
     if #[cfg(target_os = "windows")] {
-        use crate::controller::controller::{self, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA};
+        use crate::controller::controller::{self, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA, JoystickSource};
     } else if #[cfg(target_os = "linux")] {
-        use crate::controller::controller::{self, disconnect_device, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA};
+        use crate::controller::controller::{self, disconnect_device, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA, JoystickSource};
     }
 }
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
@@ -73,6 +73,17 @@ fn _poll_xbox_controller_state(state: XInputState) {
     controller_data.left_stick.y = final_ly;
     controller_data.right_stick.x = final_rx;
     controller_data.right_stick.y = final_ry;
+
+    // --- 新增: 使用通用函数计算并存储摇杆旋转状态 ---
+    controller_data.left_stick_rotation = controller::update_joystick_rotation_state(JoystickSource::LeftStick, final_lx, final_ly);
+    controller_data.right_stick_rotation = controller::update_joystick_rotation_state(JoystickSource::RightStick, final_rx, final_ry);
+
+    // 打印旋转状态
+    // log::info!(
+    //     "{:?}, {:?}",
+    //     controller_data.left_stick_rotation,
+    //     controller_data.right_stick_rotation
+    // );
 
     // 触发器状态读取
     let lt = state.left_trigger();

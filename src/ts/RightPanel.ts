@@ -74,8 +74,9 @@ export async function editButtonMap(id: number) {
         // --- 新增转换和状态恢复逻辑 ---
         const raw_key: string = mapping.composed_shortcut_key; // 获取英文原始值
 
-        // 1. 转换为中文显示值，用于弹窗UI
-        const display_key = raw_key.split(' + ').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+        // 1. 恢复原始值和显示值
+        state.rawKeyDisplayText = raw_key;
+        const display_key = raw_key.split('+').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
 
         // 2. 反向解析原始值，恢复 state.currentKeys 状态
         const parts = raw_key.split(' + ');
@@ -91,6 +92,14 @@ export async function editButtonMap(id: number) {
         state.triggerState.initial_interval = mapping.initial_interval ?? 300;
         state.triggerState.min_interval = mapping.min_interval ?? 100;
         state.triggerState.acceleration = mapping.acceleration ?? 0.8;
+
+        // 4. 恢复 amount (如果存在)
+        if (typeof mapping.amount === 'number') {
+            // 使用绝对值，因为滑块只能表示大小，方向由按键本身决定
+            state.mapping_amount = Math.abs(mapping.amount);
+        } else {
+            state.mapping_amount = 1; // 重置为默认值
+        }
 
         // 使用转换后的中文值和恢复的状态打开模态窗口
         console.log("编辑按钮映射", id);
@@ -124,7 +133,10 @@ export async function addButtonMap() {
     state.triggerState.initial_interval = 300;
     state.triggerState.min_interval = 100;
     state.triggerState.acceleration = 0.8;
-    await openButtonMapModal();
+    state.mapping_amount = 1; // 重置为默认值
+    state.rawKeyDisplayText = ''; // 清空上次的按键检测结果
+    state.keyDisplayText = '';
+    await openButtonMapModal("添加按键映射");
 }
 
 
@@ -133,6 +145,7 @@ export function formatKeyDisplay(rawKey: string): string {
 }
 
 // 特殊键的显示名称映射
+// TODO: 国际化支持
 const keyDisplayNames: Record<string, string> = {
     ' ': '空格键',
     Control: 'Ctrl',
@@ -179,19 +192,18 @@ const keyDisplayNames: Record<string, string> = {
 
 // 更新按键显示
 function updateKeyDisplay() {
-    let displayText = '';
+    const parts: string[] = [];
+    if (state.currentKeys.ctrl) parts.push('Control');
+    if (state.currentKeys.shift) parts.push('Shift');
+    if (state.currentKeys.alt) parts.push('Alt');
+    if (state.currentKeys.meta) parts.push('Meta');
+    if (state.currentKeys.key) parts.push(state.currentKeys.key);
 
-    if (state.currentKeys.ctrl) displayText += 'Ctrl + ';
-    if (state.currentKeys.shift) displayText += 'Shift + ';
-    if (state.currentKeys.alt) displayText += 'Alt + ';
-    if (state.currentKeys.meta) displayText += 'Cmd + ';
+    // 更新原始文本用于逻辑判断
+    state.rawKeyDisplayText = parts.join('+');
 
-    if (state.currentKeys.key) {
-        const key = state.currentKeys.key;
-        displayText += keyDisplayNames[key] || key.toUpperCase();
-    }
-
-    state.keyDisplayText = displayText;
+    // 更新显示文本用于UI
+    state.keyDisplayText = parts.map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
 }
 
 // 移除按键监听器
@@ -213,6 +225,11 @@ export function stopKeyDetection(resetText = true) {
     }
 
     removeKeyListeners();
+
+    // 如果检测结果不是滚轮, 重置 amount (使用原始值判断)
+    if (!state.rawKeyDisplayText.toLowerCase().includes('mousewheel')) {
+        state.mapping_amount = 1;
+    }
 }
 
 // 处理按键事件
@@ -288,6 +305,7 @@ export function startKeyDetection() {
 
     state.keyDetectorText = '请按下键盘按键、鼠标按键或滚动滚轮...';
     state.keyDisplayText = '';
+    state.rawKeyDisplayText = '';
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -306,8 +324,8 @@ const buttonTextMapLists = {
         { value: 'Y', text: 'Y 按钮' },
         { value: 'LB', text: '左肩键 (LB)' },
         { value: 'RB', text: '右肩键 (RB)' },
-        { value: 'LeftStick', text: '左摇杆' },
-        { value: 'RightStick', text: '右摇杆' },
+        // { value: 'LeftStick', text: '左摇杆' },
+        // { value: 'RightStick', text: '右摇杆' },
         { value: 'Back', text: 'Back 按钮' },
         { value: 'Start', text: 'Start 按钮' },
         { value: 'Guide', text: 'Guide 按钮' },
@@ -323,8 +341,8 @@ const buttonTextMapLists = {
         { value: 'Triangle', text: '三角按钮 (Triangle)' },
         { value: 'L1', text: '左肩键 (L1)' },
         { value: 'R1', text: '右肩键 (R1)' },
-        { value: 'LeftStick', text: '左摇杆' },
-        { value: 'RightStick', text: '右摇杆' },
+        // { value: 'LeftStick', text: '左摇杆' },
+        // { value: 'RightStick', text: '右摇杆' },
         { value: 'Share', text: 'Share 按钮' },
         { value: 'Options', text: 'Options 按钮' },
         { value: 'PS', text: 'PS 按钮' },
@@ -340,8 +358,8 @@ const buttonTextMapLists = {
         { value: 'Y', text: 'Y 按钮' },
         { value: 'L', text: '左肩键 (L)' },
         { value: 'R', text: '右肩键 (R)' },
-        { value: 'LeftStick', text: '左摇杆' },
-        { value: 'RightStick', text: '右摇杆' },
+        // { value: 'LeftStick', text: '左摇杆' },
+        // { value: 'RightStick', text: '右摇杆' },
         { value: 'Minus', text: 'Minus 按钮' },
         { value: 'Plus', text: 'Plus 按钮' },
         { value: 'Home', text: 'Home 按钮' },

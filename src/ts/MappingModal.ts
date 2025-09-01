@@ -5,7 +5,16 @@ import {startKeyDetection, stopKeyDetection} from "@/ts/RightPanel.ts";
 import {invoke} from "@tauri-apps/api/core";
 
 export async function mappingsConfirm() {
+    stopKeyDetection();
+    state.modalErrorVisible = false;
+    state.modalErrorMessage = '';
+
     const composed_button = state.selectedButton;
+    if (!composed_button) {
+        state.modalErrorMessage = '请选择一个输入源';
+        state.modalErrorVisible = true;
+        return;
+    }
 
     // 从 state.currentKeys 构建用于后端的原始快捷键字符串
     const shortcut_parts = [];
@@ -14,58 +23,55 @@ export async function mappingsConfirm() {
     if (state.currentKeys.alt) shortcut_parts.push('Alt');
     if (state.currentKeys.meta) shortcut_parts.push('Meta');
     if (state.currentKeys.key) shortcut_parts.push(state.currentKeys.key);
-    const raw_shortcut_key = shortcut_parts.join('+'); // 这就是后端需要的英文值
+    const raw_shortcut_key = shortcut_parts.join('+');
 
-    stopKeyDetection();
-
-    state.modalErrorVisible = false;
-    state.modalErrorMessage = '';
-
-    if (!composed_button) {
-        state.modalErrorMessage = '请选择手柄按键';
+    if (!raw_shortcut_key) {
+        state.modalErrorMessage = '请设置映射输出动作';
         state.modalErrorVisible = true;
         return;
     }
 
-    if (!raw_shortcut_key) { // 使用新生成的原始值进行校验
-        state.modalErrorMessage = '请设置键盘映射按键';
-        state.modalErrorVisible = true;
-        return;
-    }
-
-    // 从全局状态中获取触发器状态
+    // For all mapping types, we now use trigger_state from the UI
     const trigger_state = {
-        interval: state.triggerState.initial_interval, // 关键：添加 interval 字段
+        interval: state.triggerState.initial_interval,
         initial_interval: state.triggerState.initial_interval,
         min_interval: state.triggerState.min_interval,
         acceleration: state.triggerState.acceleration,
-        // Rust 结构中的 `last_trigger` 是在后端处理的，前端不需要发送
     };
 
+    // joystick_config is no longer used for rotation, set to null
+    const joystick_config = null;
 
     let result = false;
+    const payload = {
+        id: state.editingMappingId,
+        composedButton: composed_button,
+        composedShortcutKey: raw_shortcut_key,
+        triggerState: trigger_state,
+        joystickConfig: joystick_config,
+        amount: (() => {
+            const lowerCaseKey = raw_shortcut_key.toLowerCase();
+            if (lowerCaseKey.includes('mousewheelup')) {
+                return -state.mapping_amount;
+            } else if (lowerCaseKey.includes('mousewheeldown')) {
+                return state.mapping_amount;
+            }
+            return null;
+        })(),
+    };
+
     if (state.editingMappingId) {
-        result = await invoke("update_mapping", {
-            id: state.editingMappingId,
-            composedButton: composed_button,
-            composedShortcutKey: raw_shortcut_key,
-            triggerState: trigger_state,
-        });
-        updateStatusMessage('按键映射已更新');
+        result = await invoke("update_mapping", payload);
+        updateStatusMessage('映射已更新');
     } else {
-        result = await invoke("add_mapping", {
-            composedButton: composed_button,
-            composedShortcutKey: raw_shortcut_key,
-            triggerState: trigger_state,
-        });
-        updateStatusMessage('按键映射已添加');
+        result = await invoke("add_mapping", payload);
+        updateStatusMessage('映射已添加');
     }
 
     if (result) {
-        // 保存成功，重新加载映射列表
         await queryMappings();
     } else {
-        updateStatusMessage('按键映射操作失败', true);
+        updateStatusMessage('映射操作失败', true);
     }
 
     await closeButtonMapModal();

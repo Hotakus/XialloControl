@@ -19,7 +19,36 @@ use crate::setting::{self, get_setting, LastConnectedDevice, AppSettings};
 use rusty_xinput::XInputHandle;
 use uuid::Uuid;
 
+use std::collections::HashMap;
 // ---------------------- 结构体定义 ----------------------
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum JoystickSource {
+    LeftStick,
+    RightStick,
+}
+
+use crate::controller::datas::JoystickRotation;
+
+/// 摇杆旋转的物理状态 (用于在 controller 模块内部追踪)
+#[derive(Clone, Debug)]
+pub struct JoystickRotationState {
+    last_angle: f32,
+    was_active: bool,
+    current_rotation: JoystickRotation,
+    last_rotation_time: Instant,
+}
+
+impl Default for JoystickRotationState {
+    fn default() -> Self {
+        Self {
+            last_angle: 0.0,
+            was_active: false,
+            current_rotation: JoystickRotation::None,
+            last_rotation_time: Instant::now(),
+        }
+    }
+}
+
 /// 游戏控制器设备信息
 #[derive(Debug, Eq, Serialize, Deserialize, Clone, PartialEq)]
 pub struct DeviceInfo {
@@ -119,6 +148,10 @@ pub static PREV_BTN_DATA: Lazy<RwLock<u32>> =
 
 pub static PREV_PRESSURE_DATA: Lazy<RwLock<CompactPressureDatas>> =
     Lazy::new(|| RwLock::new(CompactPressureDatas::new()));
+
+/// 全局摇杆旋转物理状态 (由 controller 模块独占)
+pub static JOYSTICK_ROTATION_STATES: Lazy<RwLock<HashMap<JoystickSource, JoystickRotationState>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// 自适应采样器实例（结构复杂，保持 Mutex）
 #[allow(dead_code)]
@@ -492,32 +525,80 @@ pub(crate) fn get_calibrated_stick_values(raw_lx: f32, raw_ly: f32, raw_rx: f32,
     (lx, ly, rx, ry)
 }
 
+
+/// 通用函数: 计算并更新单个摇杆的旋转状态, 并返回旋转状态
+pub fn update_joystick_rotation_state(
+    source: JoystickSource,
+    x: f32,
+    y: f32,
+) -> JoystickRotation {
+    const ROTATION_THRESHOLD: f32 = 0.01; // 旋转检测的最小角度变化阈值
+    const JUMP_THRESHOLD: f32 = std::f32::consts::PI; // 角度跳变的阈值, 约180度
+    const ROTATION_TIMEOUT_MS: u128 = 50; // 旋转状态维持的超时时间 (毫秒)
+
+    let mut rotation_states = JOYSTICK_ROTATION_STATES.write().unwrap();
+    let mut state = rotation_states.remove(&source).unwrap_or_default();
+
+    let is_active = x != 0.0 || y != 0.0;
+
+    if is_active {
+        let angle = (-y).atan2(x);
+        if state.was_active {
+            let mut delta = angle - state.last_angle;
+            if delta > std::f32::consts::PI { delta -= 2.0 * std::f32::consts::PI; }
+            else if delta < -std::f32::consts::PI { delta += 2.0 * std::f32::consts::PI; }
+
+            // 检查是否为大幅度跳变 (回弹), 如果是, 则重置状态
+            if delta.abs() > JUMP_THRESHOLD {
+                state.current_rotation = JoystickRotation::None;
+            } else if delta > ROTATION_THRESHOLD {
+                state.current_rotation = JoystickRotation::Clockwise;
+                state.last_rotation_time = Instant::now();
+            } else if delta < -ROTATION_THRESHOLD {
+                state.current_rotation = JoystickRotation::CounterClockwise;
+                state.last_rotation_time = Instant::now();
+            }
+        }
+        state.last_angle = angle;
+    } else {
+        // 如果摇杆回到死区, 直接重置状态
+        state.current_rotation = JoystickRotation::None;
+    }
+    
+    // 超时检查: 如果距离上次有效旋转超过一定时间, 则认为旋转已停止
+    if state.last_rotation_time.elapsed().as_millis() > ROTATION_TIMEOUT_MS {
+        state.current_rotation = JoystickRotation::None;
+    }
+
+    state.was_active = is_active;
+    let rotation = state.current_rotation;
+    rotation_states.insert(source, state);
+    rotation
+}
+
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
     let mut controller_data = CONTROLLER_DATA.write().unwrap();
 
     let buttons = [
-        (gamepad.is_pressed(gilrs::Button::South), ControllerButtons::South, "South",),
-        (gamepad.is_pressed(gilrs::Button::East), ControllerButtons::East, "East",),
-        (gamepad.is_pressed(gilrs::Button::West), ControllerButtons::West, "West",),
-        (gamepad.is_pressed(gilrs::Button::North), ControllerButtons::North, "North",),
-        (gamepad.is_pressed(gilrs::Button::DPadDown), ControllerButtons::Down, "DPadDown",),
-        (gamepad.is_pressed(gilrs::Button::DPadLeft), ControllerButtons::Left, "DPadLeft",),
-        (gamepad.is_pressed(gilrs::Button::DPadRight), ControllerButtons::Right, "DPadRight",),
-        (gamepad.is_pressed(gilrs::Button::DPadUp), ControllerButtons::Up, "DPadUp",),
-        (gamepad.is_pressed(gilrs::Button::LeftTrigger), ControllerButtons::LB, "LB",),
-        (gamepad.is_pressed(gilrs::Button::RightTrigger), ControllerButtons::RB, "RB",),
-        (gamepad.is_pressed(gilrs::Button::LeftThumb), ControllerButtons::LStick, "LStick",),
-        (gamepad.is_pressed(gilrs::Button::RightThumb), ControllerButtons::RStick, "RStick",),
-        (gamepad.is_pressed(gilrs::Button::Select), ControllerButtons::Back, "Select",),
-        (gamepad.is_pressed(gilrs::Button::Start), ControllerButtons::Start, "Start",),
-        (gamepad.is_pressed(gilrs::Button::Mode), ControllerButtons::Guide, "Guide",),
+        (gamepad.is_pressed(gilrs::Button::South), ControllerButtons::South),
+        (gamepad.is_pressed(gilrs::Button::East), ControllerButtons::East),
+        (gamepad.is_pressed(gilrs::Button::West), ControllerButtons::West),
+        (gamepad.is_pressed(gilrs::Button::North), ControllerButtons::North),
+        (gamepad.is_pressed(gilrs::Button::DPadDown), ControllerButtons::Down),
+        (gamepad.is_pressed(gilrs::Button::DPadLeft), ControllerButtons::Left),
+        (gamepad.is_pressed(gilrs::Button::DPadRight), ControllerButtons::Right),
+        (gamepad.is_pressed(gilrs::Button::DPadUp), ControllerButtons::Up),
+        (gamepad.is_pressed(gilrs::Button::LeftTrigger), ControllerButtons::LB),
+        (gamepad.is_pressed(gilrs::Button::RightTrigger), ControllerButtons::RB),
+        (gamepad.is_pressed(gilrs::Button::LeftThumb), ControllerButtons::LStick),
+        (gamepad.is_pressed(gilrs::Button::RightThumb), ControllerButtons::RStick),
+        (gamepad.is_pressed(gilrs::Button::Select), ControllerButtons::Back),
+        (gamepad.is_pressed(gilrs::Button::Start), ControllerButtons::Start),
+        (gamepad.is_pressed(gilrs::Button::Mode), ControllerButtons::Guide),
     ];
 
-    for (pressed, button, name) in buttons {
-        if pressed {
-            log::info!("{name:#?} 按键按下");
-        }
+    for (pressed, button) in buttons {
         controller_data.set_button(button, pressed);
     }
 
@@ -542,11 +623,20 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     controller_data.right_stick.x = final_rx;
     controller_data.right_stick.y = final_ry;
 
+    // --- 新增: 使用通用函数计算并存储摇杆旋转状态 ---
+    controller_data.left_stick_rotation = update_joystick_rotation_state(JoystickSource::LeftStick, final_lx, final_ly);
+    controller_data.right_stick_rotation = update_joystick_rotation_state(JoystickSource::RightStick, final_rx, final_ry);
+
     controller_data.right_stick.is_pressed = gamepad.is_pressed(gilrs::Button::RightThumb);
     controller_data.left_stick.is_pressed = gamepad.is_pressed(gilrs::Button::LeftThumb);
 
     controller_data.left_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
     controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
+    log::info!(
+        "Left Stick Rotation: {:?}, Right Stick Rotation: {:?}",
+        controller_data.left_stick_rotation,
+        controller_data.right_stick_rotation
+    );
 
     controller_data.left_trigger.value = gamepad.button_data(gilrs::Button::LeftTrigger2)
                                                 .map(|data| data.value())
@@ -554,11 +644,6 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     controller_data.right_trigger.value = gamepad.button_data(gilrs::Button::RightTrigger2)
                                                  .map(|data| data.value())
                                                  .unwrap_or(0.0);
-
-    // TODO: 统计 拥有Dpadx 的手柄
-    // let mut dpadx = gamepad.axis_data(Axis::DPadX).unwrap().value();
-    // let mut dpady = gamepad.axis_data(Axis::DPadY).unwrap().value();
-    // log::info!("DPAD: ({}, {})", dpadx, dpady);
 
     pack_and_send_data(&controller_data);
 }

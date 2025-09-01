@@ -2,7 +2,7 @@
 
 // --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
 use crate::controller::controller::{CURRENT_DEVICE, ControllerType};
-use crate::controller::datas::{ControllerButtons, ControllerDatas};
+use crate::controller::datas::{ControllerButtons, ControllerDatas, JoystickRotation};
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
@@ -77,6 +77,25 @@ impl TriggerState {
     }
 }
 
+/// 定义摇杆输入的模式
+/// 摇杆映射的静态配置
+/// 它只关心触发的阈值是多少，具体的行为 (旋转/方向) 由 composed_button 决定
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub struct JoystickConfig {
+    /// 触发阈值.
+    /// 对于旋转, 单位是 "度".
+    /// 对于方向, 单位是累积位移.
+    pub threshold: f32,
+}
+
+/// 摇杆映射的动态状态, 用于追踪摇杆的实时数据
+#[derive(Clone, Debug, Default)]
+pub struct JoystickMappingState {
+    accumulated_angle: f32,
+    accumulated_value: f32,
+}
+
 /// 映射配置，将一个手柄按钮组合映射到一个键盘或鼠标操作。
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -95,6 +114,10 @@ pub struct Mapping {
     /// 触发选项，用于控制按键的重复触发行为。
     #[serde(flatten)]
     trigger_state: TriggerState,
+
+    /// 如果存在, 表示这是一个摇杆映射配置.
+    #[serde(flatten)]
+    joystick_config: Option<JoystickConfig>,
 }
 
 impl Mapping {
@@ -106,6 +129,7 @@ impl Mapping {
             composed_shortcut_key,
             action: Action::default(),
             trigger_state: TriggerState::default(),
+            joystick_config: None,
         }
     }
 
@@ -213,6 +237,11 @@ pub static CONTROLLER_LAYOUT_MAP: Lazy<RwLock<HashMap<ControllerType, Arc<HashMa
 pub static DYNAMIC_TRIGGER_STATES: Lazy<RwLock<HashMap<u64, TriggerState>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
+/// 动态摇杆映射状态, 存储每个摇杆映射的实时数据.
+pub static JOYSTICK_MAPPING_STATES: Lazy<RwLock<HashMap<u64, JoystickMappingState>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+
 /// Enigo 工作线程的发送器，用于向其发送执行命令。
 pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
     let (tx, rx): (Sender<EnigoCommand>, Receiver<EnigoCommand>) = channel();
@@ -310,65 +339,90 @@ pub fn set_mapping(mapping: Vec<Mapping>) {
 
 /// Tauri 命令：更新一个已存在的映射配置。
 #[tauri::command]
-pub fn update_mapping(id: u64, composed_button: String, composed_shortcut_key: String, trigger_state: TriggerState) -> bool {
-    match parse_composed_key_to_action(&composed_shortcut_key) {
-        Ok(action) => {
-            let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
-            if let Some(mapping) = cache.iter_mut().find(|m| m.id == id) {
+pub fn update_mapping(
+    id: u64,
+    composed_button: String,
+    composed_shortcut_key: String,
+    trigger_state: TriggerState,
+    joystick_config: Option<JoystickConfig>,
+    amount: Option<i32>,
+) -> bool {
+    let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+    if let Some(mapping) = cache.iter_mut().find(|m| m.id == id) {
+        // 解析快捷键字符串来获取输出动作 (包括修饰键和滚轮基础量)
+        match parse_composed_key_to_action(&composed_shortcut_key) {
+            Ok(mut action) => {
+                // 如果是滚轮动作且自定义了 amount, 则覆盖
+                if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) = (&mut action.primary, amount) {
+                    action.primary = PrimaryAction::MouseWheel { amount: new_amount };
+                }
+
                 mapping.composed_button = composed_button;
                 mapping.composed_shortcut_key = composed_shortcut_key;
                 mapping.action = action;
                 mapping.trigger_state = trigger_state.clone();
+                mapping.joystick_config = joystick_config;
 
-                let mut live_triggers = DYNAMIC_TRIGGER_STATES.write().unwrap();
-                live_triggers.insert(id, trigger_state);
-                drop(live_triggers);
-
-                drop(cache);
-                save_mappings();
-                return true;
+                // 如果是按键映射，则更新其动态触发状态
+                if mapping.joystick_config.is_none() {
+                    let mut live_triggers = DYNAMIC_TRIGGER_STATES.write().unwrap();
+                    live_triggers.insert(id, trigger_state);
+                }
             }
-            log::error!("更新失败，未找到 id {id} 的映射");
-            false
+            Err(e) => {
+                log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
+                return false;
+            }
         }
-        Err(e) => {
-            log::error!("解析快捷键失败 '{composed_shortcut_key}': {e:?}");
-            false
-        }
+        drop(cache);
+        save_mappings();
+        return true;
     }
+    log::error!("更新失败，未找到 id {id} 的映射");
+    false
 }
 
 /// Tauri 命令：添加一个新的映射配置。
 #[tauri::command]
-pub fn add_mapping(composed_button: String, composed_shortcut_key: String, trigger_state: TriggerState) -> bool {
-    log::debug!(
-        "请求添加映射配置: '{composed_button}', '{composed_shortcut_key}'",
-    );
-    // 调用解析器来生成 Action
+pub fn add_mapping(
+    composed_button: String,
+    composed_shortcut_key: String,
+    trigger_state: TriggerState,
+    joystick_config: Option<JoystickConfig>,
+    amount: Option<i32>,
+) -> bool {
+    log::debug!("请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}', joystick={joystick_config:?}");
+
+    // 对于所有映射类型，我们都从 composed_shortcut_key 解析出 Action
     match parse_composed_key_to_action(&composed_shortcut_key) {
-        Ok(action) => {
+        Ok(mut action) => {
+            // 如果是滚轮动作且自定义了 amount, 则覆盖
+            if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) = (&mut action.primary, amount) {
+                action.primary = PrimaryAction::MouseWheel { amount: new_amount };
+            }
+
             let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
             let id = SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as u64;
 
-            // 创建包含 Action 的新 Mapping
-            let mapping = Mapping {
+            let new_mapping = Mapping {
                 id,
                 composed_button,
                 composed_shortcut_key,
-                action, // <-- 存储解析结果
-                trigger_state, // <-- 使用前端传来的触发状态
+                action,
+                trigger_state,
+                joystick_config,
             };
 
-            cache.push(mapping);
+            cache.push(new_mapping);
             drop(cache);
             save_mappings();
             true
         }
         Err(e) => {
-            log::error!("解析快捷键失败 '{composed_shortcut_key}': {e:?}");
+            log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
             false
         }
     }
@@ -679,33 +733,46 @@ pub fn initialize() {
 /// 核心映射函数，将手柄输入映射到相应的操作。
 /// 遍历所有映射配置，检查手柄状态，并触发相应的操作。
 pub fn map(controller_datas: &ControllerDatas) {
-    // 获取可写的映射配置和触发状态，以及只读的布局映射
-    let mut mappings = GLOBAL_MAPPING_CACHE.write().unwrap();
-
+    let mappings = GLOBAL_MAPPING_CACHE.read().unwrap().clone();
     let layout_map = get_current_controller_layout_map();
-
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
 
-    // 遍历所有映射
-    for mapping in mappings.iter_mut() {
-        // 根据手柄按钮字符串获取对应的枚举值
-        if let Some(button) = layout_map.get(mapping.get_composed_button()) {
-            // 检查该手柄按钮是否被按下
-            if controller_datas.get_button(*button) {
-                // 获取或插入该映射的触发状态
+    for mapping in mappings.iter() {
+        let composed_button = mapping.get_composed_button();
+        
+        // 检查是否为摇杆旋转映射
+        let rotation_match = match composed_button {
+            "LeftStickCW" => Some(controller_datas.left_stick_rotation == JoystickRotation::Clockwise),
+            "LeftStickCCW" => Some(controller_datas.left_stick_rotation == JoystickRotation::CounterClockwise),
+            "RightStickCW" => Some(controller_datas.right_stick_rotation == JoystickRotation::Clockwise),
+            "RightStickCCW" => Some(controller_datas.right_stick_rotation == JoystickRotation::CounterClockwise),
+            _ => None,
+        };
+
+        if let Some(is_rotating) = rotation_match {
+            // --- 处理摇杆旋转映射 (虚拟按键) ---
+            if is_rotating {
                 let trigger_state = trigger_states
                     .entry(mapping.get_id())
                     .or_insert_with(|| mapping.trigger_state.clone());
 
-                // 检查是否可以触发操作
                 if trigger_state.should_trigger() {
-                    // 只需发送解析好的 Action 即可！
-                    ENIGO_SENDER
-                        .send(EnigoCommand::Execute(mapping.action.clone()))
-                        .unwrap();
+                    ENIGO_SENDER.send(EnigoCommand::Execute(mapping.action.clone())).unwrap();
                 }
             } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
-                // 如果按钮未被按下，重置触发状态
+                state.reset();
+            }
+        } else if let Some(button) = layout_map.get(composed_button) {
+            // --- 处理原始按键映射 ---
+            if controller_datas.get_button(*button) {
+                let trigger_state = trigger_states
+                    .entry(mapping.get_id())
+                    .or_insert_with(|| mapping.trigger_state.clone());
+
+                if trigger_state.should_trigger() {
+                    ENIGO_SENDER.send(EnigoCommand::Execute(mapping.action.clone())).unwrap();
+                }
+            } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
                 state.reset();
             }
         }

@@ -1,4 +1,11 @@
 use serde::{Deserialize, Serialize};
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum JoystickRotation {
+    #[default]
+    None,
+    Clockwise,
+    CounterClockwise,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct ControllerStick {
@@ -87,6 +94,10 @@ pub struct ControllerDatas {
     pub left_trigger: ControllerTrigger,
     pub right_trigger: ControllerTrigger,
 
+    // 新增：摇杆旋转状态
+    pub left_stick_rotation: JoystickRotation,
+    pub right_stick_rotation: JoystickRotation,
+
     pub left_stick_center: (f32, f32),
     pub right_stick_center: (f32, f32),
 
@@ -117,6 +128,8 @@ impl ControllerDatas {
                 has_pressure: false,
                 is_pressed: false,
             },
+            left_stick_rotation: JoystickRotation::None,
+            right_stick_rotation: JoystickRotation::None,
             left_stick_center: (0.0, 0.0),
             right_stick_center: (0.0, 0.0),
             limits: ControllerLimits {
