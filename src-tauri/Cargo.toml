@@ -37,18 +37,18 @@ codegen-units = 1   # 最大化优化
 rpath = false
 
 [build-dependencies]
-tauri-build = { version = "2", features = [ "config-json5" ] }
+tauri-build = { version = "2.4.1", features = [ "config-json5" ] }
 
 [dependencies]
 # Tauri 核心
-tauri = { version = "2", features = ["tray-icon", "config-json5"] }
+tauri = { version = "2.8.5", features = ["tray-icon", "config-json5"] }
 
 # Tauri 插件
 tauri-plugin-opener = "2"
 tauri-plugin-autostart = "2"
 
 # 系统交互
-enigo = { version = "0.5", features = ["serde"] }# 输入模拟
+enigo = { version = "0.6.1", features = ["serde", "wayland"] }# 输入模拟
 gilrs = { path = "./third-party/gilrs/gilrs", version = "0.11.0" }
 hidapi = "2"      # HID设备访问
 rusty-xinput = "1"
@@ -56,7 +56,7 @@ rusty-xinput = "1"
 # 数据处理
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "0.8"   # 更新版本
+toml = "0.9.5"   # 更新版本
 
 # 异步
 tokio = { version = "1", features = ["full"] }
