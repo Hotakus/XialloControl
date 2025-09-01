@@ -3,14 +3,37 @@ import {nextTick, reactive} from "vue";
 import {getCurrentWindow} from "@tauri-apps/api/window";
 import {invoke} from "@tauri-apps/api/core";
 import {DeviceInfo} from "@/ts/LeftPanel.ts";
+import { locale } from "@tauri-apps/plugin-os";
 
 let appWindow = getCurrentWindow();
 
+export interface LastConnectedDevice {
+    vid: number;
+    pid: number;
+    sub_pid: number;
+}
+
+export interface Preset {
+    name: string;
+    items: {
+        deadzone: number;
+        deadzone_left: number;
+        mappings: any[];
+    }
+}
+
+export interface UpdateInfo {
+    version: string;
+    body: string;
+    date: string;
+}
 
 // ---------- 响应式应用状态 ----------
 export const state = reactive({
     version: '0.0.0',
     is_release_env: false,
+    locale: 'zh-CN',
+    updateInfo: null as UpdateInfo | null,
 
     titlebar_visible: true,
 
@@ -22,9 +45,12 @@ export const state = reactive({
 
     autoStart: false,
     minimizeToTray: false,
+    rememberLastConnection: false,
+    lastConnectedDevice: null as LastConnectedDevice | null,
     theme: 'light',
     pollingFrequency: 125,
     previousPreset: "default",
+    calibration_mode: "square",
 
     connectButtonDisabled: false,
 
@@ -36,13 +62,27 @@ export const state = reactive({
     keyListenerActive: false,
     keyDetectorText: '点击此处并按下键盘按键、鼠标按键或滚动滚轮',
     keyDisplayText: '',
-    selectedButton: "",
+    rawKeyDisplayText: '', // For logic, un-translated
+    selectedButton: "", // For button mappings
     isMouseKey: false,
     isScanning: false,
 
+    // --- 新增: 摇杆映射相关状态 ---
+    joystick_threshold: 15.0, // 统一的阈值状态
+
+    showUpdateModal: false,
     showCaliModal: false,
+    showPresetEditModal: false,
 
     buttonsText: [{value: '', text: ''}],
+    sticksText: [
+        {value: 'LeftStick', text: '左摇杆 - 按下'},
+        {value: 'RightStick', text: '右摇杆 - 按下'},
+        {value: 'LeftStickCW', text: '左摇杆 - 顺时针'},
+        {value: 'LeftStickCCW', text: '左摇杆 - 逆时针'},
+        {value: 'RightStickCW', text: '右摇杆 - 顺时针'},
+        {value: 'RightStickCCW', text: '右摇杆 - 逆时针'},
+    ],
 
     // main.js 原有的状态
     hasUserSelectedDevice: false,
@@ -55,6 +95,13 @@ export const state = reactive({
     deviceType: 'xbox',
     mappings: [] as any[],
     editingMappingId: null as number | null,
+    // 用于模态窗口中的触发状态绑定
+    triggerState: {
+        initial_interval: 300,
+        min_interval: 100,
+        acceleration: 0.8,
+    },
+    mapping_amount: 1, // For mouse wheel amount in mapping modal
 
     preventNextClick: false,
     currentKeys: {
@@ -90,7 +137,13 @@ export const state = reactive({
             deadzone_left: 0,
             mappings: []
         }
-    }
+    } as Preset,
+
+    presets: [] as string[],
+    
+    // 新建预设相关状态
+    isCreatingNewPreset: false,
+    newPresetName: "",
 });
 
 // ---------- 延迟获取 DOM 元素 ----------

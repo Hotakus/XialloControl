@@ -1,6 +1,6 @@
 use crate::controller::controller::{ADAPTER, CONTROLLER_DATA, CURRENT_DEVICE, TIME_INTERVAL};
 use crate::controller::datas::{
-    ControllerDatas, ControllerLimits, ControllerStick, ControllerTrigger,
+    ControllerDatas, ControllerLimits, ControllerStick, ControllerTrigger, JoystickRotation,
 };
 use num_traits::ToPrimitive;
 use std::time::{Duration, Instant};
@@ -86,6 +86,9 @@ fn average_controller_datas(data_slice: &[ControllerDatas]) -> ControllerDatas {
             has_pressure: false,
             is_pressed: false,
         },
+
+        left_stick_rotation: JoystickRotation::None,
+        right_stick_rotation: JoystickRotation::None,
 
         left_stick_center,
         right_stick_center,

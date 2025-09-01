@@ -55,7 +55,7 @@ function validateCommitMessage(parsed) {
     // 检查类型是否有效
     const validTypes = [
         'feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'revert',
-        'build', 'ci'
+        'build', 'ci', 'Merge', 'merge'
     ];
     if (!validTypes.includes(parsed.type)) {
         errors.push(`类型 "${parsed.type}" 无效。允许的类型: ${validTypes.join(', ')}`);

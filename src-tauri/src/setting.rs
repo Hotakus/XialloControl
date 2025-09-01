@@ -21,6 +21,11 @@ pub struct AppSettings {
     #[serde(default = "bool_false")]
     pub minimize_to_tray: bool,
 
+    #[serde(default = "bool_false")]
+    pub remember_last_connection: bool,
+    #[serde(default = "default_last_connected_device")]
+    pub last_connected_device: Option<LastConnectedDevice>,
+
     #[serde(default = "default_theme")]
     pub theme: String,
 
@@ -28,6 +33,9 @@ pub struct AppSettings {
     pub polling_frequency: u32,
 
     pub previous_preset: String,
+
+    #[serde(default = "default_calibration_mode")]
+    pub calibration_mode: String,
 }
 
 impl Default for AppSettings {
@@ -35,11 +43,25 @@ impl Default for AppSettings {
         Self {
             auto_start: false,
             minimize_to_tray: false,
+            remember_last_connection: false,
+            last_connected_device: None,
             theme: "light".to_string(),
             polling_frequency: DEFAULT_POLLING_FREQUENCY,
             previous_preset: "default".to_string(),
+            calibration_mode: "square".to_string(),
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct LastConnectedDevice {
+    pub vid: u16,
+    pub pid: u16,
+    pub sub_pid: u16,
+}
+
+fn default_last_connected_device() -> Option<LastConnectedDevice> {
+    None
 }
 
 fn bool_true() -> bool {
@@ -53,6 +75,9 @@ fn default_theme() -> String {
 }
 fn default_polling_frequency() -> u32 {
     DEFAULT_POLLING_FREQUENCY
+}
+fn default_calibration_mode() -> String {
+    "square".to_string()
 }
 
 /// 获取当前设置
@@ -113,6 +138,8 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
     // 2. 更新全局缓存
     let mut settings_lock = GLOBAL_SETTINGS.write().unwrap();
     let old_auto_start = settings_lock.auto_start;
+    let old_remember_last_connection = settings_lock.remember_last_connection; // 获取旧值
+    let old_last_connected_device = settings_lock.last_connected_device.clone(); // 获取旧值
     *settings_lock = new_settings.clone();
     drop(settings_lock); // 提前释放锁
 
@@ -137,6 +164,22 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
             }
             log::info!("已禁用开机自启动");
         }
+    }
+
+    if new_settings.remember_last_connection != old_remember_last_connection {
+        log::info!(
+            "remember_last_connection 设置已更改: {} -> {}",
+            old_remember_last_connection,
+            new_settings.remember_last_connection
+        );
+    }
+
+    if new_settings.last_connected_device != old_last_connected_device {
+        log::info!(
+            "last_connected_device 设置已更改: {:?} -> {:?}",
+            old_last_connected_device,
+            new_settings.last_connected_device
+        );
     }
 
     log::info!("设置已成功更新");

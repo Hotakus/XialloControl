@@ -1,15 +1,15 @@
 cfg_if::cfg_if! {
     if #[cfg(target_os = "windows")] {
-        use crate::controller::controller::{get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA};
+        use crate::controller::controller::{self, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA, JoystickSource};
     } else if #[cfg(target_os = "linux")] {
-        use crate::controller::controller::{disconnect_device, DeviceInfo, CONTROLLER_DATA};
+        use crate::controller::controller::{self, disconnect_device, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA, JoystickSource};
     }
 }
 use crate::controller::datas::{ControllerButtons, ControllerDatas};
 use crate::controller::logic;
 use tauri::Emitter;
 
-use crate::controller::controller::physical_disconnect_device;
+use crate::controller::controller::{pack_and_send_data, physical_disconnect_device};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputState;
 
@@ -18,74 +18,28 @@ const MAX_XINPUT_DEVICES: usize = 4;
 /// Xbox控制器状态轮询处理 (Windows)
 #[cfg(target_os = "windows")]
 fn _poll_xbox_controller_state(state: XInputState) {
-    let mut controller_data = ControllerDatas::new();
-
+    // let mut controller_data = ControllerDatas::new();
+    let mut controller_data = CONTROLLER_DATA.write().unwrap();
+    
     // 按钮状态检测
     let buttons = [
-        (
-            state.south_button(),
-            ControllerButtons::South,
-            "Xbox A 键（South）",
-        ),
-        (
-            state.east_button(),
-            ControllerButtons::East,
-            "Xbox B 键（East）",
-        ),
-        (
-            state.north_button(),
-            ControllerButtons::North,
-            "Xbox Y 键（North）",
-        ),
-        (
-            state.west_button(),
-            ControllerButtons::West,
-            "Xbox X 键（West）",
-        ),
-        (
-            state.guide_button(),
-            ControllerButtons::Guide,
-            "Xbox Guide 键",
-        ),
-        (
-            state.start_button(),
-            ControllerButtons::Start,
-            "Xbox Start 键",
-        ),
-        (
-            state.select_button(),
-            ControllerButtons::Back,
-            "Xbox Select 键",
-        ),
-        (
-            state.arrow_down(),
-            ControllerButtons::Down,
-            "Xbox 方向键（Down）",
-        ),
-        (
-            state.arrow_left(),
-            ControllerButtons::Left,
-            "Xbox 方向键（Left）",
-        ),
-        (
-            state.arrow_right(),
-            ControllerButtons::Right,
-            "Xbox 方向键（Right）",
-        ),
+        (state.south_button(), ControllerButtons::South, "Xbox A 键（South）"),
+        (state.east_button(), ControllerButtons::East, "Xbox B 键（East）"),
+        (state.north_button(), ControllerButtons::North, "Xbox Y 键（North）"),
+        (state.west_button(), ControllerButtons::West, "Xbox X 键（West）"),
+        (state.guide_button(), ControllerButtons::Guide, "Xbox Guide 键"),
+        (state.start_button(), ControllerButtons::Start, "Xbox Start 键"),
+        (state.select_button(), ControllerButtons::Back, "Xbox Select 键"),
+        (state.arrow_down(), ControllerButtons::Down, "Xbox 方向键（Down）"),
+        (state.arrow_left(), ControllerButtons::Left, "Xbox 方向键（Left）"),
+        (state.arrow_right(), ControllerButtons::Right, "Xbox 方向键（Right）"),
         (state.arrow_up(), ControllerButtons::Up, "Xbox 方向键（Up）"),
         (state.left_shoulder(), ControllerButtons::LB, "Xbox LB 键"),
         (state.right_shoulder(), ControllerButtons::RB, "Xbox RB 键"),
-        (
-            state.left_thumb_button(),
-            ControllerButtons::LStick,
-            "Xbox 左摇杆按键",
-        ),
-        (
-            state.right_thumb_button(),
-            ControllerButtons::RStick,
-            "Xbox 右摇杆按键",
-        ),
+        (state.left_thumb_button(), ControllerButtons::LStick, "Xbox 左摇杆按键"),
+        (state.right_thumb_button(), ControllerButtons::RStick, "Xbox 右摇杆按键"),
     ];
+
 
     for (pressed, button, label) in buttons {
         controller_data.set_button(button, pressed);
@@ -99,35 +53,50 @@ fn _poll_xbox_controller_state(state: XInputState) {
     let (rx, ry) = state.right_stick_raw();
 
     // 归一化处理
-    controller_data.left_stick.x = logic::normalize(lx, -32768, 32767, -1.0, 1.0).unwrap() as f32;
-    controller_data.left_stick.y = logic::normalize(ly, -32768, 32767, -1.0, 1.0).unwrap() as f32;
-    controller_data.right_stick.x = logic::normalize(rx, -32768, 32767, -1.0, 1.0).unwrap() as f32;
-    controller_data.right_stick.y = logic::normalize(ry, -32768, 32767, -1.0, 1.0).unwrap() as f32;
+    let raw_lx = logic::normalize(lx, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+    let raw_ly = logic::normalize(ly, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+    let raw_rx = logic::normalize(rx, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+    let raw_ry = logic::normalize(ry, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
+
+    // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
+    {
+        let mut raw_data = crate::controller::controller::RAW_CONTROLLER_DATA.write().unwrap();
+        raw_data.left_stick.x = raw_lx;
+        raw_data.left_stick.y = raw_ly;
+        raw_data.right_stick.x = raw_rx;
+        raw_data.right_stick.y = raw_ry;
+    }
+
+    let (final_lx, final_ly, final_rx, final_ry) = controller::get_calibrated_stick_values(raw_lx, raw_ly, raw_rx, raw_ry);
+
+    controller_data.left_stick.x = final_lx;
+    controller_data.left_stick.y = final_ly;
+    controller_data.right_stick.x = final_rx;
+    controller_data.right_stick.y = final_ry;
+
+    // --- 新增: 使用通用函数计算并存储摇杆旋转状态 ---
+    controller_data.left_stick_rotation = controller::update_joystick_rotation_state(JoystickSource::LeftStick, final_lx, final_ly);
+    controller_data.right_stick_rotation = controller::update_joystick_rotation_state(JoystickSource::RightStick, final_rx, final_ry);
+
+    // 打印旋转状态
+    // log::info!(
+    //     "{:?}, {:?}",
+    //     controller_data.left_stick_rotation,
+    //     controller_data.right_stick_rotation
+    // );
 
     // 触发器状态读取
     let lt = state.left_trigger();
     let rt = state.right_trigger();
-    let lt_bool = state.left_trigger_bool();
-    let rt_bool = state.right_trigger_bool();
 
-    controller_data.left_trigger.value = lt as f32;
-    controller_data.right_trigger.value = rt as f32;
-    controller_data.left_trigger.is_pressed = lt_bool;
-    controller_data.right_trigger.is_pressed = rt_bool;
+    controller_data.left_trigger.value = logic::normalize(lt, 0, 255, 0.0, 1.0).unwrap() as f32;
+    controller_data.right_trigger.value = logic::normalize(rt, 0, 255, 0.0, 1.0).unwrap() as f32;
+    controller_data.left_trigger.is_pressed = state.left_trigger_bool();
+    controller_data.right_trigger.is_pressed = state.right_trigger_bool();
 
     controller_data.left_trigger.has_pressure = true;
 
-    let mut global_controller_data = CONTROLLER_DATA.write().unwrap();
-    if *global_controller_data != controller_data {
-        *global_controller_data = controller_data;
-
-        let app_handle = get_app_handle();
-        // TODO: 发送精简数据
-        app_handle
-            .emit("update_controller_data", controller_data)
-            .expect("TODO: panic message");
-    }
-    // println!("({lx}, {ly}) - ({rx}, {ry}) {}, {}", state.left_trigger(), state.left_trigger_bool());
+    pack_and_send_data(&controller_data);
 }
 
 /// Xbox控制器轮询入口 (Windows)
@@ -146,15 +115,31 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
                 let vid = format!("{:04x}", xinput_caps_ex.vendor_id);
                 let pid = format!("{:04x}", xinput_caps_ex.product_id);
 
-                if vid.eq_ignore_ascii_case(&_device.vendor_id)
-                    && pid.eq_ignore_ascii_case(_device.sub_product_id.as_deref().unwrap())
+                // log::warn!("{vid:#?}/{pid:#?} - {:#?}/{:#?}/{:#?}",
+                //     _device.vendor_id,
+                //     _device.product_id.as_deref().unwrap(),
+                //     _device.sub_product_id.as_deref().unwrap());
+
+                let d_vid = &_device.vendor_id;
+                let d_pid = &_device.product_id.as_deref().unwrap();
+                let d_sub_pid = &_device.sub_product_id.as_deref().unwrap();
+
+                if vid.eq_ignore_ascii_case(d_vid)
+                    && (pid.eq_ignore_ascii_case(d_pid) || pid.eq_ignore_ascii_case(d_sub_pid))
                 {
                     got_device = true;
                     _poll_xbox_controller_state(state);
                     break;
+                } else {
+                    // 错误
+                    log::error!("Xbox 控制器连接错误，数据不匹配 ({vid:#?}/{pid:#?}) - ({:#?}/{:#?})",
+                        _device.vendor_id,
+                        _device.sub_product_id.as_deref().unwrap()
+                    );
                 }
             }
             Err(_) => {
+                log::error!("Xbox 控制器连接错误，设备索引 {i} 不存在");
                 got_device = false;
             }
         }

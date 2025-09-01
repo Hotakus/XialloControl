@@ -1,12 +1,18 @@
 import {defineConfig} from "vite";
 import vue from "@vitejs/plugin-vue";
+import svgLoader from "vite-svg-loader"
 
-// @ts-expect-error process is a nodejs global
+// ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-    plugins: [vue()],
+    plugins: [
+        vue(),
+        svgLoader({
+            svgo: false, // 是否开启压缩，可以先关掉避免 Inkscape 导出的属性被删掉
+        }),
+    ],
 
     resolve: {
         alias: {

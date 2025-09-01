@@ -1,6 +1,6 @@
-import {appWindow, state} from "@/ts/global_states.ts";
-import {invoke} from "@tauri-apps/api/core";
-import {updateControllerButtons} from "@/ts/RightPanel.ts";
+import { appWindow, state } from "@/ts/global_states.ts";
+import { invoke } from "@tauri-apps/api/core";
+import { updateControllerButtons } from "@/ts/RightPanel.ts";
 
 // 更新状态消息
 export function updateStatusMessage(message: string, isError = false) {
@@ -34,7 +34,7 @@ export async function disconnectCurrentDevice() {
     updateStatusMessage(`正在断开设备: ${deviceName}...`);
 
     try {
-        let res = await invoke("disconnect_device", {deviceName});
+        let res = await invoke("disconnect_device", { deviceName });
         if (res) {
             updateStatusMessage(`设备已断开`);
             state.isConnected = false;
@@ -185,7 +185,7 @@ export async function scanDevices() {
 
     icon?.addEventListener("animationend", () => {
         icon.classList.remove("spin");
-    }, {once: true});
+    }, { once: true });
 
     updateStatusMessage(`扫描完成！发现${state.currentDevices.length}个可用设备`);
     state.isScanning = false;
@@ -219,7 +219,7 @@ export async function toggleDeviceConnection() {
         // 如果当前设备已连接，则断开连接
         if (state.isConnected) {
             updateStatusMessage(`正在连接设备: ${deviceName}...`);
-            if (await invoke("use_device", {deviceName})) {
+            if (await invoke("use_device", { deviceName })) {
                 updateStatusMessage(`设备 ${deviceName} 已成功连接`);
                 state.isConnected = true;
                 state.connectIcon = connectStatusIcons.connected;
@@ -232,7 +232,7 @@ export async function toggleDeviceConnection() {
         } else {
             // 如果当前设备未连接，则连接设备
             updateStatusMessage(`正在断开设备: ${deviceName}...`);
-            if (await invoke("disconnect_device", {deviceName})) {
+            if (await invoke("disconnect_device", { deviceName })) {
                 updateStatusMessage(`设备已断开`);
                 state.isConnected = false;
                 state.connectIcon = connectStatusIcons.disconnected;
@@ -263,3 +263,17 @@ appWindow.listen("physical_connect_status", async (event) => {
     resetDevice();
     await queryDevice();
 })
+
+appWindow.listen("auto_connect_success", async (event) => {
+    const deviceInfo = event.payload as DeviceInfo;
+    state.isConnected = true;
+    state.connectIcon = connectStatusIcons.connected;
+    state.deviceSelected = deviceInfo;
+    state.hasUserSelectedDevice = true;
+
+    // find by name
+    state.deviceSelectedIndex = state.currentDevices.findIndex(device => device.name === deviceInfo.name).toString();
+
+    updateStatusMessage(`设备 ${deviceInfo.name} 已自动连接`);
+    updateControllerButtons();
+});

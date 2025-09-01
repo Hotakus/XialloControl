@@ -1,5 +1,6 @@
 // src/windowHeader.ts
 import {appWindow, invoke, state} from "@/ts/global_states";
+import {updateStatusMessage} from "@/ts/LeftPanel";
 
 // ---------- titlebar 显示隐藏逻辑 ----------
 export async function updateTitlebar() {
@@ -30,4 +31,18 @@ export async function close() {
     console.log("close button clicked");
     if (state.minimizeToTray) await appWindow.hide();
     else await appWindow.close();
+}
+
+// ---------- 更新逻辑 ----------
+export async function performUpdate() {
+    if (!invoke) return;
+    try {
+        updateStatusMessage('正在下载并安装更新...');
+        await invoke('perform_update');
+        // 后端会在更新成功后自动重启
+        updateStatusMessage('更新成功，正在重启应用...');
+    } catch (error) {
+        console.error('Perform update failed:', error);
+        updateStatusMessage(`更新失败: ${error}`, true);
+    }
 }

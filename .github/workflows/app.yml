@@ -40,8 +40,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           failOnError: true
           owner: 'Hotakus'
-          repo: 'XenoControl'
-          mode: 'PR'  # [PR, COMMIT, HYBRID]
+          repo: 'XialloControl'
+          mode: 'HYBRID'  # [PR, COMMIT, HYBRID]
       - name: Print Changelog
         run: |
           echo "Changelog: ${{ steps.changelog_builder.outputs.changelog }}"
@@ -79,9 +79,23 @@ jobs:
         with:
           node-version: lts/*
       - name: Install pnpm
-        run: npm install -g pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       # Rust
       - uses: dtolnay/rust-toolchain@stable
@@ -107,9 +121,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
-          # 这里 tagName 的逻辑可以简化一下，只在 tag push 时才使用 __VERSION__ 占位符
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && 'v__VERSION__' || '' }}
-          releaseName: "XenoControl Release v__VERSION__"
+          releaseName: "XialloControl Release v__VERSION__"
           # 从上游 Job 的 outputs 中获取 changelog！
           releaseBody: ${{ needs.generate-changelog.outputs.changelog }}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}

@@ -22,7 +22,7 @@ body {
 }
 
 :root {
-    --primary-bg: #2f3542;
+    --primary-bg: #4c5a66;
     --primary-text: #ffffff;
     --secondary-bg: #f7f9fb;
     --card-bg: #ffffff;
@@ -32,12 +32,28 @@ body {
     --active-shadow: 0 0 15px rgba(0, 0, 0, 0.3) inset;
     --overlay-bg: rgba(0, 0, 0, 0.5);
     --modal-bg: #ffffff;
-    --modal-width: 500px;
-    --danger: #e74c3c;
-    --success: #65c78e;
+    --modal-width: 800px;
+    --danger: #d3685c;
     --indicator-off: #341c1c;
     --indicator-on: #42d589;
     --window-header-height: 30px;
+
+    --crosshair-color: #c1d1d4;
+
+    --success-text: #38a164;
+    --success-bg: #e6f7ee;
+
+    --button-base-bg: #6489c9;
+    --button-base-bg-hover: #4c86dd;
+    --button-base-bg-active: #2a5dbf;
+
+    --button-connected-bg: #3ac2a4;
+    --button-connected-hover-bg: #37b69a;
+    --button-connected-active-bg: #3bc4a6;
+
+    --slider-bg: #f6f6f7;
+    --slider-filled-bg: #6489c9;
+    --slider-border: #cad4da;
 }
 
 * {
@@ -199,6 +215,7 @@ body {
 
 .card {
     background: var(--card-bg);
+    /*background: #9c2c37;*/
     border-radius: var(--border-radius);
     box-shadow: var(--card-shadow);
     padding: 15px 20px;
@@ -234,7 +251,7 @@ body {
     padding: 0;
     border: none;
     border-radius: 8px;
-    background-color: #4c8bf5;
+    background-color: var(--button-base-bg);
     color: white;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -244,13 +261,13 @@ body {
 }
 
 .preset-controls button:hover {
-    background-color: #3a7de0;
+    background-color: var(--button-base-bg-hover);
     transform: translateY(-1px);
 }
 
 .preset-controls button:active {
     transform: translateY(1px);
-    background-color: #2a5dbf;
+    background-color: var(--button-base-bg-active);
     box-shadow: var(--active-shadow);
     transition: none;
 }
@@ -274,9 +291,16 @@ body {
 
 .controller-image {
     flex: 1;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect x='20' y='40' width='160' height='120' rx='20' fill='%23333'/%3E%3Ccircle cx='60' cy='80' r='15' fill='%23fff'/%3E%3Ccircle cx='140' cy='80' r='15' fill='%23fff'/%3E%3Crect x='80' y='110' width='40' height='20' rx='5' fill='%23fff'/%3E%3C/svg%3E") center/contain no-repeat;
     border-radius: var(--border-radius);
     min-height: 0;
+    position: relative;
+}
+
+.controller-svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* 保持比例缩放 */
+    display: block;
 }
 
 .tabs {
@@ -358,7 +382,7 @@ body {
     padding: 0;
     border: none;
     border-radius: 8px;
-    background-color: #4c8bf5;
+    background-color: var(--button-base-bg);
     color: white;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -368,13 +392,13 @@ body {
 }
 
 .button-map-controls button:hover {
-    background-color: #3a7de0;
+    background-color: var(--button-base-bg-hover);
     transform: translateY(-1px);
 }
 
 .button-map-controls button:active {
     transform: translateY(1px);
-    background-color: #2a5dbf;
+    background-color: var(--button-base-bg-active);
     box-shadow: var(--active-shadow);
     transition: none;
 }
@@ -472,7 +496,7 @@ body {
 }
 
 .item-action-btn.delete {
-    color: #e74c3c;
+    color: var(--danger);
 }
 
 .item-action-btn:active {
@@ -535,7 +559,7 @@ select {
 
 select:focus {
     outline: none;
-    border-color: #4c8bf5;
+    border-color: var(--button-base-bg);
     box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.3);
 }
 
@@ -612,33 +636,33 @@ select:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #4c8bf5;
+    background-color: var(--button-base-bg);
     color: white;
     flex-shrink: 0;
 }
 
 .icon-button:hover {
-    background-color: #3a7de0;
+    background-color: var(--button-base-bg-hover);
     transform: translateY(-1px);
 }
 
 .icon-button:active {
     transform: translateY(1px);
-    background-color: #2a5dbf;
+    background-color: var(--button-base-bg-active);
     box-shadow: var(--active-shadow);
     transition: none;
 }
 
 .icon-button.connected {
-    background-color: #28a745;
+    background-color: var(--button-connected-bg);
 }
 
 .icon-button.connected:hover {
-    background-color: #218838;
+    background-color: var(--button-connected-hover-bg);
 }
 
 .icon-button.connected:active {
-    background-color: #1e7e34;
+    background-color: var(--button-connected-active-bg);
 }
 
 .icon-button svg {
@@ -689,13 +713,19 @@ select:focus {
 .slider-container {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 1px;
     flex-grow: 1;
     min-width: 150px;
 }
 
 .slider-container input[type="range"] {
     flex: 1;
+    background: var(--slider-bg);
+    border: 1px solid var(--slider-border);
+    border-radius: 5px;
+    height: 10px;
+    outline: none;
+    transition: background 0.3s ease;
 }
 
 .slider-container span {
@@ -745,7 +775,7 @@ select:focus {
 }
 
 input:checked + .slider {
-    background-color: #4c8bf5;
+    background-color: var(--button-base-bg);
 }
 
 input:checked + .slider:before {
@@ -779,7 +809,7 @@ input:checked + .slider:before {
 
 .polling-container input:focus {
     outline: none;
-    border-color: #4c8bf5;
+    border-color: var(--button-base-bg);
     box-shadow: 0 0 0 2px rgba(76, 139, 245, 0.3);
 }
 
@@ -796,7 +826,7 @@ input:checked + .slider:before {
     font-size: 13px;
     text-align: center;
     background: #f0f7ff;
-    color: #4c8bf5;
+    color: var(--button-base-bg);
 }
 
 .status-message.error {
@@ -805,8 +835,8 @@ input:checked + .slider:before {
 }
 
 .status-message.success {
-    background: #e6f7ee;
-    color: #28a745;
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 @keyframes pulse {
@@ -927,7 +957,7 @@ input:checked + .slider:before {
 .modal-header {
     background: var(--primary-bg);
     color: var(--primary-text);
-    padding: 15px 20px;
+    padding: 10px 10px;
     font-size: 18px;
     font-weight: bold;
     display: flex;
@@ -983,7 +1013,7 @@ input:checked + .slider:before {
 
 .form-control:focus {
     outline: none;
-    border-color: #4c8bf5;
+    border-color: var(--button-base-bg);
     box-shadow: 0 0 0 3px rgba(76, 139, 245, 0.2);
 }
 
@@ -1009,7 +1039,6 @@ input:checked + .slider:before {
     text-align: center;
     padding: 0 20px;
     -webkit-user-select: none;
-    user-select: none;
     -webkit-user-drag: none;
 }
 
@@ -1020,8 +1049,8 @@ input:checked + .slider:before {
 
 .detector-area.active {
     background: #e6f0ff;
-    border-color: #4c8bf5;
-    color: #4c8bf5;
+    border-color: var(--button-base-bg);
+    color: var(--button-base-bg);
 }
 
 .detector-hint {
@@ -1050,16 +1079,16 @@ input:checked + .slider:before {
 }
 
 .btn-primary {
-    background: #4c8bf5;
+    background: var(--button-base-bg);
     color: white;
 }
 
 .btn-primary:hover {
-    background: #3a7de0;
+    background: var(--button-base-bg-hover);
 }
 
 .btn-primary:active {
-    background: #2a5dbf;
+    background: var(--button-base-bg-active);
     box-shadow: var(--active-shadow);
 }
 
@@ -1247,7 +1276,7 @@ body.theme-dark .button-map-controls button:hover {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #4c8bf5;
+    background: var(--button-base-bg);
     flex-grow: 1;
 }
 
@@ -1338,12 +1367,11 @@ body.theme-dark .button-map-controls button:hover {
 .joystick-cali-modal .modal-body {
     padding: 15px;
     display: flex;
-    flex-direction: row;
     /* 移除 flex-wrap，强制子元素横向排列 */
     /* flex-wrap: wrap; */
     gap: 15px;
     justify-content: center;
-    align-items: center;
+    /* align-items: center; */
     flex-grow: 1;
     overflow-y: auto;
 }
@@ -1378,7 +1406,7 @@ body.theme-dark .button-map-controls button:hover {
 .joystick-handle {
     width: 10px;
     height: 10px;
-    background: #4c8bf5;
+    background: var(--button-base-bg);
     border-radius: 50%;
     position: absolute;
     top: 55px;
@@ -1398,8 +1426,8 @@ body.theme-dark .button-map-controls button:hover {
     width: 100%;
     height: 100%;
     background:
-            linear-gradient(to right, transparent 49.5%, #dce2eb 50%, transparent 50.5%),
-            linear-gradient(to bottom, transparent 49.5%, #dce2eb 50%, transparent 50.5%);
+            linear-gradient(to right, transparent 49.5%, var(--crosshair-color) 50%, transparent 50.5%),
+            linear-gradient(to bottom, transparent 49.5%, var(--crosshair-color) 50%, transparent 50.5%);
     z-index: 1;
     pointer-events: none;
     border-radius: 50%;
@@ -1433,7 +1461,7 @@ body.theme-dark .button-map-controls button:hover {
 .progress-fill {
     width: 100%;
     height: 0%;
-    background-color: #4c8bf5;
+    background-color: var(--button-base-bg);
     transition: height 0.1s ease-out;
     position: absolute;
     bottom: 0;
@@ -1589,4 +1617,27 @@ body.theme-dark .button-map-controls button:hover {
         font-size: 18px;
         min-width: 180px;
     }
+}
+
+/* Mapping Modal Layout */
+.modal-content-wrapper {
+  display: flex;
+  gap: 20px;
+}
+
+.modal-left-panel, .modal-right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.divider {
+  width: 1px;
+  background-color: #e0e4eb;
+  align-self: stretch;
+}
+
+.modal-right-panel .form-group {
+    margin-bottom: 0;
 }

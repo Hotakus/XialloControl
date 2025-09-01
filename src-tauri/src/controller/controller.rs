@@ -2,9 +2,9 @@
 
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
-use crate::controller::datas::{ControllerButtons, ControllerDatas};
-use crate::{mapping, xeno_utils};
-use gilrs::{Axis, Button, Event, EventType, Gamepad, Gilrs};
+use crate::controller::datas::{CompactPressureDatas, ControllerButtons, ControllerDatas};
+use crate::{mapping, preset, xeno_utils};
+use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -14,12 +14,41 @@ use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
 use crate::controller::xbox;
-use crate::setting::get_setting;
+use crate::setting::{self, get_setting, LastConnectedDevice, AppSettings};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputHandle;
 use uuid::Uuid;
 
+use std::collections::HashMap;
 // ---------------------- 结构体定义 ----------------------
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum JoystickSource {
+    LeftStick,
+    RightStick,
+}
+
+use crate::controller::datas::JoystickRotation;
+
+/// 摇杆旋转的物理状态 (用于在 controller 模块内部追踪)
+#[derive(Clone, Debug)]
+pub struct JoystickRotationState {
+    last_angle: f32,
+    was_active: bool,
+    current_rotation: JoystickRotation,
+    last_rotation_time: Instant,
+}
+
+impl Default for JoystickRotationState {
+    fn default() -> Self {
+        Self {
+            last_angle: 0.0,
+            was_active: false,
+            current_rotation: JoystickRotation::None,
+            last_rotation_time: Instant::now(),
+        }
+    }
+}
+
 /// 游戏控制器设备信息
 #[derive(Debug, Eq, Serialize, Deserialize, Clone, PartialEq)]
 pub struct DeviceInfo {
@@ -71,6 +100,7 @@ struct SupportedDevicesConfig {
 // ---------------------- 枚举定义 ----------------------
 /// 控制器类型分类
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Hash)]
 pub enum ControllerType {
     /// Xbox 系列控制器
     Xbox,
@@ -106,6 +136,22 @@ pub static CURRENT_DEVICE: Lazy<RwLock<DeviceInfo>> = Lazy::new(|| {
 /// 当前控制器采样数据（高频读取，偶尔写入）
 pub static CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
     Lazy::new(|| RwLock::new(ControllerDatas::new()));
+
+/// 原始控制器采样数据，专用于校准
+pub static RAW_CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
+    Lazy::new(|| RwLock::new(ControllerDatas::new()));
+
+pub static PREV_CONTROLLER_DATA: Lazy<RwLock<ControllerDatas>> =
+    Lazy::new(|| RwLock::new(ControllerDatas::new()));
+pub static PREV_BTN_DATA: Lazy<RwLock<u32>> =
+    Lazy::new(|| RwLock::new(0));
+
+pub static PREV_PRESSURE_DATA: Lazy<RwLock<CompactPressureDatas>> =
+    Lazy::new(|| RwLock::new(CompactPressureDatas::new()));
+
+/// 全局摇杆旋转物理状态 (由 controller 模块独占)
+pub static JOYSTICK_ROTATION_STATES: Lazy<RwLock<HashMap<JoystickSource, JoystickRotationState>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// 自适应采样器实例（结构复杂，保持 Mutex）
 #[allow(dead_code)]
@@ -324,7 +370,7 @@ pub fn get_controller_data() -> ControllerDatas {
 ///
 /// 触发 "update_devices" 事件通知前端
 #[tauri::command]
-pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
+pub fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
     let devices = _query_devices();
     if let Err(e) = app.emit("update_devices", devices.clone()) {
         log::error!("发送 update_devices 事件失败: {e}");
@@ -333,16 +379,38 @@ pub async fn query_devices(app: AppHandle) -> Vec<DeviceInfo> {
     devices
 }
 
+/// 更新设置中上次连接的设备信息
+fn update_last_connected_device_setting(device_info: Option<DeviceInfo>) {
+    let mut settings = get_setting();
+    settings.last_connected_device = device_info.map(|d| LastConnectedDevice {
+        vid: u16::from_str_radix(&d.vendor_id, 16).unwrap_or(0),
+        pid: u16::from_str_radix(&d.product_id.unwrap_or_default(), 16).unwrap_or(0),
+        sub_pid: u16::from_str_radix(&d.sub_product_id.unwrap_or_default(), 16).unwrap_or(0),
+    });
+    let app_handle = get_app_handle();
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = setting::update_settings(app_handle, settings).await {
+            log::error!("保存上次连接设备信息失败: {:?}", e);
+        }
+    });
+}
+
 /// 选择使用指定设备命令 (Tauri 前端调用)
 #[tauri::command]
-pub async fn use_device(device_name: String) -> bool {
+pub fn use_device(device_name: String) -> bool {
     log::debug!("尝试使用设备: {device_name}");
     let device = _find_device_by_name(&device_name);
     match device {
-        Some(device) => {
+        Some(device_info) => {
             let mut current_device = CURRENT_DEVICE.write().unwrap();
-            *current_device = device;
+            *current_device = device_info.clone();
             log::info!("✅ 使用设备: {}", current_device.name);
+            
+            // 加载与此设备关联的校准数据
+            crate::controller::calibrate::load_calibration(&device_info);
+
+            drop(current_device); // 显式释放锁
+            update_last_connected_device_setting(Some(device_info));
             true
         }
         None => {
@@ -358,6 +426,12 @@ pub fn disconnect_device() -> bool {
     let mut current_device = CURRENT_DEVICE.write().unwrap();
     *current_device = default_devices()[0].clone();
     log::info!("✅ 已断开当前设备");
+
+    // 重置全局校准数据
+    crate::controller::calibrate::reset_calibration();
+
+    drop(current_device); // 显式释放锁
+    update_last_connected_device_setting(None);
     true
 }
 
@@ -377,6 +451,7 @@ pub fn physical_disconnect_device() -> bool {
     }
     disconnect_device()
 }
+
 
 /// 设置轮询频率命令 (Tauri 前端调用)
 ///
@@ -404,106 +479,173 @@ pub fn set_frequency(freq: u32) {
     );
 }
 
+#[tauri::command]
+pub fn need_rumble() {
+
+}
+
 // ---------------------- 设备轮询 ----------------------
+
+pub fn pack_and_send_data(controller_data: &ControllerDatas) {
+    let mut prev_controller_data = PREV_CONTROLLER_DATA.write().unwrap();
+    if controller_data.eq(&prev_controller_data) {
+        // 无变化，不发送数据
+        return;
+    }
+
+    // 数据有变化则进一步比较具体值
+    // 按键数据变化
+    let app_handle = get_app_handle();
+    let compact_data = controller_data.as_compact();
+    if let Err(e) = app_handle.emit("update_controller_compact_datas", compact_data) {
+        log::error!("按键数据发送失败: {e}");
+    }
+    drop(app_handle);
+
+    *prev_controller_data = *controller_data;
+}
+
+pub(crate) fn get_calibrated_stick_values(raw_lx: f32, raw_ly: f32, raw_rx: f32, raw_ry: f32) -> (f32, f32, f32, f32) {
+    let preset = preset::get_current_preset();
+    let cali_data = crate::controller::calibrate::get_current_calibration();
+
+    let (lx, ly) = crate::controller::calibrate::apply_calibration(
+        raw_lx,
+        raw_ly,
+        preset.items.deadzone_left,
+        &cali_data.left_stick,
+    );
+
+    let (rx, ry) = crate::controller::calibrate::apply_calibration(
+        raw_rx,
+        raw_ry,
+        preset.items.deadzone,
+        &cali_data.right_stick,
+    );
+    (lx, ly, rx, ry)
+}
+
+
+/// 通用函数: 计算并更新单个摇杆的旋转状态, 并返回旋转状态
+pub fn update_joystick_rotation_state(
+    source: JoystickSource,
+    x: f32,
+    y: f32,
+) -> JoystickRotation {
+    const ROTATION_THRESHOLD: f32 = 0.01; // 旋转检测的最小角度变化阈值
+    const JUMP_THRESHOLD: f32 = std::f32::consts::PI; // 角度跳变的阈值, 约180度
+    const ROTATION_TIMEOUT_MS: u128 = 50; // 旋转状态维持的超时时间 (毫秒)
+
+    let mut rotation_states = JOYSTICK_ROTATION_STATES.write().unwrap();
+    let mut state = rotation_states.remove(&source).unwrap_or_default();
+
+    let is_active = x != 0.0 || y != 0.0;
+
+    if is_active {
+        let angle = (-y).atan2(x);
+        if state.was_active {
+            let mut delta = angle - state.last_angle;
+            if delta > std::f32::consts::PI { delta -= 2.0 * std::f32::consts::PI; }
+            else if delta < -std::f32::consts::PI { delta += 2.0 * std::f32::consts::PI; }
+
+            // 检查是否为大幅度跳变 (回弹), 如果是, 则重置状态
+            if delta.abs() > JUMP_THRESHOLD {
+                state.current_rotation = JoystickRotation::None;
+            } else if delta > ROTATION_THRESHOLD {
+                state.current_rotation = JoystickRotation::Clockwise;
+                state.last_rotation_time = Instant::now();
+            } else if delta < -ROTATION_THRESHOLD {
+                state.current_rotation = JoystickRotation::CounterClockwise;
+                state.last_rotation_time = Instant::now();
+            }
+        }
+        state.last_angle = angle;
+    } else {
+        // 如果摇杆回到死区, 直接重置状态
+        state.current_rotation = JoystickRotation::None;
+    }
+    
+    // 超时检查: 如果距离上次有效旋转超过一定时间, 则认为旋转已停止
+    if state.last_rotation_time.elapsed().as_millis() > ROTATION_TIMEOUT_MS {
+        state.current_rotation = JoystickRotation::None;
+    }
+
+    state.was_active = is_active;
+    let rotation = state.current_rotation;
+    rotation_states.insert(source, state);
+    rotation
+}
 
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
+    let mut controller_data = CONTROLLER_DATA.write().unwrap();
 
     let buttons = [
-        (
-            gamepad.is_pressed(Button::South),
-            ControllerButtons::South,
-            "South",
-        ),
-        (
-            gamepad.is_pressed(Button::East),
-            ControllerButtons::East,
-            "East",
-        ),
-        (
-            gamepad.is_pressed(Button::West),
-            ControllerButtons::West,
-            "West",
-        ),
-        (
-            gamepad.is_pressed(Button::North),
-            ControllerButtons::North,
-            "North",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadDown),
-            ControllerButtons::Down,
-            "DPadDown",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadLeft),
-            ControllerButtons::Left,
-            "DPadLeft",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadRight),
-            ControllerButtons::Right,
-            "DPadRight",
-        ),
-        (
-            gamepad.is_pressed(Button::DPadUp),
-            ControllerButtons::Up,
-            "DPadUp",
-        ),
-        (
-            gamepad.is_pressed(Button::LeftTrigger),
-            ControllerButtons::LB,
-            "LB",
-        ),
-        (
-            gamepad.is_pressed(Button::RightTrigger),
-            ControllerButtons::RB,
-            "RB",
-        ),
-        (
-            gamepad.is_pressed(Button::LeftThumb),
-            ControllerButtons::LStick,
-            "LStick",
-        ),
-        (
-            gamepad.is_pressed(Button::RightThumb),
-            ControllerButtons::RStick,
-            "RStick",
-        ),
-        (
-            gamepad.is_pressed(Button::Select),
-            ControllerButtons::Back,
-            "Select",
-        ),
-        (
-            gamepad.is_pressed(Button::Start),
-            ControllerButtons::Start,
-            "Start",
-        ),
+        (gamepad.is_pressed(gilrs::Button::South), ControllerButtons::South),
+        (gamepad.is_pressed(gilrs::Button::East), ControllerButtons::East),
+        (gamepad.is_pressed(gilrs::Button::West), ControllerButtons::West),
+        (gamepad.is_pressed(gilrs::Button::North), ControllerButtons::North),
+        (gamepad.is_pressed(gilrs::Button::DPadDown), ControllerButtons::Down),
+        (gamepad.is_pressed(gilrs::Button::DPadLeft), ControllerButtons::Left),
+        (gamepad.is_pressed(gilrs::Button::DPadRight), ControllerButtons::Right),
+        (gamepad.is_pressed(gilrs::Button::DPadUp), ControllerButtons::Up),
+        (gamepad.is_pressed(gilrs::Button::LeftTrigger), ControllerButtons::LB),
+        (gamepad.is_pressed(gilrs::Button::RightTrigger), ControllerButtons::RB),
+        (gamepad.is_pressed(gilrs::Button::LeftThumb), ControllerButtons::LStick),
+        (gamepad.is_pressed(gilrs::Button::RightThumb), ControllerButtons::RStick),
+        (gamepad.is_pressed(gilrs::Button::Select), ControllerButtons::Back),
+        (gamepad.is_pressed(gilrs::Button::Start), ControllerButtons::Start),
+        (gamepad.is_pressed(gilrs::Button::Mode), ControllerButtons::Guide),
     ];
 
-    for (pressed, button, name) in buttons {
-        let mut controller_data = CONTROLLER_DATA.write().unwrap();
+    for (pressed, button) in buttons {
         controller_data.set_button(button, pressed);
     }
 
-    // log::debug!("---------------- {:#?}", gamepad.id());
-    // let left_stick_x = gamepad.axis_data(Axis::LeftStickX).unwrap().value();
-    // let left_stick_y = gamepad.axis_data(Axis::LeftStickY).unwrap().value();
-    // log::debug!(
-    //     "Left Stick X: {:#?}, Left Stick Y: {:#?}",
-    //     left_stick_x,
-    //     left_stick_y
-    // );
-    //
-    // let right_stick_x = gamepad.axis_data(Axis::RightStickX).unwrap().value();
-    // let right_stick_y = gamepad.axis_data(Axis::RightStickY).unwrap().value();
-    // log::debug!(
-    //     "Right Stick X: {:#?}, Right Stick Y: {:#?}",
-    //     right_stick_x,
-    //     right_stick_y
-    // );
-    // log::debug!("----------------");
+    let raw_lx = gamepad.axis_data(Axis::LeftStickX).map_or(0.0, |d| d.value());
+    let raw_ly = gamepad.axis_data(Axis::LeftStickY).map_or(0.0, |d| d.value());
+    let raw_rx = gamepad.axis_data(Axis::RightStickX).map_or(0.0, |d| d.value());
+    let raw_ry = gamepad.axis_data(Axis::RightStickY).map_or(0.0, |d| d.value());
+
+    // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
+    {
+        let mut raw_data = RAW_CONTROLLER_DATA.write().unwrap();
+        raw_data.left_stick.x = raw_lx;
+        raw_data.left_stick.y = raw_ly;
+        raw_data.right_stick.x = raw_rx;
+        raw_data.right_stick.y = raw_ry;
+    }
+
+    let (final_lx, final_ly, final_rx, final_ry) = get_calibrated_stick_values(raw_lx, raw_ly, raw_rx, raw_ry);
+
+    controller_data.left_stick.x = final_lx;
+    controller_data.left_stick.y = final_ly;
+    controller_data.right_stick.x = final_rx;
+    controller_data.right_stick.y = final_ry;
+
+    // --- 新增: 使用通用函数计算并存储摇杆旋转状态 ---
+    controller_data.left_stick_rotation = update_joystick_rotation_state(JoystickSource::LeftStick, final_lx, final_ly);
+    controller_data.right_stick_rotation = update_joystick_rotation_state(JoystickSource::RightStick, final_rx, final_ry);
+
+    controller_data.right_stick.is_pressed = gamepad.is_pressed(gilrs::Button::RightThumb);
+    controller_data.left_stick.is_pressed = gamepad.is_pressed(gilrs::Button::LeftThumb);
+
+    controller_data.left_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
+    controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
+    log::info!(
+        "Left Stick Rotation: {:?}, Right Stick Rotation: {:?}",
+        controller_data.left_stick_rotation,
+        controller_data.right_stick_rotation
+    );
+
+    controller_data.left_trigger.value = gamepad.button_data(gilrs::Button::LeftTrigger2)
+                                                .map(|data| data.value())
+                                                .unwrap_or(0.0);
+    controller_data.right_trigger.value = gamepad.button_data(gilrs::Button::RightTrigger2)
+                                                 .map(|data| data.value())
+                                                 .unwrap_or(0.0);
+
+    pack_and_send_data(&controller_data);
 }
 
 /// 轮询非Xbox控制器状态
@@ -602,15 +744,15 @@ pub fn listen() {
                     last_device = Some(current_device.clone());
                 }
                 (true, true)
-                    if last_device.as_ref().unwrap().device_path != current_device.device_path =>
-                {
-                    log::info!(
+                if last_device.as_ref().unwrap().device_path != current_device.device_path =>
+                    {
+                        log::info!(
                         "🔄 设备切换: {} → {}",
                         last_device.as_ref().unwrap().name,
                         current_device.name
                     );
-                    last_device = Some(current_device.clone());
-                }
+                        last_device = Some(current_device.clone());
+                    }
                 (true, false) => {
                     if let Some(device) = &last_device {
                         log::info!("❌ 设备断开: {}", device.name);
@@ -643,7 +785,10 @@ pub fn gilrs_listen() {
         }
 
         loop {
-            if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap().as_mut() {
+            if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap_or_else(|poisoned| {
+                log::warn!("GLOBAL_GILRS 互斥锁已被污染，正在恢复...");
+                poisoned.into_inner()
+            }).as_mut() {
                 // 清空事件队列但不处理
                 while let Some(Event { event, id, .. }) = gilrs.next_event() {
                     let _ = id;
@@ -665,6 +810,12 @@ pub fn gilrs_listen() {
                         #[cfg(not(target_os = "windows"))]
                         physical_disconnect_device();
                     }
+                    // if let EventType::AxisChanged(axis, value, code) = event {
+                    //     log::info!("Axis {:?} changed: {}", axis, value);
+                    // }
+                    // if let EventType::ButtonChanged(b, v, code) = event {
+                    //     log::info!("Button {:#?}, value {:#?} ({:#?})", b, v, code);
+                    // }
                 }
             }
 
@@ -702,4 +853,58 @@ pub fn initialize(app_handle: AppHandle) {
     gilrs_listen();
     listen();
     polling_devices();
+}
+
+/// 尝试自动连接上次连接的设备
+#[tauri::command]
+pub fn try_auto_connect_last_device(app_handle: AppHandle) {
+    let settings = get_setting();
+    if settings.remember_last_connection {
+        if let Some(last_device) = settings.last_connected_device {
+            log::info!("尝试连接上次连接的设备: {:?}", last_device);
+            let devices = query_devices(app_handle.clone()); // query_devices 现在是同步的
+            if let Some(device_info) = devices.into_iter().find(|d| {
+                let last_vid_str = format!("{:04x}", last_device.vid);
+                let last_pid_str = format!("{:04x}", last_device.pid);
+                let last_sub_pid_str = format!("{:04x}", last_device.sub_pid);
+
+                let vid_matches = d.vendor_id == last_vid_str;
+
+                let pid_matches = if last_device.pid == 0 {
+                    true
+                } else {
+                    d.product_id.as_deref().map_or(false, |pid| pid == last_pid_str)
+                };
+
+                let sub_pid_matches = if last_device.sub_pid == 0 {
+                    true
+                } else {
+                    d.sub_product_id.as_deref().map_or(false, |sub_pid| sub_pid == last_sub_pid_str)
+                };
+
+                // log::debug!("匹配检查: DeviceInfo {:?} vs LastConnectedDevice {:?}", d, last_device);
+                // log::debug!("  VID: {} == {} -> {}", d.vendor_id, last_vid_str, vid_matches);
+                // log::debug!("  PID: {:?} == {} -> {}", d.product_id, last_pid_str, pid_matches);
+                // log::debug!("  SubPID: {:?} == {} -> {}", d.sub_product_id, last_sub_pid_str, sub_pid_matches);
+                // log::debug!("  总匹配: {}", vid_matches && (pid_matches || sub_pid_matches));
+
+                vid_matches && (pid_matches || sub_pid_matches)
+            }) {
+                log::info!("找到匹配的设备，尝试连接: {:?}", device_info);
+                if use_device(device_info.name.clone()) { // use_device 现在是同步的
+                    log::info!("成功自动连接上次设备");
+                    if let Err(e) = app_handle.emit("auto_connect_success", device_info) {
+                        log::error!("发送 auto_connect_success 事件失败: {e}");
+                    }
+                    return;
+                } else {
+                    log::error!("自动连接上次设备失败");
+                }
+            } else {
+                log::warn!("未找到上次连接的设备: {:?}", last_device);
+            }
+        } else {
+            log::info!("记住上次连接状态已启用，但没有上次连接的设备信息。");
+        }
+    }
 }

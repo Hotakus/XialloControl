@@ -3,52 +3,52 @@
   "footer": "\n\n---",
   "categories": [
     {
-      "title": "## ✨ 新功能",
+      "title": "### ✨ 新功能：",
       "labels": ["feat", "feature"],
       "commit_types": ["feat"]
     },
     {
-      "title": "## 🐛 修复",
+      "title": "### 🐛 修复：",
       "labels": ["fix", "bug"],
       "commit_types": ["fix"]
     },
     {
-      "title": "## 📚 文档",
+      "title": "### 📚 文档：",
       "labels": ["docs", "doc"],
       "commit_types": ["docs"]
     },
     {
-      "title": "## 🚀 性能优化",
+      "title": "### 🚀 性能优化：",
       "labels": ["perf"],
       "commit_types": ["perf"]
     },
     {
-      "title": "## 💅 样式调整",
+      "title": "### 💅 样式调整：",
       "labels": ["style"],
       "commit_types": ["style"]
     },
     {
-      "title": "## 🔨 重构",
+      "title": "### 🔨 重构：",
       "labels": ["refactor"],
       "commit_types": ["refactor"]
     },
     {
-      "title": "## 🧪 测试",
+      "title": "### 🧪 测试：",
       "labels": ["test"],
       "commit_types": ["test"]
     },
     {
-      "title": "## 📦 构建",
+      "title": "### 📦 构建：",
       "labels": ["build"],
       "commit_types": ["build"]
     },
     {
-      "title": "## 🤖 CI/CD",
+      "title": "### 🤖 CI/CD：",
       "labels": ["ci", "cd"],
       "commit_types": ["ci"]
     },
     {
-      "title": "## 📌 其他",
+      "title": "### 📌 其他：",
       "labels": [],
       "exhaustive": false
     }
@@ -60,8 +60,8 @@
     "order": "DESC",
     "on_property": "mergedAt"
   },
-  "pr_template": "PR: ##{{NUMBER}} - #{{TITLE}} by @#{{AUTHOR}}",
-  "template": "# 更新日志: \n #{{CHANGELOG}}\n #{{UNCATEGORIZED}}",
+  "pr_template": "##{{NUMBER}} - #{{TITLE}} by @#{{AUTHOR}}",
+  "template": "## 更新日志: \n #{{CHANGELOG}}\n #{{UNCATEGORIZED}}",
   "empty_template": "- 暂无改动",
   "trim_values": true,
   "max_tags_to_fetch": 200,
