@@ -28,7 +28,7 @@
     ],
     "windows": {
       "wix": {
-        "language": ["en-US"]
+        "language": ["zh-CN"]
       },
       "nsis": {
         "languages": ["English", "SimpChinese"],
