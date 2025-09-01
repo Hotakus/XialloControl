@@ -48,7 +48,7 @@ tauri-plugin-opener = "2"
 tauri-plugin-autostart = "2"
 
 # 系统交互
-enigo = { version = "0.6.1", features = ["serde", "wayland"] }# 输入模拟
+enigo = { version = "0.6.1", features = ["serde", "wayland", "x11rb"] }# 输入模拟
 gilrs = { path = "./third-party/gilrs/gilrs", version = "0.11.0" }
 hidapi = "2"      # HID设备访问
 rusty-xinput = "1"
