@@ -290,7 +290,11 @@ function handleWheel(e: any) {
     state.currentKeys.shift = e.shiftKey;
     state.currentKeys.alt = e.altKey;
     state.currentKeys.meta = e.metaKey;
-    state.currentKeys.key = e.deltaY < 0 ? 'MouseWheelUp' : 'MouseWheelDown';
+    if (e.deltaY < 0 || e.deltaX < 0) {
+        state.currentKeys.key = 'MouseWheelUp';
+    } else if (e.deltaY > 0 || e.deltaX > 0) {
+        state.currentKeys.key = 'MouseWheelDown';
+    }
 
     updateKeyDisplay();
     stopKeyDetection(false);
