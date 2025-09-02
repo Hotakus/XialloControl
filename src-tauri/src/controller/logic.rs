@@ -148,7 +148,7 @@ pub async fn controller_stick_drift_sampling() {
 pub fn check_controller_deadzone() -> (f32, f32) {
     let device = CURRENT_DEVICE.read().unwrap();
     let datas = CONTROLLER_DATA.read().unwrap();
-    let mut deadzone: (f32, f32) = (0.0, 0.0);
+    let deadzone: (f32, f32) = (0.0, 0.0);
 
     let left_stick_max = datas.left_stick.x.abs().max(datas.left_stick.y.abs());
     let right_stick_max = datas.right_stick.x.abs().max(datas.right_stick.y.abs());

@@ -32,6 +32,12 @@ pub struct StickRange {
     pub y_max: f32,
 }
 
+impl Default for StickRange {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StickRange {
     pub fn new() -> Self {
         Self {
@@ -54,6 +60,12 @@ pub struct StickCalibration {
     pub mode: StickCaliMode,
     pub stick_center: (f32, f32),
     pub stick_range: StickRange,
+}
+
+impl Default for StickCalibration {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl StickCalibration {
@@ -95,6 +107,12 @@ pub struct ControllerCalibration {
     pub right_stick: StickCalibration,
 }
 
+impl Default for ControllerCalibration {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ControllerCalibration {
     pub fn new() -> Self {
         Self {
@@ -131,7 +149,7 @@ fn get_calibration_filepath(device: &DeviceInfo) -> Option<PathBuf> {
     let vid = &device.vendor_id;
     let pid = device.product_id.as_deref().unwrap_or("0000");
     let subpid = device.sub_product_id.as_deref().unwrap_or("0000");
-    let filename = format!("cali_{}_{}_{}.toml", vid, pid, subpid);
+    let filename = format!("cali_{vid}_{pid}_{subpid}.toml");
     xeno_utils::ensure_dir(&PathBuf::from(CALIBRATIONS_DIR)).map(|dir| dir.join(filename))
 }
 
@@ -142,7 +160,7 @@ pub fn save_calibration(device: &DeviceInfo, cali_data: &ControllerCalibration) 
             right_stick_calibration: cali_data.right_stick,
         };
         xeno_utils::write_toml_file(&path, &file_content)
-            .map_err(|e| format!("写入校准文件失败: {}", e))
+            .map_err(|e| format!("写入校准文件失败: {e}"))
     } else {
         Err("无法获取校准文件路径".to_string())
     }
@@ -168,7 +186,7 @@ pub fn load_calibration(device: &DeviceInfo) {
                     log::info!("成功加载设备 {:?} 的校准文件，模式为 {:?}", device.name, mode);
                 }
                 Err(e) => {
-                    log::error!("读取校准文件失败: {}, 将使用默认值", e);
+                    log::error!("读取校准文件失败: {e}, 将使用默认值");
                     reset_calibration();
                 }
             }
@@ -215,8 +233,8 @@ pub fn reset_calibration_to_default() -> Result<(), String> {
     if let Some(path) = get_calibration_filepath(&device) {
         if path.exists() {
             if let Err(e) = std::fs::remove_file(&path) {
-                let err_msg = format!("删除校准文件失败: {}", e);
-                log::error!("{}", err_msg);
+                let err_msg = format!("删除校准文件失败: {e}");
+                log::error!("{err_msg}");
                 return Err(err_msg);
             }
         }
@@ -253,7 +271,7 @@ pub fn start_stick_calibration(stick_side: &str) {
         }
     }
     
-    log::info!("开始校准: {} stick", stick_side);
+    log::info!("开始校准: {stick_side} stick");
     
     IS_CALIBRATING.store(true, Ordering::SeqCst);
     
@@ -295,7 +313,7 @@ pub fn cancel_stick_calibration(stick_side: &str) {
     } else {
         cali_data.right_stick.reset();
     }
-    log::info!("取消校准: {} stick", stick_side);
+    log::info!("取消校准: {stick_side} stick");
     
     IS_CALIBRATING.store(false, Ordering::SeqCst);
 }
@@ -312,7 +330,7 @@ pub fn set_calibration_mode(app_handle: tauri::AppHandle, mode: &str) {
         let mut cali_data = CONTROLLER_CALIBRATION.write().unwrap();
         cali_data.left_stick.mode = new_mode;
         cali_data.right_stick.mode = new_mode;
-        log::info!("设置所有摇杆校准模式为: {:?}", new_mode);
+        log::info!("设置所有摇杆校准模式为: {new_mode:?}");
     }
 
     // 更新并保存应用设置
@@ -320,7 +338,7 @@ pub fn set_calibration_mode(app_handle: tauri::AppHandle, mode: &str) {
     settings.calibration_mode = mode.to_string();
     tauri::async_runtime::spawn(async move {
         if let Err(e) = crate::setting::update_settings(app_handle, settings).await {
-            log::error!("保存校准模式设置失败: {:?}", e);
+            log::error!("保存校准模式设置失败: {e:?}");
         }
     });
 }

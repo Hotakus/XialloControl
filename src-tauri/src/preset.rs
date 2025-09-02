@@ -3,7 +3,7 @@
 use crate::mapping::{Mapping, get_mappings};
 use crate::setting::{get_setting, load_settings};
 use crate::xeno_utils::ensure_dir;
-use crate::{mapping, preset, xeno_utils};
+use crate::{mapping, xeno_utils};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -120,9 +120,9 @@ fn default_deadzone() -> u8 {
 
 #[tauri::command]
 pub fn preset_test() {
-    let mut preset = CURRENT_PRESET.write().unwrap();
-    let mut setting = load_settings();
-    let mut mappings = get_mappings();
+    let preset = CURRENT_PRESET.write().unwrap();
+    load_settings();
+    let mappings = get_mappings();
 
     // preset.set_deadzone(setting.deadzone);
     // preset.set_deadzone_left(setting.deadzone_left);
@@ -151,14 +151,12 @@ pub fn create_preset(name: &str) -> Result<Preset, String> {
     let preset = Preset::new(name.to_string(), vec![]);
     let mut presets = CURRENT_PRESET_LIST.write().unwrap();
     if presets.iter().any(|p| p.name == name) {
-        return Err("预设名称已存在".to_string());
+        Err("预设名称已存在".to_string())
+    } else if preset.save() {
+        presets.push(preset.clone());
+        Ok(preset)
     } else {
-        if preset.save() {
-            presets.push(preset.clone());
-            Ok(preset)
-        } else {
-            Err("创建预设失败".to_string())
-        }
+        Err("创建预设失败".to_string())
     }
 }
 
@@ -261,7 +259,7 @@ pub fn check_presets_list() -> Vec<String> {
     if let Some(dir) = preset_dir {
         if let Ok(entries) = fs::read_dir(dir) {
             for entry in entries.flatten() {
-                if entry.file_type().map_or(false, |ft| ft.is_dir()) {
+                if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
                     if let Some(preset_name) = entry.file_name().to_str() {
                         preset_list.push(preset_name.to_string());
                     }
@@ -269,7 +267,7 @@ pub fn check_presets_list() -> Vec<String> {
             }
         }
     }
-    log::debug!("Loaded presets: {:#?}", preset_list);
+    log::debug!("Loaded presets: {preset_list:#?}");
     preset_list
 }
 
@@ -292,7 +290,7 @@ pub fn load_presets_from_list_to_global(list: Vec<String>) {
     let mut preset_list = CURRENT_PRESET_LIST.write().unwrap();
     *preset_list = presets.clone();
 
-    log::info!("成功加载预设: {:#?}", preset_list);
+    log::info!("成功加载预设: {preset_list:#?}");
 }
 
 pub fn get_current_preset() -> Preset {

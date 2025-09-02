@@ -14,7 +14,7 @@ use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
 use crate::controller::xbox;
-use crate::setting::{self, get_setting, LastConnectedDevice, AppSettings};
+use crate::setting::{self, get_setting, LastConnectedDevice};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputHandle;
 use uuid::Uuid;
@@ -390,7 +390,7 @@ fn update_last_connected_device_setting(device_info: Option<DeviceInfo>) {
     let app_handle = get_app_handle();
     tauri::async_runtime::spawn(async move {
         if let Err(e) = setting::update_settings(app_handle, settings).await {
-            log::error!("保存上次连接设备信息失败: {:?}", e);
+            log::error!("保存上次连接设备信息失败: {e:?}");
         }
     });
 }
@@ -861,7 +861,7 @@ pub fn try_auto_connect_last_device(app_handle: AppHandle) {
     let settings = get_setting();
     if settings.remember_last_connection {
         if let Some(last_device) = settings.last_connected_device {
-            log::info!("尝试连接上次连接的设备: {:?}", last_device);
+            log::info!("尝试连接上次连接的设备: {last_device:?}");
             let devices = query_devices(app_handle.clone()); // query_devices 现在是同步的
             if let Some(device_info) = devices.into_iter().find(|d| {
                 let last_vid_str = format!("{:04x}", last_device.vid);
@@ -873,13 +873,13 @@ pub fn try_auto_connect_last_device(app_handle: AppHandle) {
                 let pid_matches = if last_device.pid == 0 {
                     true
                 } else {
-                    d.product_id.as_deref().map_or(false, |pid| pid == last_pid_str)
+                    d.product_id.as_deref().is_some_and(|pid| pid == last_pid_str)
                 };
 
                 let sub_pid_matches = if last_device.sub_pid == 0 {
                     true
                 } else {
-                    d.sub_product_id.as_deref().map_or(false, |sub_pid| sub_pid == last_sub_pid_str)
+                    d.sub_product_id.as_deref().is_some_and(|sub_pid| sub_pid == last_sub_pid_str)
                 };
 
                 // log::debug!("匹配检查: DeviceInfo {:?} vs LastConnectedDevice {:?}", d, last_device);
@@ -890,18 +890,17 @@ pub fn try_auto_connect_last_device(app_handle: AppHandle) {
 
                 vid_matches && (pid_matches || sub_pid_matches)
             }) {
-                log::info!("找到匹配的设备，尝试连接: {:?}", device_info);
+                log::info!("找到匹配的设备，尝试连接: {device_info:?}");
                 if use_device(device_info.name.clone()) { // use_device 现在是同步的
                     log::info!("成功自动连接上次设备");
                     if let Err(e) = app_handle.emit("auto_connect_success", device_info) {
                         log::error!("发送 auto_connect_success 事件失败: {e}");
                     }
-                    return;
                 } else {
                     log::error!("自动连接上次设备失败");
                 }
             } else {
-                log::warn!("未找到上次连接的设备: {:?}", last_device);
+                log::warn!("未找到上次连接的设备: {last_device:?}");
             }
         } else {
             log::info!("记住上次连接状态已启用，但没有上次连接的设备信息。");

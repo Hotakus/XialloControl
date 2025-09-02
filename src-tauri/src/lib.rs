@@ -166,7 +166,7 @@ async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
             let locale = get_locale();
             if locale.starts_with("zh") {
                 let new_url = format!("{}{}", GITHUB_MIRROR_PREFIX, update.download_url);
-                log::info!("Using mirror URL for CN user: {}", new_url);
+                log::info!("Using mirror URL for CN user: {new_url}");
                 update.download_url = Url::parse(&new_url).map_err(|e| e.to_string())?;
             }
 
@@ -186,7 +186,7 @@ async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
             Ok(None)
         }
         Err(e) => {
-            log::error!("Failed to check for updates: {}", e);
+            log::error!("Failed to check for updates: {e}");
             Err(e.to_string())
         }
     }
@@ -204,7 +204,7 @@ async fn perform_update(app: AppHandle) -> Result<(), String> {
 
         // TODO: 添加下载进度显示
         if let Err(e) = update.download_and_install(|_, _| {}, || {}).await {
-            log::error!("Failed to install update: {}", e);
+            log::error!("Failed to install update: {e}");
             return Err(e.to_string());
         }
         log::info!("Update installed, restarting...");

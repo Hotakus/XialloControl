@@ -41,11 +41,6 @@ impl TriggerState {
         Instant::now()
     }
 
-    /// 创建一个带有默认参数的 `TriggerState`。
-    pub fn default() -> Self {
-        Self::new(300, 100, 0.8)
-    }
-
     /// 使用指定的参数创建一个新的 `TriggerState`。
     pub fn new(initial_interval: u64, min_interval: u64, acceleration: f64) -> Self {
         Self {
@@ -74,6 +69,12 @@ impl TriggerState {
     /// 重置触发状态到初始间隔。
     pub fn reset(&mut self) {
         self.interval = self.initial_interval;
+    }
+}
+
+impl Default for TriggerState {
+    fn default() -> Self {
+        Self::new(300, 100, 0.8)
     }
 }
 
@@ -183,10 +184,9 @@ pub struct Action {
     pub primary: PrimaryAction,
 }
 
-impl Action {
-    /// 创建一个默认的 `Action`，其主要操作为按下空格键。
-    pub fn default() -> Action {
-        Action {
+impl Default for Action {
+    fn default() -> Self {
+        Self {
             modifiers: vec![],
             primary: PrimaryAction::KeyPress {
                 key: enigo::Key::Space,
@@ -230,7 +230,9 @@ pub static MAPPING_FILE_PATH: Lazy<RwLock<PathBuf>> =
 
 /// 全局手柄按键布局映射，例如将 "Y" 映射到 `ControllerButtons::North`。
 /// 存储不同类型手柄的布局。
-pub static CONTROLLER_LAYOUT_MAP: Lazy<RwLock<HashMap<ControllerType, Arc<HashMap<&'static str, ControllerButtons>>>>> =
+type ButtonLayout = HashMap<&'static str, ControllerButtons>;
+type ControllerLayouts = HashMap<ControllerType, Arc<ButtonLayout>>;
+pub static CONTROLLER_LAYOUT_MAP: Lazy<RwLock<ControllerLayouts>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
 /// 动态触发状态，存储每个映射的触发状态。

@@ -104,6 +104,12 @@ pub struct ControllerDatas {
     pub limits: ControllerLimits,
 }
 
+impl Default for ControllerDatas {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ControllerDatas {
     pub fn new() -> ControllerDatas {
         ControllerDatas {
@@ -201,6 +207,12 @@ pub struct CompactPressureDatas {
     pub right_trigger: f32,
 }
 
+impl Default for CompactPressureDatas {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompactPressureDatas {
     pub fn new() -> CompactPressureDatas {
         Self {
@@ -218,6 +230,12 @@ impl CompactPressureDatas {
 pub struct CompactControllerDatas {
     pub buttons: u32,
     pub pressure: CompactPressureDatas
+}
+
+impl Default for CompactControllerDatas {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CompactControllerDatas {

@@ -1,13 +1,12 @@
 cfg_if::cfg_if! {
     if #[cfg(target_os = "windows")] {
-        use crate::controller::controller::{self, get_app_handle, get_xinput, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA, JoystickSource};
+        use crate::controller::controller::{self, get_xinput, DeviceInfo, CONTROLLER_DATA, JoystickSource};
     } else if #[cfg(target_os = "linux")] {
         use crate::controller::controller::{self, disconnect_device, DeviceInfo, CONTROLLER_DATA, RAW_CONTROLLER_DATA, JoystickSource};
     }
 }
-use crate::controller::datas::{ControllerButtons, ControllerDatas};
+use crate::controller::datas::ControllerButtons;
 use crate::controller::logic;
-use tauri::Emitter;
 
 use crate::controller::controller::{pack_and_send_data, physical_disconnect_device};
 #[cfg(target_os = "windows")]

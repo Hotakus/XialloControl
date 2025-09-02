@@ -3,7 +3,7 @@ use anyhow::{Context, Result};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::sync::RwLock;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
 
 const SETTINGS_FILE: &str = "settings.toml";
@@ -122,13 +122,13 @@ pub async fn save_settings() -> Result<()> {
             e
         })?;
 
-    log::info!("设置已保存到: {:?}", settings_path);
+    log::info!("设置已保存到: {settings_path:?}");
     Ok(())
 }
 
 #[tauri::command]
 pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Result<(), String> {
-    log::debug!("接收到更新设置请求: {:?}", new_settings);
+    log::debug!("接收到更新设置请求: {new_settings:?}");
 
     // 1. 验证数据
     if !(1..=8000).contains(&new_settings.polling_frequency) {
@@ -146,7 +146,7 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
     // 3. 异步保存到文件
     tokio::spawn(async move {
         if let Err(e) = save_settings().await {
-            log::error!("异步保存设置失败: {:?}", e);
+            log::error!("异步保存设置失败: {e:?}");
         }
     });
 
@@ -155,12 +155,12 @@ pub async fn update_settings(app: AppHandle, new_settings: AppSettings) -> Resul
         let autostart_manager = app.autolaunch();
         if new_settings.auto_start {
             if let Err(e) = autostart_manager.enable() {
-                log::error!("启用开机自启动失败: {:?}", e);
+                log::error!("启用开机自启动失败: {e:?}");
             }
             log::info!("已启用开机自启动");
         } else {
             if let Err(e) = autostart_manager.disable() {
-                log::error!("禁用开机自启动失败: {:?}", e);
+                log::error!("禁用开机自启动失败: {e:?}");
             }
             log::info!("已禁用开机自启动");
         }
