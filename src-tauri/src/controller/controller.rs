@@ -790,7 +790,7 @@ pub fn gilrs_listen() {
                 poisoned.into_inner()
             }).as_mut() {
                 // 清空事件队列但不处理
-                while let Some(Event { event, id, .. }) = gilrs.next_event() {
+                while let Some(Event { event, id, .. }) = gilrs.next_event_blocking(Some(Duration::from_millis(1))) {
                     let _ = id;
                     if event == EventType::Disconnected {
                         let device = CURRENT_DEVICE.read().unwrap().clone();
