@@ -201,29 +201,71 @@ pub fn rename_preset(old_name: &str, new_name: &str) -> Result<(), String> {
         return Err("不能重命名默认预设".to_string());
     }
 
-    let old_dir = PathBuf::from(PRESET_DIR).join(old_name);
-    let new_dir = PathBuf::from(PRESET_DIR).join(new_name);
+    let presets_dir = ensure_dir(&PathBuf::from(PRESET_DIR));
+    if let Some(presets_path) = presets_dir {
+        let old_dir = presets_path.join(old_name);
+        let new_dir = presets_path.join(new_name);
 
-    if !old_dir.exists() {
-        return Err("原预设不存在".to_string());
+        if !old_dir.exists() {
+            return Err("原预设不存在".to_string());
+        }
+
+        if new_dir.exists() {
+            return Err("新预设名称已存在".to_string());
+        }
+
+        if let Err(e) = fs::rename(&old_dir, &new_dir) {
+            log::error!("重命名预设失败：{e}");
+            return Err("重命名预设失败".to_string());
+        }
+
+        // 在新目录中，将旧的 .toml 文件重命名为新的 .toml 文件
+        let old_toml_path = new_dir.join(old_name.to_string() + ".toml");
+        let new_toml_path = new_dir.join(new_name.to_string() + ".toml");
+
+        if old_toml_path.exists() {
+            if let Err(e) = fs::rename(&old_toml_path, &new_toml_path) {
+                log::error!("重命名预设 .toml 文件失败：{e}");
+                // 尝试回滚文件夹重命名操作
+                let _ = fs::rename(&new_dir, &old_dir);
+                return Err("重命名预设的 .toml 文件失败".to_string());
+            }
+        } else {
+            // 如果旧的 toml 不存在，这是一个严重错误，回滚
+            let _ = fs::rename(&new_dir, &old_dir);
+            return Err("找不到原始预设的 .toml 文件".to_string());
+        }
+
+        // 读取新的 .toml 文件，修改其内部的 name 字段，然后保存
+        let updated_preset = match xeno_utils::read_toml_file::<PresetFile>(&new_toml_path) {
+            Ok(mut preset_file) => {
+                preset_file.preset.name = new_name.to_string();
+                if let Err(e) = xeno_utils::write_toml_file(&new_toml_path, &preset_file) {
+                    log::error!("更新预设文件内容失败：{e}");
+                    return Err("更新预设文件内容失败".to_string());
+                }
+                preset_file.preset
+            }
+            Err(e) => {
+                log::error!("读取新预设文件失败：{e}");
+                return Err("读取新预设文件失败".to_string());
+            }
+        };
+
+        // 更新全局预设列表
+        let mut presets = CURRENT_PRESET_LIST.write().unwrap();
+        if let Some(p) = presets.iter_mut().find(|p| p.name == old_name) {
+            *p = updated_preset;
+            Ok(())
+        } else {
+            // 如果在列表中找不到，可能是一个不一致的状态，但文件操作已完成
+            // 最好也记录一个警告
+            log::warn!("文件系统中的预设已重命名，但在全局列表中未找到: {old_name}");
+            Ok(())
+        }
+    } else {
+        Err("预设目录不可用".to_string())
     }
-
-    if new_dir.exists() {
-        return Err("新预设名称已存在".to_string());
-    }
-
-    if let Err(e) = fs::rename(old_dir, new_dir) {
-        log::error!("重命名预设失败：{e}");
-        return Err("重命名预设失败".to_string());
-    }
-
-    // 更新预设文件内的名称
-    let mut preset = Preset::new(new_name.to_string(), vec![]);
-    preset.load(new_name);
-    preset.name = new_name.to_string();
-    preset.save();
-
-    Ok(())
 }
 
 /// 切换到指定预设
