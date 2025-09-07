@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use crate::mapping::{Mapping, get_mappings};
-use crate::setting::{get_setting, load_settings};
+use crate::mapping::{Mapping};
+use crate::setting::{get_setting};
 use crate::xeno_utils::ensure_dir;
 use crate::{mapping, xeno_utils};
 use once_cell::sync::Lazy;
