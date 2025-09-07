@@ -118,27 +118,6 @@ fn default_deadzone() -> u8 {
     DEFAULT_DEADZONE
 }
 
-#[tauri::command]
-pub fn preset_test() {
-    let preset = CURRENT_PRESET.write().unwrap();
-    load_settings();
-    let mappings = get_mappings();
-
-    // preset.set_deadzone(setting.deadzone);
-    // preset.set_deadzone_left(setting.deadzone_left);
-    // preset.set_mappings(mappings.clone());
-    // preset.save();
-}
-
-#[tauri::command]
-pub fn preset_test2() {
-    let mut preset = Preset::new("test".to_string(), vec![]);
-    preset.load("default");
-
-    println!("{:#?}", preset.items.deadzone);
-    println!("{:#?}", preset.items.deadzone_left);
-    println!("{:#?}", preset.items.mappings_file_name);
-}
 
 /// 创建新的预设
 #[tauri::command]
