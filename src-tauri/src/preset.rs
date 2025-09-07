@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use crate::mapping::{Mapping};
 use crate::setting::{get_setting};
 use crate::xeno_utils::ensure_dir;
 use crate::{mapping, xeno_utils};
@@ -17,7 +16,7 @@ const DEFAULT_MAPPINGS_FILE: &str = "mappings.toml";
 const DEFAULT_DEADZONE: u8 = 5; // 10%
 
 pub static CURRENT_PRESET: Lazy<RwLock<Preset>> =
-    Lazy::new(|| RwLock::new(Preset::new(DEFAULT_PRESET_NAME.to_string(), vec![])));
+    Lazy::new(|| RwLock::new(Preset::new(DEFAULT_PRESET_NAME.to_string())));
 
 pub static CURRENT_PRESET_LIST: Lazy<RwLock<Vec<Preset>>> = Lazy::new(|| RwLock::new(vec![]));
 
@@ -42,7 +41,7 @@ pub struct Preset {
 }
 
 impl Preset {
-    pub fn new(name: String, mappings: Vec<Mapping>) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
             items: PresetItems {
@@ -127,7 +126,7 @@ pub fn create_preset(name: &str) -> Result<Preset, String> {
     }
 
     // 创建，然后返回最新
-    let preset = Preset::new(name.to_string(), vec![]);
+    let preset = Preset::new(name.to_string());
     let mut presets = CURRENT_PRESET_LIST.write().unwrap();
     if presets.iter().any(|p| p.name == name) {
         Err("预设名称已存在".to_string())
@@ -303,7 +302,7 @@ pub fn load_presets_from_list_to_global(list: Vec<String>) {
     }
 
     for name in list {
-        let mut preset = Preset::new(name.clone(), vec![]);
+        let mut preset = Preset::new(name.clone());
         if preset.load(name.as_str()) {
             presets.push(preset);
         }
