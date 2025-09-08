@@ -16,8 +16,10 @@ body {
     align-items: center;
     min-height: 100vh;
     -webkit-app-region: nodrag;
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    /* background: linear-gradient(135deg, #1e3c72, #2a5298); */
+    background: transparent;
     -webkit-user-select: none;
+    user-select: none;
     position: relative;
 }
 
@@ -348,6 +350,15 @@ body {
 
 .button-map,
 .stick-map {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+}
+.draggable-list {
     flex-grow: 1;
     overflow-y: auto;
     padding-right: 5px;
@@ -1038,13 +1049,13 @@ input:checked + .slider:before {
     user-select: none;
     text-align: center;
     padding: 0 20px;
-    -webkit-user-select: none;
+    /* -webkit-user-select: none; */
     -webkit-user-drag: none;
 }
 
 .detector-area, .key-detector {
     -webkit-context-menu: none;
-    context-menu: none;
+    /* context-menu: none; */
 }
 
 .detector-area.active {
