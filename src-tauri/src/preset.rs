@@ -274,19 +274,18 @@ pub fn load_preset(name: &str) -> Preset {
 /// 获取所有预设名称列表
 #[tauri::command]
 pub fn check_presets_list() -> Vec<String> {
-    let preset_dir = ensure_dir(&PathBuf::from(PRESET_DIR));
-    let mut preset_list = Vec::new();
-    if let Some(dir) = preset_dir {
-        if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
-                    if let Some(preset_name) = entry.file_name().to_str() {
-                        preset_list.push(preset_name.to_string());
-                    }
-                }
-            }
-        }
-    }
+    let preset_list = ensure_dir(&PathBuf::from(PRESET_DIR))
+        .and_then(|dir| {
+            fs::read_dir(dir).ok().map(|entries| {
+                entries
+                    .flatten()
+                    .filter(|entry| entry.file_type().is_ok_and(|ft| ft.is_dir()))
+                    .filter_map(|entry| entry.file_name().to_str().map(|s| s.to_string()))
+                    .collect()
+            })
+        })
+        .unwrap_or_default();
+
     log::debug!("Loaded presets: {preset_list:#?}");
     preset_list
 }
