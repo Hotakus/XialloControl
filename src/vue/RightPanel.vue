@@ -116,7 +116,7 @@
                 按钮添加映射
               </p>
             </div>
-            <template v-else>
+            <!-- <template v-else>
               <div class="button-map-item" v-for="mapping in state.mappings" :key="mapping.id"
                 @dblclick="editButtonMap(mapping.id)">
                 <div class="button-icon">{{ mapping.composed_button }}</div>
@@ -153,7 +153,8 @@
                   </button>
                 </div>
               </div>
-            </template>
+            </template> -->
+            <DraggableList />
           </div>
 
         </div>
@@ -280,7 +281,8 @@ import {
   editPreset
 } from "@/ts/RightPanel.ts";
 import { state } from "@/ts/global_states.ts";
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
+import DraggableList from "./DraggableList.vue";
 </script>
 
 <style scoped>
@@ -325,4 +327,5 @@ import { onMounted } from "vue";
 .cancel-btn:hover {
   color: #2f3542;
 }
+
 </style>

@@ -287,6 +287,7 @@ pub fn run() {
             mapping::add_mapping,
             mapping::delete_mapping,
             mapping::refresh_mappings,
+            mapping::update_mappings_order,
             preset::load_preset,
             preset::update_deadzone,
             preset::check_presets_list,

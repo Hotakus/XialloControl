@@ -460,6 +460,20 @@ pub fn save_mapping_config() {
     save_mappings();
 }
 
+/// Tauri 命令：更新映射的顺序。
+#[tauri::command]
+pub fn update_mappings_order(mappings: Vec<Mapping>) -> bool {
+    log::debug!("请求更新映射顺序，共 {} 条映射", mappings.len());
+    let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+
+    // 直接用前端发送过来的新顺序覆盖整个缓存
+    *cache = mappings;
+
+    drop(cache);
+    save_mappings();
+    true
+}
+
 /// Tauri 命令：获取当前所有映射配置。
 #[tauri::command]
 pub fn get_mappings() -> Vec<Mapping> {

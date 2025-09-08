@@ -546,3 +546,20 @@ export async function deletePreset() {
 export async function editPreset() {
     state.showPresetEditModal = true;
 }
+
+
+/**
+ * 更新映射顺序
+ * @param newOrder 新的映射顺序数组
+ */
+export async function updateMappingsOrder(newOrder: any[]) {
+    try {
+        await invoke("update_mappings_order", { mappings: newOrder });
+        updateStatusMessage("映射顺序已更新", false);
+    } catch (error) {
+        console.error("更新映射顺序失败:", error);
+        updateStatusMessage(`更新映射顺序失败: ${error}`, true);
+        // 如果失败，从后端重新加载一次，以恢复到失败前的状态
+        await queryMappings();
+    }
+}
