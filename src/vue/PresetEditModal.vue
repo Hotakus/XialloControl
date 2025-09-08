@@ -22,6 +22,13 @@
                             </button>
                         </div>
                     </div>
+                    <div class="setting-item sub-preset-toggle">
+                        <label for="as-sub-preset">作为副预设:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="as-sub-preset" v-model="state.current_preset.items.as_sub">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <!-- <button class="btn btn-outline" @click="closePresetEditModal()">取消</button>

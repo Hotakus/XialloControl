@@ -18,7 +18,8 @@ export interface Preset {
     items: {
         deadzone: number;
         deadzone_left: number;
-        mappings: any[];
+        mappings_file_name: string;
+        as_sub: boolean; // 是否为副预设
     }
 }
 
@@ -135,7 +136,8 @@ export const state = reactive({
         items: {
             deadzone: 0,
             deadzone_left: 0,
-            mappings: []
+            mappings_file_name: "",
+            as_sub: false,
         }
     } as Preset,
 

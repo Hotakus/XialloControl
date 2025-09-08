@@ -15,10 +15,15 @@ const DEFAULT_MAPPINGS_FILE: &str = "mappings.toml";
 
 const DEFAULT_DEADZONE: u8 = 5; // 10%
 
+// 当前预设
 pub static CURRENT_PRESET: Lazy<RwLock<Preset>> =
     Lazy::new(|| RwLock::new(Preset::new(DEFAULT_PRESET_NAME.to_string())));
 
+// 预设列表
 pub static CURRENT_PRESET_LIST: Lazy<RwLock<Vec<Preset>>> = Lazy::new(|| RwLock::new(vec![]));
+
+// 当前副预设
+pub static CURRENT_SUB_PRESET: Lazy<RwLock<Option<Preset>>> = Lazy::new(|| RwLock::new(None));
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PresetItems {
@@ -31,6 +36,10 @@ pub struct PresetItems {
     /// 左摇杆死区范围 (%)
     #[serde(default = "default_deadzone")]
     pub deadzone_left: u8,
+
+    /// 是否为副预设，只能有一个副预设
+    #[serde(default)]
+    pub as_sub: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -48,6 +57,7 @@ impl Preset {
                 mappings_file_name: DEFAULT_MAPPINGS_FILE.into(),
                 deadzone: DEFAULT_DEADZONE,
                 deadzone_left: DEFAULT_DEADZONE,
+                as_sub: false,
             },
         }
     }

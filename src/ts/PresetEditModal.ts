@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { state } from "@/ts/global_states";
 import { invoke } from "@tauri-apps/api/core";
 import { switchPreset } from "@/ts/RightPanel";
+import { updateStatusMessage } from "./LeftPanel";
 
 export const editablePresetName = ref('');
 
@@ -34,6 +35,6 @@ export const handleRenamePreset = async () => {
         console.error("重命名预设失败:", error);
         // 失败时，把输入框的值重置回原来的名字
         editablePresetName.value = oldName;
-        // 可以在这里向用户显示错误信息
+        updateStatusMessage(`重命名预设失败: ${error}`, true);
     }
 };
