@@ -13,14 +13,14 @@
 //     ],
 
 use crate::xeno_utils::get_config_path;
+use once_cell::sync::Lazy;
 use std::env;
+use std::sync::Mutex;
 use tauri::{AppHandle, WebviewWindow, Window};
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::fern;
 use tauri_plugin_log::fern::colors::ColoredLevelConfig;
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
 use tauri_plugin_updater::{Update, UpdaterExt};
 use url::Url;
 
@@ -128,6 +128,7 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
     .enable_clipboard_access()
     .devtools(cfg!(debug_assertions))
     .drag_and_drop(false)
+    .visible(false)
     .build()
     .expect("Failed to create main window")
 }
@@ -300,7 +301,17 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle();
 
+            // 在创建窗口前，先初始化设置
+            setup::initialize();
+
             let main_window = create_main_window(app_handle.clone());
+
+            // 根据设置判断是否显示窗口
+            let settings = setting::get_setting();
+            if !settings.minimize_to_tray {
+                main_window.show().unwrap();
+                main_window.set_focus().unwrap();
+            }
 
             // let child_window = create_child_window(app_handle.clone());
             // let child_windows_list = vec![child_window.clone()];
@@ -312,8 +323,9 @@ pub fn run() {
                     tauri::WindowEvent::CloseRequested { .. } => {
                         log::info!("Main window close requested");
                         for w in &child_windows_list {
-                            w.close()
-                                .unwrap_or_else(|e| log::error!("Failed to close child window: {e}"));
+                            w.close().unwrap_or_else(|e| {
+                                log::error!("Failed to close child window: {e}")
+                            });
                         }
                         app_handle.exit(0);
                     }
@@ -328,7 +340,6 @@ pub fn run() {
 
             let _ = tray::initialize(app_handle.clone());
 
-            setup::initialize();
             controller::initialize(app_handle.clone());
 
             Ok(())
