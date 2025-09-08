@@ -121,12 +121,13 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
     .resizable(true)
     .fullscreen(false)
     .decorations(decorations)
-    .transparent(true)
+    .transparent(false)
     .maximizable(false)
     .auto_resize()
     .center()
     .enable_clipboard_access()
     .devtools(cfg!(debug_assertions))
+    .drag_and_drop(false)
     .build()
     .expect("Failed to create main window")
 }
@@ -307,16 +308,21 @@ pub fn run() {
 
             main_window.on_window_event({
                 let app_handle = app_handle.clone(); // 闭包再 clone 一次，保证 'static
-                move |event| {
-                    if let tauri::WindowEvent::CloseRequested { api: _, .. } = event {
+                move |event| match event {
+                    tauri::WindowEvent::CloseRequested { .. } => {
                         log::info!("Main window close requested");
                         for w in &child_windows_list {
-                            w.close().unwrap_or_else(|e| {
-                                log::error!("Failed to close child window: {e}")
-                            });
+                            w.close()
+                                .unwrap_or_else(|e| log::error!("Failed to close child window: {e}"));
                         }
                         app_handle.exit(0);
                     }
+                    // 捕获并忽略 DragDrop 事件，以防止 Tauri 后端劫持前端的拖拽操作
+                    tauri::WindowEvent::DragDrop(e) => {
+                        // 什么都不做，消费掉这个事件
+                        log::debug!("DragDrop event ignored: {e:?}");
+                    }
+                    _ => {}
                 }
             });
 
