@@ -632,11 +632,11 @@ fn _poll_other_controllers(gamepad: Gamepad) {
 
     controller_data.left_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
     controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
-    log::info!(
-        "Left Stick Rotation: {:?}, Right Stick Rotation: {:?}",
-        controller_data.left_stick_rotation,
-        controller_data.right_stick_rotation
-    );
+    // log::info!(
+    //     "Left Stick Rotation: {:?}, Right Stick Rotation: {:?}",
+    //     controller_data.left_stick_rotation,
+    //     controller_data.right_stick_rotation
+    // );
 
     controller_data.left_trigger.value = gamepad.button_data(gilrs::Button::LeftTrigger2)
                                                 .map(|data| data.value())
