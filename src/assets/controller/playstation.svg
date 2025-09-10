@@ -1,10 +1,10 @@
 <svg width="1024" height="1024" version="1.1" viewBox="0 0 270.93 270.93" xmlns="http://www.w3.org/2000/svg">
  <g>
-  <g id="svg-gamepad-g-rightstick" transform="translate(110.51 34.876)" style="mix-blend-mode:darken;paint-order:normal">
+  <g id="svg-gamepad-rightstick-g" transform="translate(110.51 34.876)" style="mix-blend-mode:darken;paint-order:normal">
    <ellipse id="svg-gamepad-rightstick" cx="65.875" cy="93.828" rx="10.049" ry="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
    <circle id="svg-gamepad-btn-rightstick" cx="65.875" cy="93.828" r="16.394" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:2.543;stroke:#808080"/>
   </g>
-  <g id="svg-gamepad-g-leftstick" transform="translate(28.327 34.811)" style="mix-blend-mode:darken;paint-order:normal">
+  <g id="svg-gamepad-leftstick-g" transform="translate(28.327 34.811)" style="mix-blend-mode:darken;paint-order:normal">
    <circle id="svg-gamepad-leftstick" cx="65.875" cy="93.828" r="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
    <ellipse id="svg-gamepad-btn-leftstick" cx="65.875" cy="93.828" rx="16.394" ry="16.394" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:2.543;stroke:#808080"/>
   </g>
