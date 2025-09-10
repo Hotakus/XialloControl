@@ -13,7 +13,7 @@ use std::time::Instant;
 use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
-use crate::controller::xbox;
+use crate::controller::{ps4, xbox};
 use crate::setting::{self, get_setting, LastConnectedDevice};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputHandle;
@@ -67,6 +67,7 @@ pub struct DeviceInfo {
     pub product_id: Option<String>,
     /// 子产品ID (16进制字符串，可选)
     pub sub_product_id: Option<String>,
+    /// UUID是否无效 (部分设备可能无UUID)
     pub uuid_is_invalid: bool,
     /// 设备路径 (运行时检测)
     pub device_path: Option<String>,
@@ -299,7 +300,7 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
                 product_id: Some(pid_str),
                 sub_product_id: None,
                 uuid_is_invalid: uuid.is_nil(),
-                device_path: Some(format!("{id:?}")),
+                device_path: None,
                 controller_type: detect_controller_type(&vid_str),
             };
             connected_devices.push(device_info);
@@ -314,6 +315,7 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
         for d in connected_devices.iter_mut() {
             if d.vendor_id.eq_ignore_ascii_case(&vid) {
                 d.sub_product_id = Some(pid.clone());
+                d.device_path = Some(device.path().to_string_lossy().to_string());
             }
         }
     }
@@ -412,7 +414,7 @@ pub fn use_device(device_name: String) -> bool {
             let mut current_device = CURRENT_DEVICE.write().unwrap();
             *current_device = device_info.clone();
             log::info!("✅ 使用设备: {}", current_device.name);
-            
+
             // 加载与此设备关联的校准数据
             crate::controller::calibrate::load_calibration(&device_info);
 
@@ -571,7 +573,7 @@ pub fn update_joystick_rotation_state(
         // 如果摇杆回到死区, 直接重置状态
         state.current_rotation = JoystickRotation::None;
     }
-    
+
     // 超时检查: 如果距离上次有效旋转超过一定时间, 则认为旋转已停止
     if state.last_rotation_time.elapsed().as_millis() > ROTATION_TIMEOUT_MS {
         state.current_rotation = JoystickRotation::None;
@@ -693,12 +695,18 @@ fn poll_controller(device: &DeviceInfo) {
                 poll_other_controllers(device)
             }
         }
+        ControllerType::PlayStation => {
+            // ps4::poll_ps4_controller(device);
+            poll_other_controllers(device);
+        }
         _ => {
             if device.uuid_is_invalid {
                 // TODO：未知控制器处理方法，windows 下拟调用xbox方法，其他平台报错
                 #[cfg(target_os = "windows")]
                 {
-                    xbox::poll_xbox_controller(device)
+                    log::warn!("未知控制器，尝试使用 Xbox 轮询方法: {device:#?}");
+                    // xbox::poll_xbox_controller(device)
+                    todo!("实现未知控制器的轮询逻辑");
                 }
                 #[cfg(not(target_os = "windows"))]
                 {
@@ -812,7 +820,10 @@ pub fn listen() {
                     }
                 (true, false) => {
                     if let Some(device) = &last_device {
-                        log::info!("❌ 设备断开: {}", device.name);
+                        log::info!("❌ 设备断开: {} ({}/{}/{})",
+                        device.name, device.vendor_id,
+                        device.product_id.as_deref().unwrap_or("Unknown"),
+                        device.sub_product_id.as_deref().unwrap_or("Unknown"));
                     }
                     last_device = None;
                 }

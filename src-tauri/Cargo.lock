@@ -8,6 +8,8 @@ version = "0.20.1"
 dependencies = [
  "anyhow",
  "cfg-if",
+ "ds4-rs",
+ "dualsense-rs",
  "enigo",
  "gilrs",
  "hidapi",
@@ -1042,6 +1044,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ds4-rs"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "742b2dc6280a8d528c1ab3d78a25cf9c188399b2b7070345e8c1d07810c631f9"
+dependencies = [
+ "hidapi",
+ "scroll",
+]
+
+[[package]]
 name = "dtoa"
 version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1054,6 +1066,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cd1511a7b6a56299bd043a9c167a6d2bfb37bf84a6dfceaba651168adfb43c87"
 dependencies = [
  "dtoa",
+]
+
+[[package]]
+name = "dualsense-rs"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4801f4040ea7d783c2c1111df25fdca6eb033f211c2ed26882da31b0bfcfa48"
+dependencies = [
+ "hidapi",
 ]
 
 [[package]]
@@ -3995,6 +4016,12 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
+
+[[package]]
+name = "scroll"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1257cd4248b4132760d6524d6dda4e053bc648c9070b960929bf50cfb1e7add"
 
 [[package]]
 name = "seahash"
