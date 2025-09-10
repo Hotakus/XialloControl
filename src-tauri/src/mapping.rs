@@ -7,10 +7,9 @@ use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use tauri::utils::config;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, RwLock};
 use std::thread;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
@@ -247,7 +246,6 @@ pub static DYNAMIC_TRIGGER_STATES: Lazy<RwLock<HashMap<u64, TriggerState>>> =
 pub static JOYSTICK_MAPPING_STATES: Lazy<RwLock<HashMap<u64, JoystickMappingState>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
-
 /// Enigo 工作线程的发送器，用于向其发送执行命令。
 pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
     let (tx, rx): (Sender<EnigoCommand>, Receiver<EnigoCommand>) = channel();
@@ -330,7 +328,7 @@ pub fn save_mappings() {
     };
 
     match xeno_utils::write_toml_file(&mappings_path, &mapping_file) {
-        Ok(_) => log::info!("映射配置已保存到: {mappings_path:#?}", ),
+        Ok(_) => log::info!("映射配置已保存到: {mappings_path:#?}",),
         Err(e) => log::error!("保存映射配置失败: {e:#?} {mappings:#?}"),
     }
 }
@@ -369,7 +367,9 @@ pub fn update_mapping(
         match parse_composed_key_to_action(&composed_shortcut_key) {
             Ok(mut action) => {
                 // 如果是滚轮动作且自定义了 amount, 则覆盖
-                if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) = (&mut action.primary, amount) {
+                if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) =
+                    (&mut action.primary, amount)
+                {
                     action.primary = PrimaryAction::MouseWheel { amount: new_amount };
                 }
 
@@ -407,13 +407,17 @@ pub fn add_mapping(
     joystick_config: Option<JoystickConfig>,
     amount: Option<i32>,
 ) -> bool {
-    log::debug!("请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}', joystick={joystick_config:?}");
+    log::debug!(
+        "请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}', joystick={joystick_config:?}"
+    );
 
     // 对于所有映射类型，我们都从 composed_shortcut_key 解析出 Action
     match parse_composed_key_to_action(&composed_shortcut_key) {
         Ok(mut action) => {
             // 如果是滚轮动作且自定义了 amount, 则覆盖
-            if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) = (&mut action.primary, amount) {
+            if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) =
+                (&mut action.primary, amount)
+            {
                 action.primary = PrimaryAction::MouseWheel { amount: new_amount };
             }
 
@@ -504,85 +508,85 @@ pub fn get_mapping_by_id(id: u64) -> Option<Mapping> {
 /// 创建 Xbox 手柄的按键布局映射。
 fn create_xbox_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut xbox_map = HashMap::new();
-        xbox_map.insert("Y", ControllerButtons::North);
-        xbox_map.insert("X", ControllerButtons::West);
-        xbox_map.insert("A", ControllerButtons::South);
-        xbox_map.insert("B", ControllerButtons::East);
-        xbox_map.insert("RB", ControllerButtons::RB);
-        xbox_map.insert("LB", ControllerButtons::LB);
-        xbox_map.insert("LeftStick", ControllerButtons::LStick);
-        xbox_map.insert("RightStick", ControllerButtons::RStick);
-        xbox_map.insert("Back", ControllerButtons::Back);
-        xbox_map.insert("Start", ControllerButtons::Start);
-        xbox_map.insert("Guide", ControllerButtons::Guide);
-        xbox_map.insert("DPadUp", ControllerButtons::Up);
-        xbox_map.insert("DPadDown", ControllerButtons::Down);
-        xbox_map.insert("DPadLeft", ControllerButtons::Left);
-        xbox_map.insert("DPadRight", ControllerButtons::Right);
-        xbox_map
+    xbox_map.insert("Y", ControllerButtons::North);
+    xbox_map.insert("X", ControllerButtons::West);
+    xbox_map.insert("A", ControllerButtons::South);
+    xbox_map.insert("B", ControllerButtons::East);
+    xbox_map.insert("RB", ControllerButtons::RB);
+    xbox_map.insert("LB", ControllerButtons::LB);
+    xbox_map.insert("LeftStick", ControllerButtons::LStick);
+    xbox_map.insert("RightStick", ControllerButtons::RStick);
+    xbox_map.insert("Back", ControllerButtons::Back);
+    xbox_map.insert("Start", ControllerButtons::Start);
+    xbox_map.insert("Guide", ControllerButtons::Guide);
+    xbox_map.insert("DPadUp", ControllerButtons::Up);
+    xbox_map.insert("DPadDown", ControllerButtons::Down);
+    xbox_map.insert("DPadLeft", ControllerButtons::Left);
+    xbox_map.insert("DPadRight", ControllerButtons::Right);
+    xbox_map
 }
 
 /// 创建 PlayStation 手柄的按键布局映射。
 fn create_playstation_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut ps_map = HashMap::new();
-        ps_map.insert("Triangle", ControllerButtons::North);
-        ps_map.insert("Square", ControllerButtons::West);
-        ps_map.insert("Cross", ControllerButtons::South);
-        ps_map.insert("Circle", ControllerButtons::East);
-        ps_map.insert("R1", ControllerButtons::RB);
-        ps_map.insert("L1", ControllerButtons::LB);
-        ps_map.insert("LeftStick", ControllerButtons::LStick);
-        ps_map.insert("RightStick", ControllerButtons::RStick);
-        ps_map.insert("Share", ControllerButtons::Back); // PlayStation 的 Share 键通常对应 Xbox 的 Back 键
-        ps_map.insert("Options", ControllerButtons::Start); // PlayStation 的 Options 键通常对应 Xbox 的 Start 键
-        ps_map.insert("PS", ControllerButtons::Guide); // PlayStation 的 PS 键通常对应 Xbox 的 Guide 键
-        ps_map.insert("DPadUp", ControllerButtons::Up);
-        ps_map.insert("DPadDown", ControllerButtons::Down);
-        ps_map.insert("DPadLeft", ControllerButtons::Left);
-        ps_map.insert("DPadRight", ControllerButtons::Right);
-        ps_map
+    ps_map.insert("Triangle", ControllerButtons::North);
+    ps_map.insert("Square", ControllerButtons::West);
+    ps_map.insert("Cross", ControllerButtons::South);
+    ps_map.insert("Circle", ControllerButtons::East);
+    ps_map.insert("R1", ControllerButtons::RB);
+    ps_map.insert("L1", ControllerButtons::LB);
+    ps_map.insert("LeftStick", ControllerButtons::LStick);
+    ps_map.insert("RightStick", ControllerButtons::RStick);
+    ps_map.insert("Share", ControllerButtons::Back); // PlayStation 的 Share 键通常对应 Xbox 的 Back 键
+    ps_map.insert("Options", ControllerButtons::Start); // PlayStation 的 Options 键通常对应 Xbox 的 Start 键
+    ps_map.insert("PS", ControllerButtons::Guide); // PlayStation 的 PS 键通常对应 Xbox 的 Guide 键
+    ps_map.insert("DPadUp", ControllerButtons::Up);
+    ps_map.insert("DPadDown", ControllerButtons::Down);
+    ps_map.insert("DPadLeft", ControllerButtons::Left);
+    ps_map.insert("DPadRight", ControllerButtons::Right);
+    ps_map
 }
 
 /// 创建通用手柄的按键布局映射。
 fn create_other_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut other_map = HashMap::new();
-        other_map.insert("Y", ControllerButtons::North);
-        other_map.insert("X", ControllerButtons::West);
-        other_map.insert("A", ControllerButtons::South);
-        other_map.insert("B", ControllerButtons::East);
-        other_map.insert("RB", ControllerButtons::RB);
-        other_map.insert("LB", ControllerButtons::LB);
-        other_map.insert("LeftStick", ControllerButtons::LStick);
-        other_map.insert("RightStick", ControllerButtons::RStick);
-        other_map.insert("Back", ControllerButtons::Back);
-        other_map.insert("Start", ControllerButtons::Start);
-        other_map.insert("Guide", ControllerButtons::Guide);
-        other_map.insert("DPadUp", ControllerButtons::Up);
-        other_map.insert("DPadDown", ControllerButtons::Down);
-        other_map.insert("DPadLeft", ControllerButtons::Left);
-        other_map.insert("DPadRight", ControllerButtons::Right);
-        other_map
+    other_map.insert("Y", ControllerButtons::North);
+    other_map.insert("X", ControllerButtons::West);
+    other_map.insert("A", ControllerButtons::South);
+    other_map.insert("B", ControllerButtons::East);
+    other_map.insert("RB", ControllerButtons::RB);
+    other_map.insert("LB", ControllerButtons::LB);
+    other_map.insert("LeftStick", ControllerButtons::LStick);
+    other_map.insert("RightStick", ControllerButtons::RStick);
+    other_map.insert("Back", ControllerButtons::Back);
+    other_map.insert("Start", ControllerButtons::Start);
+    other_map.insert("Guide", ControllerButtons::Guide);
+    other_map.insert("DPadUp", ControllerButtons::Up);
+    other_map.insert("DPadDown", ControllerButtons::Down);
+    other_map.insert("DPadLeft", ControllerButtons::Left);
+    other_map.insert("DPadRight", ControllerButtons::Right);
+    other_map
 }
 
 /// 创建 Nintendo Switch 手柄的按键布局映射。
 fn create_switch_layout_map() -> HashMap<&'static str, ControllerButtons> {
     let mut switch_map = HashMap::new();
-        switch_map.insert("Y", ControllerButtons::North);
-        switch_map.insert("X", ControllerButtons::West);
-        switch_map.insert("B", ControllerButtons::South); // Switch 的 B 对应 Xbox 的 A
-        switch_map.insert("A", ControllerButtons::East);  // Switch 的 A 对应 Xbox 的 B
-        switch_map.insert("R", ControllerButtons::RB);    // Switch 的 R 对应 Xbox 的 RB
-        switch_map.insert("L", ControllerButtons::LB);    // Switch 的 L 对应 Xbox 的 LB
-        switch_map.insert("LeftStick", ControllerButtons::LStick);
-        switch_map.insert("RightStick", ControllerButtons::RStick);
-        switch_map.insert("Minus", ControllerButtons::Back);   // Switch 的 Minus 对应 Xbox 的 Back
-        switch_map.insert("Plus", ControllerButtons::Start);   // Switch 的 Plus 对应 Xbox 的 Start
-        switch_map.insert("Home", ControllerButtons::Guide);   // Switch 的 Home 对应 Xbox 的 Guide
-        switch_map.insert("DPadUp", ControllerButtons::Up);
-        switch_map.insert("DPadDown", ControllerButtons::Down);
-        switch_map.insert("DPadLeft", ControllerButtons::Left);
-        switch_map.insert("DPadRight", ControllerButtons::Right);
-        switch_map
+    switch_map.insert("Y", ControllerButtons::North);
+    switch_map.insert("X", ControllerButtons::West);
+    switch_map.insert("B", ControllerButtons::South); // Switch 的 B 对应 Xbox 的 A
+    switch_map.insert("A", ControllerButtons::East); // Switch 的 A 对应 Xbox 的 B
+    switch_map.insert("R", ControllerButtons::RB); // Switch 的 R 对应 Xbox 的 RB
+    switch_map.insert("L", ControllerButtons::LB); // Switch 的 L 对应 Xbox 的 LB
+    switch_map.insert("LeftStick", ControllerButtons::LStick);
+    switch_map.insert("RightStick", ControllerButtons::RStick);
+    switch_map.insert("Minus", ControllerButtons::Back); // Switch 的 Minus 对应 Xbox 的 Back
+    switch_map.insert("Plus", ControllerButtons::Start); // Switch 的 Plus 对应 Xbox 的 Start
+    switch_map.insert("Home", ControllerButtons::Guide); // Switch 的 Home 对应 Xbox 的 Guide
+    switch_map.insert("DPadUp", ControllerButtons::Up);
+    switch_map.insert("DPadDown", ControllerButtons::Down);
+    switch_map.insert("DPadLeft", ControllerButtons::Left);
+    switch_map.insert("DPadRight", ControllerButtons::Right);
+    switch_map
 }
 
 /// 初始化所有支持的手柄按键布局映射。
@@ -590,7 +594,10 @@ fn init_controller_layout_maps() {
     let mut map = CONTROLLER_LAYOUT_MAP.write().unwrap();
     if map.is_empty() {
         map.insert(ControllerType::Xbox, Arc::new(create_xbox_layout_map()));
-        map.insert(ControllerType::PlayStation, Arc::new(create_playstation_layout_map()));
+        map.insert(
+            ControllerType::PlayStation,
+            Arc::new(create_playstation_layout_map()),
+        );
         map.insert(ControllerType::Switch, Arc::new(create_switch_layout_map())); // 添加 Switch 布局
         map.insert(ControllerType::Other, Arc::new(create_other_layout_map()));
     }
@@ -601,7 +608,8 @@ pub fn get_current_controller_layout_map() -> Arc<HashMap<&'static str, Controll
     init_controller_layout_maps();
     let controller_type = CURRENT_DEVICE.read().unwrap().controller_type;
     let map_guard = CONTROLLER_LAYOUT_MAP.read().unwrap();
-    map_guard.get(&controller_type)
+    map_guard
+        .get(&controller_type)
         .unwrap_or_else(|| {
             // log::warn!("未找到 {controller_type:?} 对应的布局，使用通用布局");
             map_guard.get(&ControllerType::Other).unwrap()
@@ -768,13 +776,13 @@ pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
     } else {
         GLOBAL_MAPPING_CACHE.read().unwrap().clone()
     };
-    
+
     let layout_map = get_current_controller_layout_map();
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
 
     for mapping in mappings.iter() {
         let composed_button = mapping.get_composed_button();
-        
+
         // 检查是否为摇杆旋转映射
         let rotation_match = match composed_button {
             "LeftStickCW" => Some(controller_datas.left_stick_rotation == JoystickRotation::Clockwise),
@@ -805,7 +813,9 @@ pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
                     .or_insert_with(|| mapping.trigger_state.clone());
 
                 if trigger_state.should_trigger() {
-                    ENIGO_SENDER.send(EnigoCommand::Execute(mapping.action.clone())).unwrap();
+                    ENIGO_SENDER
+                        .send(EnigoCommand::Execute(mapping.action.clone()))
+                        .unwrap();
                 }
             } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
                 state.reset();
