@@ -1,5 +1,5 @@
 <template>
-  <VueDraggable ref="el" v-model="state.mappings" :disabled="disabled" :force-fallback="true" :animation="150"
+  <VueDraggable ref="el" v-model="state.mappings" :disabled="disabled" :force-fallback="true" :animation="200"
     ghostClass="ghost" class="button-map" @start="onStart" @update="onUpdate" @end="onEnd">
     <div v-for="mapping in state.mappings" :key="mapping.id" class="button-map-item">
       <div class="button-icon">{{ mapping.composed_button }}</div>
@@ -74,7 +74,7 @@ const onUpdate = () => {
 
 <style scoped>
 .ghost {
-  opacity: 0.5;
-  background: #c8ebfb;
+  opacity: 0.3;
+  background: #dbf4ffc4;
 }
 </style>
