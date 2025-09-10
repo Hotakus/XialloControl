@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::setting::{get_setting};
+use crate::setting::get_setting;
 use crate::xeno_utils::ensure_dir;
 use crate::{mapping, xeno_utils};
 use once_cell::sync::Lazy;
@@ -135,7 +135,6 @@ struct PresetFile {
 fn default_deadzone() -> u8 {
     DEFAULT_DEADZONE
 }
-
 
 /// 创建新的预设
 #[tauri::command]
@@ -281,7 +280,9 @@ pub fn switch_to_preset(name: &str) -> Result<Preset, String> {
         if let Some(sub_name) = &preset.items.sub_preset_name {
             let mut sub_preset = Preset::new(sub_name.clone());
             if sub_preset.load(sub_name) {
-                let sub_mapping_path = PathBuf::from(PRESET_DIR).join(sub_name).join(&sub_preset.items.mappings_file_name);
+                let sub_mapping_path = PathBuf::from(PRESET_DIR)
+                    .join(sub_name)
+                    .join(&sub_preset.items.mappings_file_name);
                 mapping::load_sub_mappings(sub_mapping_path);
                 *CURRENT_SUB_PRESET.write().unwrap() = Some(sub_preset);
             } else {
@@ -291,7 +292,10 @@ pub fn switch_to_preset(name: &str) -> Result<Preset, String> {
             *CURRENT_SUB_PRESET.write().unwrap() = None;
         }
 
-        log::info!("成功切换到预设: {}", mapping::get_mapping_file_path().display());
+        log::info!(
+            "成功切换到预设: {}",
+            mapping::get_mapping_file_path().display()
+        );
         Ok(preset.clone())
     } else {
         Err("加载预设失败".to_string())
@@ -366,7 +370,6 @@ pub fn initialize() {
     load_presets_from_list_to_global(list);
 }
 
-
 #[tauri::command]
 pub fn update_deadzone(deadzone: u8, deadzone_left: u8) -> Result<(), String> {
     let mut preset = CURRENT_PRESET.write().unwrap();
@@ -388,7 +391,9 @@ pub fn update_preset_items(items: PresetItems) -> Result<(), String> {
         if let Some(sub_name) = &preset.items.sub_preset_name {
             let mut sub_preset = Preset::new(sub_name.clone());
             if sub_preset.load(sub_name) {
-                let sub_mapping_path = PathBuf::from(PRESET_DIR).join(sub_name).join(&sub_preset.items.mappings_file_name);
+                let sub_mapping_path = PathBuf::from(PRESET_DIR)
+                    .join(sub_name)
+                    .join(&sub_preset.items.mappings_file_name);
                 mapping::load_sub_mappings(sub_mapping_path);
                 *CURRENT_SUB_PRESET.write().unwrap() = Some(sub_preset);
             } else {
@@ -402,4 +407,3 @@ pub fn update_preset_items(items: PresetItems) -> Result<(), String> {
         Err("Failed to save preset".to_string())
     }
 }
-
