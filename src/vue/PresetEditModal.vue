@@ -22,17 +22,42 @@
                             </button>
                         </div>
                     </div>
-                    <div class="setting-item sub-preset-toggle">
-                        <label for="as-sub-preset">作为副预设:</label>
-                        <label class="switch">
-                            <input type="checkbox" id="as-sub-preset" v-model="state.current_preset.items.as_sub">
-                            <span class="slider round"></span>
-                        </label>
+
+                    <div class="sub-preset-options">
+                         <div class="form-group">
+                            <label>副预设</label>
+                            <select class="form-control" v-model="subPresetOptions.sub_preset_name">
+                                <option :value="null">无</option>
+                                <option v-for="preset in state.presets.filter(p => p !== state.current_preset.name)" :key="preset" :value="preset">
+                                    {{ preset }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div v-if="subPresetOptions.sub_preset_name">
+                            <div class="form-group">
+                                <label>切换按键</label>
+                                <select class="form-control" v-model="subPresetOptions.sub_preset_switch_button">
+                                     <option v-for="btn in controllerButtons" :key="btn" :value="btn">{{ btn }}</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>切换模式</label>
+                                <div class="radio-group">
+                                    <label>
+                                        <input type="radio" value="Hold" v-model="subPresetOptions.sub_preset_switch_mode">
+                                        按住
+                                    </label>
+                                    <label>
+                                        <input type="radio" value="Toggle" v-model="subPresetOptions.sub_preset_switch_mode">
+                                        切换
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <!-- <button class="btn btn-outline" @click="closePresetEditModal()">取消</button>
-                    <button class="btn btn-primary" @click="savePresetSettings()">保存</button> -->
                 </div>
             </div>
         </div>
@@ -42,11 +67,19 @@
 <script setup lang="ts">
 import { watch } from "vue";
 import { state } from "@/ts/global_states";
-import { handleRenamePreset, editablePresetName, initEditablePresetName } from "@/ts/PresetEditModal";
+import { 
+    handleRenamePreset, 
+    editablePresetName, 
+    initEditablePresetName,
+    subPresetOptions,
+    controllerButtons,
+    initializeSubPresetOptions,
+} from "@/ts/PresetEditModal";
 
 watch(() => state.showPresetEditModal, (isVisible) => {
     if (isVisible) {
         initEditablePresetName();
+        initializeSubPresetOptions();
     }
 });
 
@@ -70,13 +103,29 @@ const closePresetEditModal = () => {
 .input-group .form-control {
     padding: 8px 12px;
     height: 36px;
-    /* 与 icon-button 的默认高度对齐 */
 }
 
-/* 使图标按钮尺寸与输入框更协调 */
 .item-action-btn {
     width: 36px;
     height: 36px;
     font-size: 16px;
+}
+.sub-preset-options {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #444;
+}
+
+.radio-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
 }
 </style>

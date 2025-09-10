@@ -37,9 +37,16 @@ pub struct PresetItems {
     #[serde(default = "default_deadzone")]
     pub deadzone_left: u8,
 
-    /// 是否为副预设，只能有一个副预设
+    // --- 副预设相关配置 ---
+    /// 指定的副预设名称
     #[serde(default)]
-    pub as_sub: bool,
+    pub sub_preset_name: Option<String>,
+    /// 切换键
+    #[serde(default)]
+    pub sub_preset_switch_button: Option<String>,
+    /// 切换模式
+    #[serde(default)]
+    pub sub_preset_switch_mode: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -57,7 +64,9 @@ impl Preset {
                 mappings_file_name: DEFAULT_MAPPINGS_FILE.into(),
                 deadzone: DEFAULT_DEADZONE,
                 deadzone_left: DEFAULT_DEADZONE,
-                as_sub: false,
+                sub_preset_name: None,
+                sub_preset_switch_button: None,
+                sub_preset_switch_mode: None,
             },
         }
     }
@@ -267,6 +276,21 @@ pub fn switch_to_preset(name: &str) -> Result<Preset, String> {
                 .join(preset.name.clone())
                 .join(preset.items.mappings_file_name.clone()),
         );
+
+        // 切换主预设时，尝试加载其指定的副预设
+        if let Some(sub_name) = &preset.items.sub_preset_name {
+            let mut sub_preset = Preset::new(sub_name.clone());
+            if sub_preset.load(sub_name) {
+                let sub_mapping_path = PathBuf::from(PRESET_DIR).join(sub_name).join(&sub_preset.items.mappings_file_name);
+                mapping::load_sub_mappings(sub_mapping_path);
+                *CURRENT_SUB_PRESET.write().unwrap() = Some(sub_preset);
+            } else {
+                *CURRENT_SUB_PRESET.write().unwrap() = None;
+            }
+        } else {
+            *CURRENT_SUB_PRESET.write().unwrap() = None;
+        }
+
         log::info!("成功切换到预设: {}", mapping::get_mapping_file_path().display());
         Ok(preset.clone())
     } else {
@@ -354,3 +378,28 @@ pub fn update_deadzone(deadzone: u8, deadzone_left: u8) -> Result<(), String> {
         Err("Failed to save preset".to_string())
     }
 }
+
+#[tauri::command]
+pub fn update_preset_items(items: PresetItems) -> Result<(), String> {
+    let mut preset = CURRENT_PRESET.write().unwrap();
+    preset.items = items;
+    if preset.save() {
+        // 更新后，需要重新加载副预设状态
+        if let Some(sub_name) = &preset.items.sub_preset_name {
+            let mut sub_preset = Preset::new(sub_name.clone());
+            if sub_preset.load(sub_name) {
+                let sub_mapping_path = PathBuf::from(PRESET_DIR).join(sub_name).join(&sub_preset.items.mappings_file_name);
+                mapping::load_sub_mappings(sub_mapping_path);
+                *CURRENT_SUB_PRESET.write().unwrap() = Some(sub_preset);
+            } else {
+                *CURRENT_SUB_PRESET.write().unwrap() = None;
+            }
+        } else {
+            *CURRENT_SUB_PRESET.write().unwrap() = None;
+        }
+        Ok(())
+    } else {
+        Err("Failed to save preset".to_string())
+    }
+}
+

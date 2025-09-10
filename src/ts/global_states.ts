@@ -19,7 +19,9 @@ export interface Preset {
         deadzone: number;
         deadzone_left: number;
         mappings_file_name: string;
-        as_sub: boolean; // 是否为副预设
+        sub_preset_name: string | null;
+        sub_preset_switch_button: string | null;
+        sub_preset_switch_mode: string | null;
     }
 }
 
@@ -137,7 +139,9 @@ export const state = reactive({
             deadzone: 0,
             deadzone_left: 0,
             mappings_file_name: "",
-            as_sub: false,
+            sub_preset_name: null,
+            sub_preset_switch_button: null,
+            sub_preset_switch_mode: null,
         }
     } as Preset,
 

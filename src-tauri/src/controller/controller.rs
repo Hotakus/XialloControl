@@ -20,6 +20,13 @@ use rusty_xinput::XInputHandle;
 use uuid::Uuid;
 
 use std::collections::HashMap;
+
+// --- 副预设切换状态 ---
+/// 用于追踪 Toggle 模式下的副预设激活状态
+static IS_SUB_PRESET_ACTIVE: Lazy<RwLock<bool>> = Lazy::new(|| RwLock::new(false));
+/// 用于检测按键单击事件 (按下后立即释放)
+static mut TOGGLE_BUTTON_LAST_STATE: bool = false;
+
 // ---------------------- 结构体定义 ----------------------
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum JoystickSource {
@@ -723,6 +730,56 @@ pub fn polling_devices() {
     // });
 }
 
+/// 处理预设切换决策, 返回是否应该使用副预设
+fn handle_preset_switching_decision() -> bool {
+    let controller_datas = CONTROLLER_DATA.read().unwrap();
+    let main_preset = preset::get_current_preset();
+    let sub_preset_guard = preset::CURRENT_SUB_PRESET.read().unwrap();
+
+    let mut use_sub_preset = false;
+
+    // 必须存在副预设，并且主预设有切换配置
+    if sub_preset_guard.is_some() {
+        if let (Some(button_name), Some(mode)) = (
+            &main_preset.items.sub_preset_switch_button,
+            &main_preset.items.sub_preset_switch_mode,
+        ) {
+            let layout_map = mapping::get_current_controller_layout_map();
+            if let Some(button_enum) = layout_map.get(button_name.as_str()) {
+                let is_button_pressed = controller_datas.get_button(*button_enum);
+
+                match mode.as_str() {
+                    "Hold" => {
+                        use_sub_preset = is_button_pressed;
+                    }
+                    "Toggle" => {
+                        unsafe {
+                            if is_button_pressed && !TOGGLE_BUTTON_LAST_STATE {
+                                let mut active = IS_SUB_PRESET_ACTIVE.write().unwrap();
+                                *active = !*active;
+                            }
+                            TOGGLE_BUTTON_LAST_STATE = is_button_pressed;
+                        }
+                        use_sub_preset = *IS_SUB_PRESET_ACTIVE.read().unwrap();
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    // 如果没有副预设, 确保 toggle 状态被重置
+    if sub_preset_guard.is_none() {
+        let mut active = IS_SUB_PRESET_ACTIVE.write().unwrap();
+        if *active {
+            *active = false;
+        }
+    }
+    
+    use_sub_preset
+}
+
+
 /// 主设备状态监听循环
 pub fn listen() {
     thread::spawn(|| {
@@ -765,7 +822,8 @@ pub fn listen() {
             // 执行设备状态轮询
             if let Some(device) = &last_device {
                 poll_controller(device);
-                mapping::map(&CONTROLLER_DATA.read().unwrap());
+                let use_sub_preset = handle_preset_switching_decision();
+                mapping::map(&CONTROLLER_DATA.read().unwrap(), use_sub_preset);
             }
 
             let elapsed = time_start.elapsed();

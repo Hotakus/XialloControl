@@ -7,6 +7,7 @@ use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use tauri::utils::config;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -223,6 +224,9 @@ pub static GLOBAL_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| {
     RwLock::new(mappings)
 });
 
+/// 副预设映射配置缓存
+pub static SUB_MAPPING_CACHE: Lazy<RwLock<Vec<Mapping>>> = Lazy::new(|| RwLock::new(vec![]));
+
 /// TOML 配置文件名。
 const DEFAULT_MAPPINGS_FILE: &str = "mappings.toml";
 pub static MAPPING_FILE_PATH: Lazy<RwLock<PathBuf>> =
@@ -268,18 +272,21 @@ pub fn get_mapping_file_path() -> PathBuf {
 /// 内部加载映射配置的实现，从文件读取。
 fn load_mappings_internal() -> Vec<Mapping> {
     let mappings_path = xeno_utils::get_config_path(get_mapping_file_path().to_str().unwrap());
+    load_mappings_from_path(mappings_path)
+}
 
-    if !mappings_path.exists() {
-        log::warn!("映射配置文件不存在，将创建空文件: {mappings_path:#?}");
+pub fn load_mappings_from_path(path: PathBuf) -> Vec<Mapping> {
+    if !path.exists() {
+        log::warn!("映射配置文件不存在，将创建空文件: {path:#?}");
         // 创建空映射文件
         let mapping_file = MappingFile { mappings: vec![] };
-        if let Err(e) = xeno_utils::write_toml_file(&mappings_path, &mapping_file) {
+        if let Err(e) = xeno_utils::write_toml_file(&path, &mapping_file) {
             log::error!("创建空映射文件失败: {e}");
         }
         return vec![];
     }
 
-    match xeno_utils::read_toml_file::<MappingFile>(&mappings_path) {
+    match xeno_utils::read_toml_file::<MappingFile>(&path) {
         Ok(mapping_file) => {
             log::info!("成功加载 {} 条映射配置", mapping_file.mappings.len());
             mapping_file.mappings
@@ -289,6 +296,13 @@ fn load_mappings_internal() -> Vec<Mapping> {
             vec![]
         }
     }
+}
+
+/// 将指定路径的映射加载到副预设缓存中
+pub fn load_sub_mappings(path: PathBuf) {
+    let mut cache = SUB_MAPPING_CACHE.write().unwrap();
+    let config_path = xeno_utils::get_config_path(path.to_str().unwrap());
+    *cache = load_mappings_from_path(config_path);
 }
 
 /// 将映射配置加载到全局缓存中。
@@ -583,7 +597,7 @@ fn init_controller_layout_maps() {
 }
 
 /// 获取当前连接手柄的按键布局映射的只读引用。
-fn get_current_controller_layout_map() -> Arc<HashMap<&'static str, ControllerButtons>> {
+pub fn get_current_controller_layout_map() -> Arc<HashMap<&'static str, ControllerButtons>> {
     init_controller_layout_maps();
     let controller_type = CURRENT_DEVICE.read().unwrap().controller_type;
     let map_guard = CONTROLLER_LAYOUT_MAP.read().unwrap();
@@ -748,8 +762,13 @@ pub fn initialize() {
 
 /// 核心映射函数，将手柄输入映射到相应的操作。
 /// 遍历所有映射配置，检查手柄状态，并触发相应的操作。
-pub fn map(controller_datas: &ControllerDatas) {
-    let mappings = GLOBAL_MAPPING_CACHE.read().unwrap().clone();
+pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
+    let mappings = if use_sub_preset {
+        SUB_MAPPING_CACHE.read().unwrap().clone()
+    } else {
+        GLOBAL_MAPPING_CACHE.read().unwrap().clone()
+    };
+    
     let layout_map = get_current_controller_layout_map();
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
 

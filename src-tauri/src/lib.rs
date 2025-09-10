@@ -296,7 +296,8 @@ pub fn run() {
             preset::create_preset,
             preset::delete_preset,
             preset::rename_preset,
-            preset::switch_to_preset
+            preset::switch_to_preset,
+            preset::update_preset_items
         ])
         .setup(|app| {
             let app_handle = app.handle();
