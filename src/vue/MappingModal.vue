@@ -20,12 +20,12 @@
                   <option disabled value="">-- 请选择 --</option>
                   <optgroup label="按键">
                     <option v-for="btn in state.buttonsText" :key="btn.value" :value="btn.value">
-                      {{ btn.text }}
+                      {{ $t(`buttons.${btn.value}`) }}
                     </option>
                   </optgroup>
                   <optgroup label="摇杆">
                     <option v-for="stick in state.sticksText" :key="stick.value" :value="stick.value">
-                      {{ stick.text }}
+                      {{ $t(`sticks.${stick.value}`) }}
                     </option>
                   </optgroup>
                 </select>

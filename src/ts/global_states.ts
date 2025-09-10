@@ -77,14 +77,14 @@ export const state = reactive({
     showCaliModal: false,
     showPresetEditModal: false,
 
-    buttonsText: [{value: '', text: ''}],
+    buttonsText: [{value: ''}],
     sticksText: [
-        {value: 'LeftStick', text: '左摇杆 - 按下'},
-        {value: 'RightStick', text: '右摇杆 - 按下'},
-        {value: 'LeftStickCW', text: '左摇杆 - 顺时针'},
-        {value: 'LeftStickCCW', text: '左摇杆 - 逆时针'},
-        {value: 'RightStickCW', text: '右摇杆 - 顺时针'},
-        {value: 'RightStickCCW', text: '右摇杆 - 逆时针'},
+        {value: 'LeftStick'},
+        {value: 'RightStick'},
+        {value: 'LeftStickCW'},
+        {value: 'LeftStickCCW'},
+        {value: 'RightStickCW'},
+        {value: 'RightStickCCW'},
     ],
 
     // main.js 原有的状态

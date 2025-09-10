@@ -1,0 +1,51 @@
+{
+  "hello": "Hello, world!",
+  "presetEditModal": {
+    "title": "Edit Preset",
+    "presetName": "Preset Name",
+    "enterNewName": "Enter new preset name",
+    "subPreset": "Sub Preset",
+    "none": "None",
+    "switchButton": "Switch Button",
+    "switchMode": "Switch Mode",
+    "hold": "Hold",
+    "toggle": "Toggle"
+  },
+  "buttons": {
+    "A": "A",
+    "B": "B",
+    "X": "X",
+    "Y": "Y",
+    "LB": "LB",
+    "RB": "RB",
+    "Back": "Back",
+    "Start": "Start",
+    "Guide": "Guide",
+    "DPadUp": "DPad Up",
+    "DPadDown": "DPad Down",
+    "DPadLeft": "DPad Left",
+    "DPadRight": "DPad Right",
+    "Cross": "Cross",
+    "Circle": "Circle",
+    "Square": "Square",
+    "Triangle": "Triangle",
+    "L1": "L1",
+    "R1": "R1",
+    "Share": "Share",
+    "Options": "Options",
+    "PS": "PS",
+    "L": "L",
+    "R": "R",
+    "Minus": "Minus",
+    "Plus": "Plus",
+    "Home": "Home"
+  },
+  "sticks": {
+    "LeftStick": "Left Stick Press",
+    "RightStick": "Right Stick Press",
+    "LeftStickCW": "Left Stick CW",
+    "LeftStickCCW": "Left Stick CCW",
+    "RightStickCW": "Right Stick CW",
+    "RightStickCCW": "Right Stick CCW"
+  }
+}

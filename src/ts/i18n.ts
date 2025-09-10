@@ -1,11 +1,29 @@
+import { createI18n } from 'vue-i18n';
+import en_US from '../locales/en_US.json';
+import zh_CN from '../locales/zh_CN.json';
+
+const i18n = createI18n({
+    legacy: false, // 使用 Composition API 模式
+    locale: 'zh_CN', // 默认语言
+    fallbackLocale: 'en_US', // 回退语言
+    missingWarn: false, // 禁用找不到翻译的警告
+    fallbackWarn: false, // 禁用回退的警告
+    missing: (locale, key) => { // 找不到翻译时的处理函数
+        return key;
+    },
+    messages: {
+        'en_US': en_US,
+        'zh_CN': zh_CN,
+    },
+});
+
+export default i18n;
+
 /**
- * 通用翻译函数 (占位符)
- * TODO: 集成 i18n 库后在此处实现真正的翻译逻辑
+ * 通用翻译函数
  * @param key 翻译的 key, e.g., "A" or "buttons.a_button"
  * @returns 翻译后的字符串
  */
 export function translate(key: string): string {
-    // 当前只是一个占位符，直接返回 key
-    // 未来会替换为 i18n.global.t(key) 之类的实现
-    return key;
+    return i18n.global.t(key);
 }

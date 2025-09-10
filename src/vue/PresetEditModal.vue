@@ -3,15 +3,15 @@
         <div class="modal-overlay" :class="{ active: state.showPresetEditModal }" @click.self="closePresetEditModal()">
             <div class="modal">
                 <div class="modal-header">
-                    <span>编辑预设</span>
+                    <span>{{ $t('presetEditModal.title') }}</span>
                     <button class="modal-close" @click="closePresetEditModal()">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>预设名称</label>
+                        <label>{{ $t('presetEditModal.presetName') }}</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" v-model="editablePresetName" placeholder="输入新的预设名称"
-                                @keyup.enter="handleRenamePreset">
+                            <input type="text" class="form-control" v-model="editablePresetName"
+                                :placeholder="$t('presetEditModal.enterNewName')" @keyup.enter="handleRenamePreset">
                             <button class="icon-button" @click="handleRenamePreset">
                                 <svg t="1757211709577" class="icon" viewBox="0 0 1024 1024" version="1.1"
                                     xmlns="http://www.w3.org/2000/svg" p-id="4551" width="200" height="200">
@@ -24,11 +24,12 @@
                     </div>
 
                     <div class="sub-preset-options">
-                         <div class="form-group">
-                            <label>副预设</label>
+                        <div class="form-group">
+                            <label>{{ $t('presetEditModal.subPreset') }}</label>
                             <select class="form-control" v-model="subPresetOptions.sub_preset_name">
-                                <option :value="null">无</option>
-                                <option v-for="preset in state.presets.filter(p => p !== state.current_preset.name)" :key="preset" :value="preset">
+                                <option :value="null">{{ $t('presetEditModal.none') }}</option>
+                                <option v-for="preset in state.presets.filter(p => p !== state.current_preset.name)"
+                                    :key="preset" :value="preset">
                                     {{ preset }}
                                 </option>
                             </select>
@@ -36,21 +37,25 @@
 
                         <div v-if="subPresetOptions.sub_preset_name">
                             <div class="form-group">
-                                <label>切换按键</label>
+                                <label>{{ $t('presetEditModal.switchButton') }}</label>
                                 <select class="form-control" v-model="subPresetOptions.sub_preset_switch_button">
-                                     <option v-for="btn in controllerButtons" :key="btn" :value="btn">{{ btn }}</option>
+                                    <option v-for="btn in controllerButtons" :key="btn" :value="btn">
+                                        {{ $t(`buttons.${btn}`) }}
+                                    </option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>切换模式</label>
+                                <label>{{ $t('presetEditModal.switchMode') }}</label>
                                 <div class="radio-group">
                                     <label>
-                                        <input type="radio" value="Hold" v-model="subPresetOptions.sub_preset_switch_mode">
-                                        按住
+                                        <input type="radio" value="Hold"
+                                            v-model="subPresetOptions.sub_preset_switch_mode">
+                                        {{ $t('presetEditModal.hold') }}
                                     </label>
                                     <label>
-                                        <input type="radio" value="Toggle" v-model="subPresetOptions.sub_preset_switch_mode">
-                                        切换
+                                        <input type="radio" value="Toggle"
+                                            v-model="subPresetOptions.sub_preset_switch_mode">
+                                        {{ $t('presetEditModal.toggle') }}
                                     </label>
                                 </div>
                             </div>
@@ -67,9 +72,9 @@
 <script setup lang="ts">
 import { watch } from "vue";
 import { state } from "@/ts/global_states";
-import { 
-    handleRenamePreset, 
-    editablePresetName, 
+import {
+    handleRenamePreset,
+    editablePresetName,
     initEditablePresetName,
     subPresetOptions,
     controllerButtons,
@@ -110,6 +115,7 @@ const closePresetEditModal = () => {
     height: 36px;
     font-size: 16px;
 }
+
 .sub-preset-options {
     margin-top: 15px;
     padding-top: 15px;
