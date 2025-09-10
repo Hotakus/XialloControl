@@ -121,26 +121,30 @@ function updateTriggerVisual(triggerId: string, value: number) {
     const opacity = Math.min(Math.max(value, 0), 1) * 0.6;
     element.style.fillOpacity = opacity.toString();
 
-    let angle = value * 10; // 最大旋转10度 (可以根据喜好调整)
+    let angle = value * 40; // 最大旋转10度 (可以根据喜好调整)
+    let z_angle = 15; // 最大旋转10度 (可以根据喜好调整)
 
     let rect = element.getBBox();
     let pivotX = 0;
-    let pivotY = rect.y / 2 + rect.height * 2.8 / 3; // 底部中心点
+    let pivotY = rect.y / 2 + rect.height * 3.2 / 3; // 底部中心点
 
     switch (triggerId) {
         case 'svg-gamepad-lefttrigger': {
-            pivotX = rect.x + rect.width;
+            pivotX = rect.x + rect.width / 2;
             angle = -angle; // 左扳机向内旋转
+            z_angle = -z_angle;
             break;
         }
         case 'svg-gamepad-righttrigger': {
-            pivotX = rect.x;
+            pivotX = rect.x + rect.width / 2;
             break;
         }
     }
 
+    element.style.transformStyle = 'preserve-3d';
     element.style.transformOrigin = `${pivotX}px ${pivotY}px`; // 以底部中心为旋转点
-    element.style.transform = `rotate(${angle}deg)`;
+    // element.style.transform = `rotate(${angle}deg)`;
+    element.style.transform = `perspective(1200px) rotateX(${angle}deg) rotateZ(${z_angle}deg)`;
 }
 
 
