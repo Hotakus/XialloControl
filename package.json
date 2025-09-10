@@ -20,7 +20,8 @@
     "marked": "^16.2.1",
     "vite-svg-loader": "^5.1.0",
     "vue": "^3.5.13",
-    "vue-draggable-plus": "^0.6.0"
+    "vue-draggable-plus": "^0.6.0",
+    "vue-i18n": "^11.1.12"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

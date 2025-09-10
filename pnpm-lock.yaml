@@ -38,6 +38,9 @@ importers:
       vue-draggable-plus:
         specifier: ^0.6.0
         version: 0.6.0(@types/sortablejs@1.15.8)
+      vue-i18n:
+        specifier: ^11.1.12
+        version: 11.1.12(vue@3.5.18(typescript@5.9.2))
     devDependencies:
       '@commitlint/cli':
         specifier: ^19.8.1
@@ -315,6 +318,18 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@intlify/core-base@11.1.12':
+    resolution: {integrity: sha512-whh0trqRsSqVLNEUCwU59pyJZYpU8AmSWl8M3Jz2Mv5ESPP6kFh4juas2NpZ1iCvy7GlNRffUD1xr84gceimjg==}
+    engines: {node: '>= 16'}
+
+  '@intlify/message-compiler@11.1.12':
+    resolution: {integrity: sha512-Fv9iQSJoJaXl4ZGkOCN1LDM3trzze0AS2zRz2EHLiwenwL6t0Ki9KySYlyr27yVOj5aVz0e55JePO+kELIvfdQ==}
+    engines: {node: '>= 16'}
+
+  '@intlify/shared@11.1.12':
+    resolution: {integrity: sha512-Om86EjuQtA69hdNj3GQec9ZC0L0vPSAnXzB3gP/gyJ7+mA7t06d9aOAiqMZ+xEOsumGP4eEBlfl8zF2LOTzf2A==}
+    engines: {node: '>= 16'}
+
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
@@ -578,6 +593,9 @@ packages:
 
   '@vue/compiler-vue2@2.7.16':
     resolution: {integrity: sha512-qYC3Psj9S/mfu9uVi5WvNZIzq+xnXMhOwbTFKKDD7b1lhpnn71jXSFdTQ+WsIEk0ONCd7VV2IMm7ONl6tbQ86A==}
+
+  '@vue/devtools-api@6.6.4':
+    resolution: {integrity: sha512-sGhTPMuXqZ1rVOk32RylztWkfXTRhuS7vgAKv0zjqk8gbsHkJ7xfFf+jbySxt7tWObEJwyKaHMikV/WGDiQm8g==}
 
   '@vue/language-core@3.0.6':
     resolution: {integrity: sha512-e2RRzYWm+qGm8apUHW1wA5RQxzNhkqbbKdbKhiDUcmMrNAZGyM8aTiL3UrTqkaFI5s7wJRGGrp4u3jgusuBp2A==}
@@ -1572,6 +1590,12 @@ packages:
       '@vue/composition-api':
         optional: true
 
+  vue-i18n@11.1.12:
+    resolution: {integrity: sha512-BnstPj3KLHLrsqbVU2UOrPmr0+Mv11bsUZG0PyCOzsawCivk8W00GMXHeVUWIDOgNaScCuZah47CZFE+Wnl8mw==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      vue: ^3.0.0
+
   vue-svg-loader@0.16.0:
     resolution: {integrity: sha512-2RtFXlTCYWm8YAEO2qAOZ2SuIF2NvLutB5muc3KDYoZq5ZeCHf8ggzSan3ksbbca7CJ/Aw57ZnDF4B7W/AkGtw==}
     peerDependencies:
@@ -1839,6 +1863,18 @@ snapshots:
   '@esbuild/win32-x64@0.25.9':
     optional: true
 
+  '@intlify/core-base@11.1.12':
+    dependencies:
+      '@intlify/message-compiler': 11.1.12
+      '@intlify/shared': 11.1.12
+
+  '@intlify/message-compiler@11.1.12':
+    dependencies:
+      '@intlify/shared': 11.1.12
+      source-map-js: 1.2.1
+
+  '@intlify/shared@11.1.12': {}
+
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
   '@rolldown/pluginutils@1.0.0-beta.29': {}
@@ -2042,6 +2078,8 @@ snapshots:
     dependencies:
       de-indent: 1.0.2
       he: 1.2.0
+
+  '@vue/devtools-api@6.6.4': {}
 
   '@vue/language-core@3.0.6(typescript@5.9.2)':
     dependencies:
@@ -3179,6 +3217,13 @@ snapshots:
   vue-draggable-plus@0.6.0(@types/sortablejs@1.15.8):
     dependencies:
       '@types/sortablejs': 1.15.8
+
+  vue-i18n@11.1.12(vue@3.5.18(typescript@5.9.2)):
+    dependencies:
+      '@intlify/core-base': 11.1.12
+      '@intlify/shared': 11.1.12
+      '@vue/devtools-api': 6.6.4
+      vue: 3.5.18(typescript@5.9.2)
 
   vue-svg-loader@0.16.0(vue-template-compiler@2.7.16):
     dependencies:
