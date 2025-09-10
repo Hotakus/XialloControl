@@ -7,7 +7,7 @@ import { translate } from "./i18n";
 
 export const editablePresetName = ref('');
 
-export const controllerButtons = computed(() => state.buttonsText.map(btn => translate(btn.value)));
+export const controllerButtons = computed(() => state.buttonsText.map(btn => btn.value));
 
 // 这个 reactive 对象现在直接镜像 state.current_preset.items 的一部分
 export const subPresetOptions = reactive({
