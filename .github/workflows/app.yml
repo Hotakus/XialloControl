@@ -127,6 +127,6 @@ jobs:
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           updaterJsonKeepUniversal: true
-          tauriScript: pnpm
+#          tauriScript: pnpm
           args: ${{ matrix.target }}
 
