@@ -45,6 +45,10 @@ body {
     --success-text: #38a164;
     --success-bg: #e6f7ee;
 
+    --button-icon-size: 28px;
+
+    --button-map-item-hover-bg: #e2e6eb;
+
     --button-base-bg: #6489c9;
     --button-base-bg-hover: #4c86dd;
     --button-base-bg-active: #2a5dbf;
@@ -418,7 +422,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: #f1f3f6;
+    background: #f1f3f6b0;
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 14px;
@@ -428,15 +432,15 @@ body {
 }
 
 .button-map-item:hover {
-    background: #e0e4eb;
+    background: var(--button-map-item-hover-bg);
 }
 
 .button-icon {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 28px;
-    height: 28px;
+    width: var(--button-icon-size);
+    height: var(--button-icon-size);
     background: #e0e4eb;
     border-radius: 6px;
     font-weight: bold;
@@ -454,7 +458,7 @@ body {
 .key-value {
     font-weight: bold;
     color: #2f3542;
-    background: #e0e4eb;
+    background: var(--button-map-item-hover-bg);
     padding: 4px 10px;
     border-radius: 4px;
     min-width: 120px;

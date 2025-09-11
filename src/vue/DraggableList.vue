@@ -77,4 +77,10 @@ const onUpdate = () => {
   opacity: 0.3;
   background: #dbf4ffc4;
 }
+
+.button-svg-icon {
+  padding: 3px;
+  width: var(--button-icon-size);
+  height: var(--button-icon-size);
+}
 </style>
