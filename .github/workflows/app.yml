@@ -72,39 +72,35 @@ jobs:
         with:
           submodules: recursive
 
-      # Node + pnpm
+      # Node + pnpm (仅改缓存逻辑)
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+          cache: 'pnpm'
+          cache-dependency-path: '**/pnpm-lock.yaml'
+
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+
       - name: Install frontend dependencies
         run: pnpm install --no-frozen-lockfile
 
       # Rust Toolchain + Cache
       - uses: dtolnay/rust-toolchain@stable
+
       - uses: actions/cache@v4
         name: Cache cargo registry
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
       - uses: actions/cache@v4
         name: Cache cargo git
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
@@ -132,4 +128,5 @@ jobs:
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           updaterJsonKeepUniversal: true
           tauriScript: pnpm
-          args: --target ${{ matrix.args }}
+          args: --target ${{ matrix.target }}
+
