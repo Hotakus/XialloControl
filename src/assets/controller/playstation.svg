@@ -46,5 +46,7 @@
    <circle id="svg-gamepad-btn-guide" transform="matrix(1.6955 0 0 1.6425 -94.182 -80.313)" cx="135.47" cy="128.56" r="6.9043" style="fill-opacity:.5;fill:#ff9c00;stroke-linejoin:round;stroke-width:.87463;stroke:#7e7e7e"/>
   </g>
   <path id="touchpad" d="m94.202 55.209v38.458s-1.8342 7.6011 7.6011 7.6011h66.831s7.6012 0.9748 7.6012-7.6011v-38.458z" style="fill-opacity:.49741;fill:#949494;stroke-linejoin:round;stroke-width:1.408;stroke:#808080"/>
+  <path id="svg-gamepad-lefttrigger" d="m51.618 17.992c6.7173-6.172 14.601-10.094 19.945-3.33 2.7846 3.5243 6.8971 7.4901 5.8385 24.146-0.28032 4.4103-7.134 2.325-27.235 2.942-20.548 0.63068 1.4514-23.758 1.4514-23.758z" style="fill-opacity:.5;fill:#ff9c00;stroke-linejoin:round;stroke-width:2.026;stroke:#808080"/>
+  <path id="svg-gamepad-righttrigger" d="m220.62 17.981c-6.7342-6.1536-14.628-10.054-19.954-3.2755-2.775 3.5319-5.9025 7.4175-5.7725 24.161 0.0343 4.4191 7.1403 2.3055 27.243 2.8676 20.549 0.57455-1.5162-23.753-1.5162-23.753z" style="fill-opacity:.5;fill:#ff9c00;stroke-linejoin:round;stroke-width:2.026;stroke:#808080"/>
  </g>
 </svg>

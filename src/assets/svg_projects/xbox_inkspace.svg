@@ -29,9 +29,9 @@
      inkscape:pagecheckerboard="false"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.36302258"
-     inkscape:cx="176.29758"
-     inkscape:cy="-144.6191"
+     inkscape:zoom="0.25669573"
+     inkscape:cx="821.98485"
+     inkscape:cy="21.426145"
      inkscape:window-width="1920"
      inkscape:window-height="1017"
      inkscape:window-x="-8"
@@ -300,7 +300,7 @@
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.0059px;font-family:Consolas;-inkscape-font-specification:'Consolas, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect17);display:inline;opacity:1;fill:#809dff;fill-opacity:1;stroke:#809eff;stroke-width:0.933195;stroke-dasharray:none;stroke-opacity:1"><tspan
            x="915.9668"
            y="130.10326"
-           id="tspan5">X
+           id="tspan1">X
 </tspan></text></g><g
        id="svg-gamepad-btn-north"
        inkscape:label="svg-gamepad-btn-north"
@@ -324,7 +324,7 @@
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.0059px;font-family:Consolas;-inkscape-font-specification:'Consolas, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect17-9);display:inline;opacity:1;fill:#fff980;fill-opacity:1;stroke:#fff880;stroke-width:0.933195;stroke-dasharray:none;stroke-opacity:1"><tspan
            x="915.9668"
            y="130.10326"
-           id="tspan6">Y
+           id="tspan2">Y
 </tspan></text></g><g
        id="svg-gamepad-btn-east"
        inkscape:label="svg-gamepad-btn-east"
@@ -349,7 +349,7 @@
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.0059px;font-family:Consolas;-inkscape-font-specification:'Consolas, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect17-9-5);display:inline;fill:#ff8280;fill-opacity:1;stroke:#ff8280;stroke-width:0.933195;stroke-dasharray:none;stroke-opacity:1"><tspan
            x="915.9668"
            y="130.10326"
-           id="tspan7">B
+           id="tspan3">B
 </tspan></text></g><g
        id="svg-gamepad-btn-south"
        inkscape:label="svg-gamepad-btn-south"
@@ -374,7 +374,7 @@
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13.0059px;font-family:Consolas;-inkscape-font-specification:'Consolas, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:start;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect17-2);display:inline;fill:#80ff8c;fill-opacity:1;stroke:#80ff8b;stroke-width:0.933195;stroke-dasharray:none;stroke-opacity:1"><tspan
            x="915.9668"
            y="130.10326"
-           id="tspan8">A
+           id="tspan4">A
 </tspan></text></g><g
        id="g37"
        inkscape:label="Dpad"
@@ -395,12 +395,12 @@
          style="fill:#ff9c00;fill-opacity:0.502591;stroke:#808080;stroke-width:1.815;stroke-linejoin:round;stroke-miterlimit:0;stroke-opacity:1"
          id="svg-gamepad-dpad-right" /></g><path
        style="fill:#ff9c00;fill-opacity:0.5;stroke:#808080;stroke-width:2.026;stroke-linejoin:round"
-       d="M 51.897089,12.957138 C 58.614436,6.7851565 66.497729,2.8628717 71.84221,9.6271059 c 2.784609,3.5243371 6.897096,7.4901321 5.838481,24.1456151 -0.280318,4.410319 -7.133985,2.324995 -27.234969,2.941964 -20.547652,0.630679 1.451367,-23.757547 1.451367,-23.757547 z"
+       d="M 63.044046,12.957138 C 69.761393,6.7851564 77.644686,2.8628716 82.989167,9.6271058 85.773776,13.151443 89.886263,17.117238 88.827648,33.772721 88.54733,38.18304 81.693663,36.097716 61.592679,36.714685 41.045027,37.345364 63.044046,12.957138 63.044046,12.957138 Z"
        id="svg-gamepad-lefttrigger"
        sodipodi:nodetypes="csssc"
        inkscape:label="svg-gamepad-lefttrigger" /><path
        style="fill:#ff9c00;fill-opacity:0.5;stroke:#808080;stroke-width:2.026;stroke-linejoin:round"
-       d="M 217.88938,12.945434 C 211.1552,6.7918256 203.26121,2.8910875 197.93523,9.6698944 c -2.77498,3.5319296 -5.90253,7.4174786 -5.77251,24.1614736 0.0343,4.419084 7.14031,2.305499 27.2429,2.867562 20.5493,0.57455 -1.51624,-23.753496 -1.51624,-23.753496 z"
+       d="M 207.61027,12.945434 C 200.87609,6.791826 192.9821,2.8910879 187.65612,9.6698948 c -2.77498,3.5319292 -5.90253,7.4174782 -5.77251,24.1614732 0.0343,4.419084 7.14031,2.305499 27.2429,2.867562 20.5493,0.57455 -1.51624,-23.753496 -1.51624,-23.753496 z"
        id="svg-gamepad-righttrigger"
        sodipodi:nodetypes="csssc"
        inkscape:label="svg-gamepad-righttrigger" /></g><metadata
