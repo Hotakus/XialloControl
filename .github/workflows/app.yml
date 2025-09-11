@@ -90,6 +90,7 @@ jobs:
       - name: Pnpm install and check
         run: |
           pnpm i
+          pnpm tauri info
 
       # System deps (Ubuntu only)
       - name: Install system dependencies (Ubuntu only)
