@@ -70,40 +70,26 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      # Node + pnpm (仅改缓存逻辑)
-      - uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: 'pnpm'
-          cache-dependency-path: '**/pnpm-lock.yaml'
-
-      - name: Install frontend dependencies
-        run: pnpm install --no-frozen-lockfile
-
       # Rust Toolchain + Cache
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      - uses: actions/cache@v4
-        name: Cache cargo registry
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - uses: actions/cache@v4
-        name: Cache cargo git
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-
-      - uses: Swatinem/rust-cache@v2
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
           workspaces: |
             src-tauri -> ../../target
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+          version: 10
+
+      - name: Pnpm install and check
+        run: |
+          pnpm i
 
       # System deps (Ubuntu only)
       - name: Install system dependencies (Ubuntu only)
@@ -124,7 +110,7 @@ jobs:
           releaseBody: ${{ needs.generate-changelog.outputs.changelog }}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
-          updaterJsonKeepUniversal: true
-#          tauriScript: pnpm
+#          updaterJsonKeepUniversal: true
+          tauriScript: pnpm
           args: ${{ matrix.target }}
 
