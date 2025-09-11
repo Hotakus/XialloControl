@@ -127,7 +127,6 @@ fn create_main_window(app_handle: AppHandle) -> WebviewWindow {
     .center()
     .enable_clipboard_access()
     .devtools(cfg!(debug_assertions))
-    .drag_and_drop(false)
     .visible(false)
     .build()
     .expect("Failed to create main window")
