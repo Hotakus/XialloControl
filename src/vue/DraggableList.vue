@@ -73,11 +73,11 @@ const onStart = (e: SortableEvent) => {
 
 const onEnd = (e: SortableEvent) => {
   // console.log('onEnd', e)
-  updateMappingsOrder(state.mappings)
 }
 
 const onUpdate = () => {
-  console.log('update')
+  // console.log('update')
+  updateMappingsOrder(state.mappings)
 }
 </script>
 
