@@ -12,21 +12,18 @@ on:
 
 jobs:
   # ----------------------------------------------------
-  # 步骤 1: 新增一个独立的 Job 来生成 Changelog
+  # 步骤 1: 生成 Changelog
   # ----------------------------------------------------
   generate-changelog:
     name: Generate Changelog
     permissions:
       contents: read
       pull-requests: read
-    # 只在推送 tag 的时候才运行这个 Job
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     outputs:
-      # 将生成的 changelog 作为输出，给下游的 Job 使用
       changelog: ${{ steps.changelog_builder.outputs.changelog }}
     steps:
-      # 需要 checkout 代码来读取配置文件
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -41,31 +38,32 @@ jobs:
           failOnError: true
           owner: 'Hotakus'
           repo: 'XialloControl'
-          mode: 'PR'  # [PR, COMMIT, HYBRID]
+          mode: 'PR'
       - name: Print Changelog
         run: |
           echo "Changelog: ${{ steps.changelog_builder.outputs.changelog }}"
 
   # ----------------------------------------------------
-  # 步骤 2: 修改你原来的 Job，让它依赖上面的 Job
+  # 步骤 2: 构建 & 发布 Tauri
   # ----------------------------------------------------
   publish-tauri:
-    # 依赖 generate-changelog Job
     needs: generate-changelog
     permissions:
-      contents: write
+      contents: write   # 用于发布 Release
     strategy:
       fail-fast: true
       matrix:
         include:
-          - platform: "ubuntu-latest"
-            args: ""
-          - platform: "windows-latest"
-            args: ""
-    #          - platform: "macos-latest"
-    #            args: "--target x86_64-apple-darwin"
-    #          - platform: "macos-latest"
-    #            args: "--target aarch64-apple-darwin"
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+          - platform: windows-latest
+            target: aarch64-pc-windows-msvc
+#          - platform: macos-latest
+#            target: aarch64-apple-darwin
+#          - platform: macos-latest
+#            target: x86_64-apple-darwin
+          - platform: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -84,48 +82,54 @@ jobs:
           version: 9
       - name: Get pnpm store directory
         id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
       - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-pnpm-
       - name: Install frontend dependencies
         run: pnpm install --no-frozen-lockfile
 
-      # Rust
+      # Rust Toolchain + Cache
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        name: Cache cargo registry
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && matrix.args != '' && matrix.args || '' }}
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions/cache@v4
+        name: Cache cargo git
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
           workspaces: |
             src-tauri -> ../../target
 
-      # System dependencies (Ubuntu)
+      # System deps (Ubuntu only)
       - name: Install system dependencies (Ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
 
-      # Tauri build + release
+      # Build & Release
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY}}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
           tagName: ${{ startsWith(github.ref, 'refs/tags/') && 'v__VERSION__' || '' }}
           releaseName: "XialloControl Release v__VERSION__"
-          # 从上游 Job 的 outputs 中获取 changelog！
           releaseBody: ${{ needs.generate-changelog.outputs.changelog }}
           releaseDraft: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
-          prerelease: true
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           updaterJsonKeepUniversal: true
-          args: ${{ matrix.args }}
+          tauriScript: pnpm
+          args: --target ${{ matrix.args }}
