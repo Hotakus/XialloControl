@@ -122,7 +122,6 @@ function updateTriggerVisual(triggerId: string, value: number) {
     element.style.fillOpacity = opacity.toString();
 
     let angle = value * 40; // 最大旋转10度 (可以根据喜好调整)
-    let z_angle = 15; // 最大旋转10度 (可以根据喜好调整)
 
     let rect = element.getBBox();
     let pivotX = 0;
@@ -132,7 +131,6 @@ function updateTriggerVisual(triggerId: string, value: number) {
         case 'svg-gamepad-lefttrigger': {
             pivotX = rect.x + rect.width / 2;
             angle = -angle; // 左扳机向内旋转
-            z_angle = -z_angle;
             break;
         }
         case 'svg-gamepad-righttrigger': {
@@ -144,7 +142,7 @@ function updateTriggerVisual(triggerId: string, value: number) {
     element.style.transformStyle = 'preserve-3d';
     element.style.transformOrigin = `${pivotX}px ${pivotY}px`; // 以底部中心为旋转点
     // element.style.transform = `rotate(${angle}deg)`;
-    element.style.transform = `perspective(1200px) rotateX(${angle}deg) rotateZ(${z_angle}deg)`;
+    element.style.transform = `perspective(1200px) rotateX(${angle}deg)`;
 }
 
 
@@ -199,6 +197,7 @@ watch(() => state.current_controller_datas, async (newVal) => {
         let isPressed = checkBit(newVal.buttons, btnBit);
         const element = container.querySelector<HTMLElement>(`#${id}`);
         if (element) {
+            element.style.transition = 'fill-opacity 0.13s ease';
             element.style.fillOpacity = isPressed ? '0.5' : '0';
         }
     }
