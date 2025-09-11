@@ -374,6 +374,47 @@ const buttonTextMapLists = {
     ]
 }
 
+// 预加载所有按键图标 SVG
+const buttonIconSvgs = import.meta.glob(
+    [
+        '/src/assets/controller/playstation/*.svg',
+        '/src/assets/controller/xbox/*.svg',
+        '/src/assets/controller/switch/*.svg',
+        '/src/assets/controller/icon/*.svg'
+    ],
+    { eager: true, import: 'default' }
+);
+
+/**
+ * 根据按键名称获取对应的 SVG 图标组件
+ * @param buttonName - 按键名称 (例如 "Cross", "Back")
+ * @returns 对应的 SVG 组件, 如果找不到则返回 null
+ */
+export function getButtonIcon(buttonName: string) {
+    if (buttonName.length <= 2) {
+        // 名称长度小于等于 2 的按键不显示图标
+        return null;
+    }
+
+    // 尝试在各个可能的路径中查找
+    const possiblePaths = [
+        `/src/assets/controller/playstation/${buttonName.toLowerCase()}.svg`,
+        `/src/assets/controller/xbox/${buttonName.toLowerCase()}.svg`,
+        `/src/assets/controller/switch/${buttonName.toLowerCase()}.svg`,
+        `/src/assets/controller/icon/${buttonName.toLowerCase()}.svg`
+    ];
+
+    for (const path of possiblePaths) {
+        if (buttonIconSvgs[path]) {
+            return buttonIconSvgs[path];
+        }
+    }
+
+    // 如果在所有路径中都找不到，返回 null
+    console.warn(`未找到按键 "${buttonName}" 对应的 SVG 图标`);
+    return null;
+}
+
 // 根据设备类型更新手柄按键选项
 export function updateControllerButtons() {
     // while (uiElements.controllerButtonSelect.options.length > 1) {

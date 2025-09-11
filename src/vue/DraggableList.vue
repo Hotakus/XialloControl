@@ -2,7 +2,15 @@
   <VueDraggable ref="el" v-model="state.mappings" :disabled="disabled" :force-fallback="true" :animation="200"
     ghostClass="ghost" class="button-map" @start="onStart" @update="onUpdate" @end="onEnd">
     <div v-for="mapping in state.mappings" :key="mapping.id" class="button-map-item">
-      <div class="button-icon">{{ mapping.composed_button }}</div>
+      <div class="button-icon">
+        <component
+          :is="getButtonIcon(mapping.composed_button)"
+          v-if="getButtonIcon(mapping.composed_button)"
+          :alt="mapping.composed_button"
+          class="button-svg-icon"
+        />
+        <span v-else>{{ mapping.composed_button }}</span>
+      </div>
       <div class="key-text">映射到</div>
       <div class="key-value">{{ formatKeyDisplay(mapping.composed_shortcut_key) }}</div>
       <div class="item-actions">
@@ -51,7 +59,8 @@ import {
   deleteButtonMap,
   editButtonMap,
   formatKeyDisplay,
-  updateMappingsOrder
+  updateMappingsOrder,
+  getButtonIcon
 } from "@/ts/RightPanel.ts";
 import { state } from '@/ts/global_states'
 
