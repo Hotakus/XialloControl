@@ -55,11 +55,11 @@ jobs:
       matrix:
         include:
           - platform: "ubuntu-latest"
-            args: ""
+            args: "--target x86_64-unknown-linux-gnu"
           - platform: "ubuntu-latest"
             args: "--target aarch64-unknown-linux-gnu"
           - platform: "windows-latest"
-            args: ""
+            args: "--target x86_64-pc-windows-msvc"
       #          - platform: "macos-latest"
       #            args: "--target x86_64-apple-darwin"
       #          - platform: "macos-latest"
