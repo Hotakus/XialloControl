@@ -124,16 +124,34 @@ jobs:
       - name: Set up PKG_CONFIG for cross-compilation (Ubuntu only)
         if: matrix.platform == 'ubuntu-latest' && (matrix.target == 'aarch64-unknown-linux-gnu' || matrix.target == 'armv7-unknown-linux-gnueabihf')
         run: |
+          # 首先安装目标架构的一些基本开发库（如果可用）
+          # 注意：这需要你已配置了多架构支持（dpkg --add-architecture arm64 && apt update）
+          sudo apt-get install -y libglib2.0-dev:arm64 # 例如，安装 arm64 版本的 glib dev 文件
+          # 设置环境变量
           export PKG_CONFIG_ALLOW_CROSS=1
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
-            export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig/:$PKG_CONFIG_PATH
-            export PKG_CONFIG_SYSROOT_DIR=/usr/aarch64-linux-gnu/
+            # 假设你的 sysroot 在 /usr/aarch64-linux-gnu， .pc 文件在 /usr/lib/aarch64-linux-gnu/pkgconfig
+            # 请务必检查这些路径在你的构建环境中是否存在且包含正确的内容！
+            TARGET_SYSROOT="/usr/aarch64-linux-gnu"
+            TARGET_PKG_CONFIG_PATH="/usr/lib/aarch64-linux-gnu/pkgconfig"
+            export PKG_CONFIG_SYSROOT_DIR=$TARGET_SYSROOT
+            export PKG_CONFIG_PATH=$TARGET_PKG_CONFIG_PATH:$PKG_CONFIG_PATH
+            # 如果有交叉编译的 pkg-config 包装器，也可以设置 PKG_CONFIG
+            # export PKG_CONFIG="aarch64-linux-gnu-pkg-config"
           elif [ "${{ matrix.target }}" == "armv7-unknown-linux-gnueabihf" ]; then
-            export PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabihf/pkgconfig/:$PKG_CONFIG_PATH
-            export PKG_CONFIG_SYSROOT_DIR=/usr/arm-linux-gnueabihf/
+            TARGET_SYSROOT="/usr/arm-linux-gnueabihf"
+            TARGET_PKG_CONFIG_PATH="/usr/lib/arm-linux-gnueabihf/pkgconfig"
+            export PKG_CONFIG_SYSROOT_DIR=$TARGET_SYSROOT
+            export PKG_CONFIG_PATH=$TARGET_PKG_CONFIG_PATH:$PKG_CONFIG_PATH
+            # export PKG_CONFIG="arm-linux-gnueabihf-pkg-config"
           else
             echo "No need to set PKG_CONFIG for target ${{ matrix.target }}"
           fi
+          # 打印设置以供调试
+          echo "PKG_CONFIG_SYSROOT_DIR is set to: $PKG_CONFIG_SYSROOT_DIR"
+          echo "PKG_CONFIG_PATH is set to: $PKG_CONFIG_PATH"
+          # 尝试列出目标平台的 glib 相关 .pc 文件，检查配置是否有效
+          pkg-config --list-all | grep glib || echo "pkg-config may not be configured correctly for target."
 
       # Build & Release
       - uses: tauri-apps/tauri-action@v0
