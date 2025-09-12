@@ -56,14 +56,19 @@ jobs:
         include:
           - platform: "ubuntu-22.04"
             args: ""
+            target: "x86_64-unknown-linux-gnu"
           - platform: "ubuntu-22.04-arm"
             args: ""
+            target: "aarch64-unknown-linux-gnu"
           - platform: "windows-latest"
             args: ""
+            target: "x86_64-pc-windows-msvc"
           - platform: "macos-latest"
-            args: "--target x86_64-apple-darwin"
+            args: ""
+            target: "x86_64-apple-darwin"
           - platform: "macos-latest"
-            args: "--target aarch64-apple-darwin"
+            args: ""
+            target: "aarch64-apple-darwin"
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -82,6 +87,10 @@ jobs:
           cache-on-failure: true
           workspaces: |
             src-tauri -> ../../target
+
+      - name: Rustup add targets
+        run: |
+          rustup target add ${{ matrix.target }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -124,5 +133,5 @@ jobs:
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
 #          updaterJsonKeepUniversal: true
 #          tauriScript: pnpm
-          args: ${{ matrix.args }}
+          args: --target ${{ matrix.target }} ${{ matrix.args }}
 
