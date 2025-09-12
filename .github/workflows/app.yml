@@ -106,7 +106,8 @@ jobs:
             patchelf \
             pkg-config \
             libudev-dev \
-            libglib2.0-dev
+            libglib2.0-dev \
+            xdg-utils
 
 
       # Build & Release
