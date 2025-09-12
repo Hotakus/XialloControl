@@ -57,9 +57,11 @@ jobs:
           - platform: "ubuntu-latest"
             args: "--target x86_64-unknown-linux-gnu"
             target: "x86_64-unknown-linux-gnu"
+            arch: "x64"
           - platform: "ubuntu-latest"
             args: "--target aarch64-unknown-linux-gnu"
             target: "aarch64-unknown-linux-gnu"
+            arch: "arm64"
           - platform: "windows-latest"
             args: "--target x86_64-pc-windows-msvc"
             target: "x86_64-pc-windows-msvc"
@@ -104,8 +106,30 @@ jobs:
       - name: Install system dependencies (Ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libudev-dev
+          if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ] || [ "${{ matrix.target }}" == "armv7-unknown-linux-gnueabihf" ]; then
+            echo "Installing cross-compilation dependencies for target ${{ matrix.target }}";
+            # 添加多架构支持
+            sudo dpkg --add-architecture ${{ matrix.arch }};
+            sudo apt-get update
+            sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev:${{ matrix.arch }} \
+            libayatana-appindicator3-dev:${{ matrix.arch }} \
+            librsvg2-dev:${{ matrix.arch }} \
+            patchelf:${{ matrix.arch }} \
+            pkg-config:${{ matrix.arch }} \
+            libudev-dev:${{ matrix.arch }} \
+            libglib2.0-dev:${{ matrix.arch }} \
+          else
+            echo "Installing native build dependencies for target ${{ matrix.target }}";
+            sudo apt-get update
+            sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            libudev-dev
+          fi
 
       - name: "Install aarch64 tools (Ubuntu only)"
         if: matrix.target == 'aarch64-unknown-linux-gnu'
@@ -124,9 +148,6 @@ jobs:
       - name: Set up PKG_CONFIG for cross-compilation (Ubuntu only)
         if: matrix.platform == 'ubuntu-latest' && (matrix.target == 'aarch64-unknown-linux-gnu' || matrix.target == 'armv7-unknown-linux-gnueabihf')
         run: |
-          # 首先安装目标架构的一些基本开发库（如果可用）
-          # 注意：这需要你已配置了多架构支持（dpkg --add-architecture arm64 && apt update）
-          sudo apt-get install -y libglib2.0-dev:arm64 # 例如，安装 arm64 版本的 glib dev 文件
           # 设置环境变量
           export PKG_CONFIG_ALLOW_CROSS=1
           if [ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]; then
