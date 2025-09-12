@@ -115,5 +115,5 @@ jobs:
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
 #          updaterJsonKeepUniversal: true
 #          tauriScript: pnpm
-          args: ${{ matrix.target }}
+          args: ${{ matrix.args }}
 
