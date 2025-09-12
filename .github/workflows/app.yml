@@ -96,17 +96,18 @@ jobs:
 
       # System deps (Ubuntu only)
       - name: Install system dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-24.04' || matrix.platform == 'ubuntu-24.04-arm64'
+        if: startsWith(matrix.platform, 'ubuntu-')
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-          libwebkit2gtk-4.1-dev \
-          libayatana-appindicator3-dev \
-          librsvg2-dev \
-          patchelf \
-          pkg-config \
-          libudev-dev \
-          libglib2.0-dev
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            pkg-config \
+            libudev-dev \
+            libglib2.0-dev
+
 
       # Build & Release
       - uses: tauri-apps/tauri-action@v0
