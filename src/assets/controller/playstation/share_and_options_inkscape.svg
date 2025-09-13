@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="200"
+   height="200"
+   viewBox="0 0 52.916665 52.916666"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   sodipodi:docname="share_and_options_inkscape.svg"
+   inkscape:export-filename="options.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showguides="true"
+     inkscape:zoom="4.1071317"
+     inkscape:cx="90.817638"
+     inkscape:cy="120.15685"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <sodipodi:guide
+       position="26.458333,26.458333"
+       orientation="0,-1"
+       id="guide1"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="26.458333,26.458333"
+       orientation="1,0"
+       id="guide2"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="图层 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g2"
+       inkscape:label="share-btn"
+       style="display:inline">
+      <path
+         d="m 26.458334,16.752984 c -2.561604,1.74e-4 -4.638071,2.076873 -4.637959,4.638477 -2.5e-5,0.0572 0.001,0.114401 0.0031,0.171565 -0.0021,0.01186 -0.0031,0.0237 -0.0031,0.03617 v 11.0262 c 0,0.0041 -2.27e-4,0.0084 0,0.0124 -1.14e-4,0.01878 -1.14e-4,0.03755 0,0.05633 1.73e-4,2.561402 2.076557,4.637786 4.637959,4.63796 2.561605,1.12e-4 4.638304,-2.076355 4.638477,-4.63796 -7.9e-5,-0.19541 0.0247,-0.975079 0,-1.168921 V 21.391461 c 0.0247,-0.193842 -7.9e-5,0.195409 0,0 1.12e-4,-2.561807 -2.07667,-4.638589 -4.638477,-4.638477 z"
+         style="fill:none;fill-opacity:0.5;stroke:#808080;stroke-width:1.426;stroke-linejoin:round;stroke-dasharray:none"
+         id="path2"
+         sodipodi:nodetypes="cccsscccccccc" />
+      <text
+         xml:space="preserve"
+         style="font-size:10.16px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:0.363;stroke-linejoin:round;stroke-dasharray:none"
+         x="22.969856"
+         y="30.248377"
+         id="text2"><tspan
+           sodipodi:role="line"
+           id="tspan2"
+           style="fill:#808080;fill-opacity:1;stroke-width:0.363;stroke-dasharray:none"
+           x="22.969856"
+           y="30.248377">S</tspan></text>
+    </g>
+    <g
+       id="g2-1"
+       inkscape:label="option-btn"
+       style="display:inline">
+      <path
+         d="m 26.458334,16.752984 c -2.561604,1.74e-4 -4.638071,2.076873 -4.637959,4.638477 -2.5e-5,0.0572 0.001,0.114401 0.0031,0.171565 -0.0021,0.01186 -0.0031,0.0237 -0.0031,0.03617 v 11.0262 c 0,0.0041 -2.27e-4,0.0084 0,0.0124 -1.14e-4,0.01878 -1.14e-4,0.03755 0,0.05633 1.73e-4,2.561402 2.076557,4.637786 4.637959,4.63796 2.561605,1.12e-4 4.638304,-2.076355 4.638477,-4.63796 -7.9e-5,-0.19541 0.0247,-0.975079 0,-1.168921 V 21.391461 c 0.0247,-0.193842 -7.9e-5,0.195409 0,0 1.12e-4,-2.561807 -2.07667,-4.638589 -4.638477,-4.638477 z"
+         style="fill:none;fill-opacity:0.5;stroke:#808080;stroke-width:1.426;stroke-linejoin:round;stroke-dasharray:none"
+         id="path2-4"
+         sodipodi:nodetypes="cccsscccccccc" />
+      <text
+         xml:space="preserve"
+         style="font-size:10.16px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:0.363;stroke-linejoin:round;stroke-dasharray:none"
+         x="22.486702"
+         y="30.441639"
+         id="text2-2"><tspan
+           sodipodi:role="line"
+           id="tspan2-3"
+           style="fill:#808080;fill-opacity:1;stroke-width:0.363;stroke-dasharray:none"
+           x="22.486702"
+           y="30.441639">O</tspan></text>
+    </g>
+  </g>
+</svg>
