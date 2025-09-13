@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="40.524002"
+   height="83.168884"
+   viewBox="0 0 10.721975 22.0051"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-21.106648,-16.039984)">
+    <g
+       id="g2"
+       style="display:inline">
+      <path
+         d="m 26.458334,16.752984 c -2.561604,1.74e-4 -4.638071,2.076873 -4.637959,4.638477 -2.5e-5,0.0572 0.001,0.114401 0.0031,0.171565 -0.0021,0.01186 -0.0031,0.0237 -0.0031,0.03617 v 11.0262 c 0,0.0041 -2.27e-4,0.0084 0,0.0124 -1.14e-4,0.01878 -1.14e-4,0.03755 0,0.05633 1.73e-4,2.561402 2.076557,4.637786 4.637959,4.63796 2.561605,1.12e-4 4.638304,-2.076355 4.638477,-4.63796 -7.9e-5,-0.19541 0.0247,-0.975079 0,-1.168921 V 21.391461 c 0.0247,-0.193842 -7.9e-5,0.195409 0,0 1.12e-4,-2.561807 -2.07667,-4.638589 -4.638477,-4.638477 z"
+         style="fill:none;fill-opacity:0.5;stroke:#808080;stroke-width:1.426;stroke-linejoin:round;stroke-dasharray:none"
+         id="path2" />
+      <text
+         xml:space="preserve"
+         style="font-size:10.16px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:0.363;stroke-linejoin:round;stroke-dasharray:none"
+         x="22.969856"
+         y="30.248377"
+         id="text2"><tspan
+           id="tspan2"
+           style="fill:#808080;fill-opacity:1;stroke-width:0.363;stroke-dasharray:none"
+           x="22.969856"
+           y="30.248377">S</tspan></text>
+    </g>
+  </g>
+</svg>

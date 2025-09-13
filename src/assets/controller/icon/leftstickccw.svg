@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="217.71231"
+   height="200"
+   viewBox="0 0 57.603047 52.916666"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="RoundedArrow-1-1"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="0.5"
+       markerHeight="0.5"
+       viewBox="0 0 1 1"
+       preserveAspectRatio="xMidYMid"
+       markerUnits="strokeWidth">
+      <path
+         transform="scale(0.7)"
+         d="m -0.21114562,-4.1055728 6.42229122,3.21114561 a 1,1 90 0 1 0,1.78885438 L -0.21114562,4.1055728 A 1.236068,1.236068 31.717474 0 1 -2,3 v -6 a 1.236068,1.236068 148.28253 0 1 1.78885438,-1.1055728 z"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         id="path8-1-2" />
+    </marker>
+  </defs>
+  <g
+     id="layer1"
+     style="display:inline"
+     transform="translate(4.6863824)">
+    <g
+       id="g8">
+      <g
+         id="g2-82-7-4"
+         style="display:inline">
+        <path
+           style="display:inline;fill:none;stroke:#808080;stroke-width:4.76926;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:0;marker-end:url(#RoundedArrow-1-1)"
+           id="path6-4-7"
+           d="M -26.459064,50.532034 A 24.074429,24.07443 0 0 1 -48.700936,35.67049 24.074429,24.07443 0 0 1 -43.482256,9.4344106 24.074429,24.07443 0 0 1 -17.24618,4.2157298 24.074429,24.07443 0 0 1 -2.3846359,26.457603"
+           transform="scale(-1,1)" />
+        <text
+           xml:space="preserve"
+           style="font-size:39.4161px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;display:inline;fill:#808080;fill-opacity:1;stroke:#808080;stroke-width:0.388;stroke-linejoin:round;stroke-dasharray:none"
+           x="15.132587"
+           y="40.267792"
+           id="text1-7-8-6"><tspan
+             id="tspan1-6-6-0"
+             style="fill:#808080;fill-opacity:1;stroke-width:0.388;stroke-dasharray:none"
+             x="15.132587"
+             y="40.267792">L</tspan></text>
+      </g>
+    </g>
+  </g>
+</svg>
