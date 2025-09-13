@@ -9,7 +9,7 @@
           :alt="mapping.composed_button"
           class="button-svg-icon"
         />
-        <span v-else>{{ mapping.composed_button }}</span>
+        <span v-else class="button-else-text">{{ mapping.composed_button }}</span>
       </div>
       <div class="key-text">映射到</div>
       <div class="key-value">{{ formatKeyDisplay(mapping.composed_shortcut_key) }}</div>
@@ -91,5 +91,9 @@ const onUpdate = () => {
   padding: 3px;
   width: var(--button-icon-size);
   height: var(--button-icon-size);
+}
+
+.button-else-text {
+  color: #808080ff;
 }
 </style>
