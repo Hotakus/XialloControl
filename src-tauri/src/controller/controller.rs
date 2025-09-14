@@ -3,7 +3,8 @@
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{CompactPressureDatas, ControllerButtons, ControllerDatas};
-use crate::{mapping, preset, xeno_utils};
+use crate::{controller, mapping, preset, xeno_utils};
+use crate::controller::logic;
 use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
@@ -39,10 +40,11 @@ use crate::controller::datas::JoystickRotation;
 /// 摇杆旋转的物理状态 (用于在 controller 模块内部追踪)
 #[derive(Clone, Debug)]
 pub struct JoystickRotationState {
-    last_angle: f32,
-    was_active: bool,
-    current_rotation: JoystickRotation,
-    last_rotation_time: Instant,
+    pub last_angle: f32,
+    pub was_active: bool,
+    pub current_rotation: JoystickRotation,
+    pub last_rotation_time: Instant,
+    pub accumulated_angle_delta: f32,
 }
 
 impl Default for JoystickRotationState {
@@ -52,6 +54,7 @@ impl Default for JoystickRotationState {
             was_active: false,
             current_rotation: JoystickRotation::None,
             last_rotation_time: Instant::now(),
+            accumulated_angle_delta: 0.0,
         }
     }
 }
@@ -514,76 +517,6 @@ pub fn pack_and_send_data(controller_data: &ControllerDatas) {
     *prev_controller_data = *controller_data;
 }
 
-pub(crate) fn get_calibrated_stick_values(raw_lx: f32, raw_ly: f32, raw_rx: f32, raw_ry: f32) -> (f32, f32, f32, f32) {
-    let preset = preset::get_current_preset();
-    let cali_data = crate::controller::calibrate::get_current_calibration();
-
-    let (lx, ly) = crate::controller::calibrate::apply_calibration(
-        raw_lx,
-        raw_ly,
-        preset.items.deadzone_left,
-        &cali_data.left_stick,
-    );
-
-    let (rx, ry) = crate::controller::calibrate::apply_calibration(
-        raw_rx,
-        raw_ry,
-        preset.items.deadzone,
-        &cali_data.right_stick,
-    );
-    (lx, ly, rx, ry)
-}
-
-
-/// 通用函数: 计算并更新单个摇杆的旋转状态, 并返回旋转状态
-pub fn update_joystick_rotation_state(
-    source: JoystickSource,
-    x: f32,
-    y: f32,
-) -> JoystickRotation {
-    const ROTATION_THRESHOLD: f32 = 0.01; // 旋转检测的最小角度变化阈值
-    const JUMP_THRESHOLD: f32 = std::f32::consts::PI; // 角度跳变的阈值, 约180度
-    const ROTATION_TIMEOUT_MS: u128 = 50; // 旋转状态维持的超时时间 (毫秒)
-
-    let mut rotation_states = JOYSTICK_ROTATION_STATES.write().unwrap();
-    let mut state = rotation_states.remove(&source).unwrap_or_default();
-
-    let is_active = x != 0.0 || y != 0.0;
-
-    if is_active {
-        let angle = (-y).atan2(x);
-        if state.was_active {
-            let mut delta = angle - state.last_angle;
-            if delta > std::f32::consts::PI { delta -= 2.0 * std::f32::consts::PI; }
-            else if delta < -std::f32::consts::PI { delta += 2.0 * std::f32::consts::PI; }
-
-            // 检查是否为大幅度跳变 (回弹), 如果是, 则重置状态
-            if delta.abs() > JUMP_THRESHOLD {
-                state.current_rotation = JoystickRotation::None;
-            } else if delta > ROTATION_THRESHOLD {
-                state.current_rotation = JoystickRotation::Clockwise;
-                state.last_rotation_time = Instant::now();
-            } else if delta < -ROTATION_THRESHOLD {
-                state.current_rotation = JoystickRotation::CounterClockwise;
-                state.last_rotation_time = Instant::now();
-            }
-        }
-        state.last_angle = angle;
-    } else {
-        // 如果摇杆回到死区, 直接重置状态
-        state.current_rotation = JoystickRotation::None;
-    }
-
-    // 超时检查: 如果距离上次有效旋转超过一定时间, 则认为旋转已停止
-    if state.last_rotation_time.elapsed().as_millis() > ROTATION_TIMEOUT_MS {
-        state.current_rotation = JoystickRotation::None;
-    }
-
-    state.was_active = is_active;
-    let rotation = state.current_rotation;
-    rotation_states.insert(source, state);
-    rotation
-}
 
 fn _poll_other_controllers(gamepad: Gamepad) {
     // 检测按键状态
@@ -616,36 +549,27 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     let raw_rx = gamepad.axis_data(Axis::RightStickX).map_or(0.0, |d| d.value());
     let raw_ry = gamepad.axis_data(Axis::RightStickY).map_or(0.0, |d| d.value());
 
-    // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
-    {
-        let mut raw_data = RAW_CONTROLLER_DATA.write().unwrap();
-        raw_data.left_stick.x = raw_lx;
-        raw_data.left_stick.y = raw_ly;
-        raw_data.right_stick.x = raw_rx;
-        raw_data.right_stick.y = raw_ry;
-    }
+    // // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
+    // {
+    //     let mut raw_data = RAW_CONTROLLER_DATA.write().unwrap();
+    //     raw_data.left_stick.x = raw_lx;
+    //     raw_data.left_stick.y = raw_ly;
+    //     raw_data.right_stick.x = raw_rx;
+    //     raw_data.right_stick.y = raw_ry;
+    // }
 
-    let (final_lx, final_ly, final_rx, final_ry) = get_calibrated_stick_values(raw_lx, raw_ly, raw_rx, raw_ry);
+    // let (final_lx, final_ly, final_rx, final_ry) = get_calibrated_stick_values(raw_lx, raw_ly, raw_rx, raw_ry);
 
-    controller_data.left_stick.x = final_lx;
-    controller_data.left_stick.y = final_ly;
-    controller_data.right_stick.x = final_rx;
-    controller_data.right_stick.y = final_ry;
-
-    // --- 新增: 使用通用函数计算并存储摇杆旋转状态 ---
-    controller_data.left_stick_rotation = update_joystick_rotation_state(JoystickSource::LeftStick, final_lx, final_ly);
-    controller_data.right_stick_rotation = update_joystick_rotation_state(JoystickSource::RightStick, final_rx, final_ry);
+    controller_data.left_stick.x = raw_lx;
+    controller_data.left_stick.y = raw_ly;
+    controller_data.right_stick.x = raw_rx;
+    controller_data.right_stick.y = raw_ry;
 
     controller_data.right_stick.is_pressed = gamepad.is_pressed(gilrs::Button::RightThumb);
     controller_data.left_stick.is_pressed = gamepad.is_pressed(gilrs::Button::LeftThumb);
 
     controller_data.left_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
     controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
-    // log::info!(
-    //     "Left Stick Rotation: {:?}, Right Stick Rotation: {:?}",
-    //     controller_data.left_stick_rotation,
-    //     controller_data.right_stick_rotation
-    // );
 
     controller_data.left_trigger.value = gamepad.button_data(gilrs::Button::LeftTrigger2)
                                                 .map(|data| data.value())
@@ -654,7 +578,6 @@ fn _poll_other_controllers(gamepad: Gamepad) {
                                                  .map(|data| data.value())
                                                  .unwrap_or(0.0);
 
-    pack_and_send_data(&controller_data);
 }
 
 /// 轮询非Xbox控制器状态
@@ -833,6 +756,12 @@ pub fn listen() {
             // 执行设备状态轮询
             if let Some(device) = &last_device {
                 poll_controller(device);
+
+                logic::apply_deadzone(&mut CONTROLLER_DATA.write().unwrap());
+                logic::check_sticks_rotation(&mut CONTROLLER_DATA.write().unwrap());
+
+                pack_and_send_data(&CONTROLLER_DATA.read().unwrap());
+
                 let use_sub_preset = handle_preset_switching_decision();
                 mapping::map(&CONTROLLER_DATA.read().unwrap(), use_sub_preset);
             }

@@ -270,8 +270,6 @@ pub fn run() {
             controller::controller::set_frequency,
             controller::controller::get_controller_data,
             controller::controller::try_auto_connect_last_device,
-            controller::logic::controller_stick_drift_sampling,
-            controller::logic::check_controller_deadzone,
             controller::calibrate::get_calibration_state,
             controller::calibrate::start_stick_calibration,
             controller::calibrate::next_stick_calibration_step,
