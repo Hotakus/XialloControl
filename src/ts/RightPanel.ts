@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { updateStatusMessage } from "@/ts/LeftPanel.ts";
 import { queryMappings, refreshMappings } from "@/App.ts";
 import { nextTick } from "vue";
+import { setLanguage } from "@/ts/i18n.ts";
 
 
 /**
@@ -30,7 +31,8 @@ export async function updateSettings() {
         last_connected_device: state.lastConnectedDevice,
         theme: state.theme,
         polling_frequency: state.pollingFrequency,
-        previous_preset: state.previousPreset
+        previous_preset: state.previousPreset,
+        language: state.language
     };
 
     try {
@@ -47,6 +49,19 @@ export async function updateSettings() {
 export async function changeTheme() {
     // TODO: 切换主题
 
+    await updateSettings();
+}
+
+
+/**
+ * 切换语言
+ */
+export async function changeLanguage() {
+    let targetLocale = state.language;
+    if (targetLocale === 'system') {
+        targetLocale = state.locale; // e.g. 'zh-CN'
+    }
+    setLanguage(targetLocale);
     await updateSettings();
 }
 

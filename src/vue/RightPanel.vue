@@ -1,12 +1,12 @@
 <template>
   <div class="right-panel">
     <div class="card preset-card">
-      <label for="preset">预设方案:</label>
+      <label for="preset">{{ $t('rightPanel.preset') }}</label>
       <div class="preset-header">
         <!-- 正常模式：显示下拉框 -->
         <select v-if="!state.isCreatingNewPreset" id="preset" class="preset-select" v-model="state.previousPreset"
           @change="switchPreset()">
-          <option disabled value="">-- 请选择预设方案 --</option>
+          <option disabled value="">{{ $t('rightPanel.selectPreset') }}</option>
           <option v-for="preset in state.presets" :key="preset" :value="preset">
             {{ preset }}
           </option>
@@ -14,16 +14,16 @@
 
         <!-- 新建模式：显示输入框 -->
         <div v-else class="preset-input-container">
-          <input type="text" v-model="state.newPresetName" placeholder="输入方案名称" class="preset-input"
+          <input type="text" v-model="state.newPresetName" :placeholder="$t('rightPanel.enterPresetName')" class="preset-input"
             @keyup.enter="confirmNewPreset()" @keyup.escape="cancelNewPreset()" ref="presetInput" />
-          <button class="icon-button confirm-btn" @click="confirmNewPreset()" title="确认">
+          <button class="icon-button confirm-btn" @click="confirmNewPreset()" :title="$t('rightPanel.confirm')">
             <svg t="1756401635650" viewBox="0 0 1024 1024" width="16" height="16">
               <path
                 d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474c-6-7.7-15.3-12.2-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1.4-12.8-6.3-12.8z"
                 fill="#ffffff" />
             </svg>
           </button>
-          <button class="icon-button cancel-btn" @click="cancelNewPreset()" title="取消">
+          <button class="icon-button cancel-btn" @click="cancelNewPreset()" :title="$t('rightPanel.cancel')">
             <svg t="1756401635650" viewBox="0 0 1024 1024" width="16" height="16">
               <path
                 d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 0 0 203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"
@@ -33,11 +33,11 @@
         </div>
 
         <div class="preset-controls">
-          <button v-if="!state.isCreatingNewPreset" id="create-preset" title="新建方案"
+          <button v-if="!state.isCreatingNewPreset" id="create-preset" :title="$t('rightPanel.newPreset')"
             class="icon-button create-preset-btn" @click="newPreset()">
             <svg t="1756498807768" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12468" width="200" height="200"><path d="M341.333333 341.333333a42.666667 42.666667 0 0 1 42.666667-42.666666h256a42.666667 42.666667 0 0 1 0 85.333333H384a42.666667 42.666667 0 0 1-42.666667-42.666667z m42.666667 128a42.666667 42.666667 0 0 0 0 85.333334h128a42.666667 42.666667 0 0 0 0-85.333334H384zM810.666667 682.666667a42.666667 42.666667 0 0 0-85.333334 0v85.333333h-85.333333a42.666667 42.666667 0 0 0 0 85.333333h85.333333v85.333334a42.666667 42.666667 0 0 0 85.333334 0v-85.333334h85.333333a42.666667 42.666667 0 0 0 0-85.333333h-85.333333v-85.333333z" p-id="12469" fill="#ffffff"></path><path d="M256 85.333333h512a85.333333 85.333333 0 0 1 85.333333 85.333334v341.333333a42.666667 42.666667 0 1 1-85.333333 0V170.666667H256v682.666666h170.666667a42.666667 42.666667 0 1 1 0 85.333334H256a85.333333 85.333333 0 0 1-85.333333-85.333334V170.666667a85.333333 85.333333 0 0 1 85.333333-85.333334z" p-id="12470" fill="#ffffff"></path></svg>
           </button>
-          <button v-if="!state.isCreatingNewPreset" id="edit-preset" title="编辑方案" class="icon-button edit-preset-btn"
+          <button v-if="!state.isCreatingNewPreset" id="edit-preset" :title="$t('rightPanel.editPreset')" class="icon-button edit-preset-btn"
             @click="editPreset()">
             <svg t="1756498642082" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
               p-id="8837" width="200" height="200">
@@ -46,7 +46,7 @@
                 fill="#ffffff" p-id="8838"></path>
             </svg>
           </button>
-          <button v-if="!state.isCreatingNewPreset" id="delete-preset" title="删除方案"
+          <button v-if="!state.isCreatingNewPreset" id="delete-preset" :title="$t('rightPanel.deletePreset')"
             class="icon-button delete-preset-btn" @click="deletePreset()">
             <svg t="1756468673115" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
               p-id="4451" width="200" height="200">
@@ -65,20 +65,20 @@
     <div class="card">
       <div class="tabs" role="tablist">
         <div class="tab" :class="{ active: state.activeTab === 'buttonMapTab' }" role="tab" aria-selected="true"
-          data-tab="buttonMapTab" @click="switchTab('buttonMapTab')">按键映射</div>
+          data-tab="buttonMapTab" @click="switchTab('buttonMapTab')">{{ $t('rightPanel.buttonMap') }}</div>
         <div class="tab" :class="{ active: state.activeTab === 'stickMapTab' }" role="tab" aria-selected="false"
-          data-tab="stickMapTab" @click="switchTab('stickMapTab')">压力设置</div>
+          data-tab="stickMapTab" @click="switchTab('stickMapTab')">{{ $t('rightPanel.pressureSetting') }}</div>
         <div class="tab" :class="{ active: state.activeTab === 'settingTab' }" role="tab" aria-selected="false"
-          data-tab="settingTab" @click="switchTab('settingTab')">设置</div>
+          data-tab="settingTab" @click="switchTab('settingTab')">{{ $t('rightPanel.settings') }}</div>
       </div>
 
       <div id="buttonMapTab" class="tab-content" :class="{ active: state.activeTab === 'buttonMapTab' }"
         role="tabpanel">
         <div class="tab-content-container">
           <div class="button-map-header">
-            <div class="button-map-title"><i class="fas fa-keyboard"></i> 按键映射</div>
+            <div class="button-map-title"><i class="fas fa-keyboard"></i> {{ $t('rightPanel.buttonMap') }}</div>
             <div class="button-map-controls">
-              <button id="add-button-map" title="添加映射" class="icon-button" @click="addButtonMap()">
+              <button id="add-button-map" :title="$t('rightPanel.addMapping')" class="icon-button" @click="addButtonMap()">
                 <svg t="1753626247148" class="icon" viewBox="0 0 1024 1024" version="1.1"
                   xmlns="http://www.w3.org/2000/svg" p-id="2595" width="200" height="200">
                   <path
@@ -102,8 +102,8 @@
                     p-id="3770" fill="#3A7DE0"></path>
                 </svg>
                 <br>
-                尚未添加任何按键映射 <br>
-                点击右上角的
+                {{ $t('rightPanel.noMappings') }} <br>
+                {{ $t('rightPanel.clickToAdd') }}
                 <svg t="1753627455046" class="icon" viewBox="0 0 1024 1024" version="1.1"
                   xmlns="http://www.w3.org/2000/svg" p-id="4836" width="32" height="32">
                   <path
@@ -113,14 +113,14 @@
                     d="M858.9 579.6H165.2c-37.4 0-67.6-30.3-67.6-67.6 0-37.4 30.3-67.6 67.6-67.6h693.7c37.4 0 67.6 30.3 67.6 67.6 0 37.4-30.3 67.6-67.6 67.6z"
                     fill="#4C8BF5" p-id="4838"></path>
                 </svg>
-                按钮添加映射
+                {{ $t('rightPanel.addButton') }}
               </p>
             </div>
             <!-- <template v-else>
               <div class="button-map-item" v-for="mapping in state.mappings" :key="mapping.id"
                 @dblclick="editButtonMap(mapping.id)">
                 <div class="button-icon">{{ mapping.composed_button }}</div>
-                <div class="key-text">映射到</div>
+                <div class="key-text">{{ $t('rightPanel.mapTo') }}</div>
                 <div class="key-value">{{ formatKeyDisplay(mapping.composed_shortcut_key) }}</div>
                 <div class="item-actions">
                   <button class="item-action-btn edit" @click="editButtonMap(mapping.id)">
@@ -163,9 +163,9 @@
       <div id="stickMapTab" class="tab-content" :class="{ active: state.activeTab === 'stickMapTab' }" role="tabpanel">
         <div class="settings-container">
           <div class="setting-group">
-            <h3>摇杆设置</h3>
+            <h3>{{ $t('rightPanel.stickSettings') }}</h3>
             <div class="setting-item">
-              <label for="deadzone">右摇杆死区:</label>
+              <label for="deadzone">{{ $t('rightPanel.rightStickDeadzone') }}</label>
               <div class="slider-container">
                 <input type="range" id="deadzone" min="0" max="30" v-model.number="state.current_preset.items.deadzone"
                   @change="saveDeadzoneSettings">
@@ -173,7 +173,7 @@
               </div>
             </div>
             <div class="setting-item">
-              <label for="deadzone">左摇杆死区:</label>
+              <label for="deadzone">{{ $t('rightPanel.leftStickDeadzone') }}</label>
               <div class="slider-container">
                 <input type="range" id="deadzone-left" min="0" max="30"
                   v-model.number="state.current_preset.items.deadzone_left" @change="saveDeadzoneSettings">
@@ -182,9 +182,9 @@
             </div>
           </div>
           <div class="setting-group">
-            <h3>摇杆旋转行为</h3>
+            <h3>{{ $t('rightPanel.stickRotationBehavior') }}</h3>
             <div class="setting-item">
-              <label>右摇杆旋转:</label>
+              <label>{{ $t('rightPanel.rightStickRotation') }}</label>
             </div>
           </div>
 
@@ -194,10 +194,10 @@
       <div id="settingTab" class="tab-content" :class="{ active: state.activeTab === 'settingTab' }" role="tabpanel">
         <div class="settings-container">
           <div class="setting-group">
-            <h3><i class="fas fa-cog"></i>软件设置</h3>
+            <h3>{{ $t('rightPanel.softwareSettings') }}</h3>
 
             <div class="setting-item">
-              <label for="auto-start">开机自启动:</label>
+              <label for="auto-start">{{ $t('rightPanel.autoStart') }}</label>
               <label class="switch">
                 <input type="checkbox" id="auto-start" v-model="state.autoStart" @change="updateSettings()">
                 <span class="slider round"></span>
@@ -205,7 +205,7 @@
             </div>
 
             <div class="setting-item">
-              <label for="remember-last-connection">记住上次连接状态:</label>
+              <label for="remember-last-connection">{{ $t('rightPanel.rememberLastConnection') }}</label>
               <label class="switch">
                 <input type="checkbox" id="remember-last-connection" v-model="state.rememberLastConnection"
                   @change="updateSettings()">
@@ -214,7 +214,7 @@
             </div>
 
             <div class="setting-item">
-              <label for="minimize-to-tray">最小化到托盘:</label>
+              <label for="minimize-to-tray">{{ $t('rightPanel.minimizeToTray') }}</label>
               <label class="switch">
                 <input type="checkbox" id="minimize-to-tray" v-model="state.minimizeToTray" @change="updateSettings()">
                 <span class="slider round"></span>
@@ -222,7 +222,7 @@
             </div>
 
             <div class="setting-item">
-              <label for="polling-frequency">轮询频率:</label>
+              <label for="polling-frequency">{{ $t('rightPanel.pollingFrequency') }}</label>
               <div class="polling-container">
                 <input type="number" id="polling-frequency" min="1" max="8000" value="125"
                   v-model="state.pollingFrequency" @change="setPollingFrequency()">
@@ -231,24 +231,33 @@
             </div>
 
             <div class="setting-item">
-              <label for="theme">界面主题:</label>
+              <label for="theme">{{ $t('rightPanel.uiTheme') }}</label>
               <select id="theme" v-model="state.theme" @change="changeTheme()">
-                <option value="light">浅色模式</option>
-                <option value="dark">深色模式</option>
-                <option value="system">跟随系统</option>
+                <option value="light">{{ $t('rightPanel.lightMode') }}</option>
+                <option value="dark">{{ $t('rightPanel.darkMode') }}</option>
+                <option value="system">{{ $t('rightPanel.followSystem') }}</option>
+              </select>
+            </div>
+
+            <div class="setting-item">
+              <label for="language">{{ $t('rightPanel.uiLanguage') }}</label>
+              <select id="language" v-model="state.language" @change="changeLanguage()">
+                <option value="system">{{ $t('rightPanel.followSystem') }}</option>
+                <option value="zh-CN">简体中文</option>
+                <option value="en-US">English</option>
               </select>
             </div>
           </div>
           <div class="setting-group">
             <button id="reset-btn" class="btn btn-outline btn-settings" v-if="!state.is_release_env"
               @click="openDevTools()">
-              打开开发者工具
+              {{ $t('rightPanel.openDevTools') }}
             </button>
             <button id="reset-btn" class="btn btn-outline btn-settings" @click="resetSettings()">
-              重置设置
+              {{ $t('rightPanel.resetSettings') }}
             </button>
             <button id="github-btn" class="btn btn-outline btn-settings" @click="openGithubLink()">
-              GitHub 项目
+              {{ $t('rightPanel.githubProject') }}
             </button>
           </div>
         </div>
@@ -261,6 +270,7 @@
 import {
   addButtonMap,
   changeTheme,
+  changeLanguage,
   deleteButtonMap,
   editButtonMap,
   formatKeyDisplay,

@@ -51,6 +51,7 @@ export const state = reactive({
     rememberLastConnection: false,
     lastConnectedDevice: null as LastConnectedDevice | null,
     theme: 'light',
+    language: 'system',
     pollingFrequency: 125,
     previousPreset: "default",
     calibration_mode: "square",

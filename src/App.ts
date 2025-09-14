@@ -2,6 +2,7 @@ import { updateStatusMessage } from "@/ts/LeftPanel.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { appWindow, Preset, state } from "@/ts/global_states.ts";
 import { locale } from "@tauri-apps/plugin-os";
+import { setLanguage } from "@/ts/i18n.ts";
 
 export async function initApp() {
     await queryLocale();
@@ -51,6 +52,7 @@ export async function queryGlobalSettings() {
         polling_frequency: number;
         previous_preset: string;
         calibration_mode: string;
+        language: string;
     }>("get_current_settings");
 
     console.log("queryGlobalSettings", settings);
@@ -63,6 +65,14 @@ export async function queryGlobalSettings() {
     state.pollingFrequency = settings.polling_frequency || 125;
     state.previousPreset = settings.previous_preset || "default";
     state.calibration_mode = settings.calibration_mode || "square";
+    state.language = settings.language || "system";
+
+    // Init language
+    let targetLocale = state.language;
+    if (targetLocale === 'system') {
+        targetLocale = state.locale; // e.g. 'zh-CN'
+    }
+    setLanguage(targetLocale);
 
     if (state.minimizeToTray) {
         appWindow?.hide();

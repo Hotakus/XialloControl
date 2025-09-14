@@ -4,16 +4,16 @@ import zh_CN from '../locales/zh_CN.json';
 
 const i18n = createI18n({
     legacy: false, // 使用 Composition API 模式
-    locale: 'zh_CN', // 默认语言
-    fallbackLocale: 'en_US', // 回退语言
+    locale: 'zh-CN', // 默认语言
+    fallbackLocale: 'en-US', // 回退语言
     missingWarn: false, // 禁用找不到翻译的警告
     fallbackWarn: false, // 禁用回退的警告
     missing: (locale, key) => { // 找不到翻译时的处理函数
         return key;
     },
     messages: {
-        'en_US': en_US,
-        'zh_CN': zh_CN,
+        'en-US': en_US,
+        'zh-CN': zh_CN,
     },
 });
 
@@ -26,4 +26,12 @@ export default i18n;
  */
 export function translate(key: string): string {
     return i18n.global.t(key);
+}
+
+/**
+ * 设置语言
+ * @param locale 'zh_CN' | 'en_US'
+ */
+export function setLanguage(locale: string) {
+    (i18n.global.locale as any).value = locale;
 }
