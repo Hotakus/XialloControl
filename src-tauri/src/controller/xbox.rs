@@ -19,7 +19,7 @@ const MAX_XINPUT_DEVICES: usize = 4;
 fn _poll_xbox_controller_state(state: XInputState) {
     // let mut controller_data = ControllerDatas::new();
     let mut controller_data = CONTROLLER_DATA.write().unwrap();
-    
+
     // 按钮状态检测
     let buttons = [
         (state.south_button(), ControllerButtons::South, "Xbox A 键（South）"),
@@ -57,32 +57,20 @@ fn _poll_xbox_controller_state(state: XInputState) {
     let raw_rx = logic::normalize(rx, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
     let raw_ry = logic::normalize(ry, -32768, 32767, -1.0, 1.0).unwrap_or(0.0) as f32;
 
-    // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
-    {
-        let mut raw_data = crate::controller::controller::RAW_CONTROLLER_DATA.write().unwrap();
-        raw_data.left_stick.x = raw_lx;
-        raw_data.left_stick.y = raw_ly;
-        raw_data.right_stick.x = raw_rx;
-        raw_data.right_stick.y = raw_ry;
-    }
+    // // 将原始数据写入 RAW_CONTROLLER_DATA 供校准线程使用
+    // {
+    //     let mut raw_data = crate::controller::controller::RAW_CONTROLLER_DATA.write().unwrap();
+    //     raw_data.left_stick.x = raw_lx;
+    //     raw_data.left_stick.y = raw_ly;
+    //     raw_data.right_stick.x = raw_rx;
+    //     raw_data.right_stick.y = raw_ry;
+    // }
 
-    let (final_lx, final_ly, final_rx, final_ry) = controller::get_calibrated_stick_values(raw_lx, raw_ly, raw_rx, raw_ry);
 
-    controller_data.left_stick.x = final_lx;
-    controller_data.left_stick.y = final_ly;
-    controller_data.right_stick.x = final_rx;
-    controller_data.right_stick.y = final_ry;
-
-    // --- 新增: 使用通用函数计算并存储摇杆旋转状态 ---
-    controller_data.left_stick_rotation = controller::update_joystick_rotation_state(JoystickSource::LeftStick, final_lx, final_ly);
-    controller_data.right_stick_rotation = controller::update_joystick_rotation_state(JoystickSource::RightStick, final_rx, final_ry);
-
-    // 打印旋转状态
-    // log::info!(
-    //     "{:?}, {:?}",
-    //     controller_data.left_stick_rotation,
-    //     controller_data.right_stick_rotation
-    // );
+    controller_data.left_stick.x = raw_lx;
+    controller_data.left_stick.y = raw_ly;
+    controller_data.right_stick.x = raw_rx;
+    controller_data.right_stick.y = raw_ry;
 
     // 触发器状态读取
     let lt = state.left_trigger();
