@@ -276,38 +276,6 @@ import {
   box-sizing: border-box; /* 新增：确保 padding 不会影响宽度计算 */
 }
 
-.btn-group {
-  display: flex;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-left: 10px;
-}
-
-.btn-switch {
-  padding: 5px 12px;
-  background-color: #fff;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  color: #333;
-}
-
-.btn-switch:not(:last-child) {
-  border-right: 1px solid #ccc;
-}
-
-.btn-switch.active {
-  background-color: var(--button-base-bg);
-  color: white;
-}
-
-.btn-switch:disabled {
-  background-color: #f0f0f0;
-  color: #999;
-  cursor: not-allowed;
-}
-
 .circularity-info {
   text-align: center;
   font-size: 12px;

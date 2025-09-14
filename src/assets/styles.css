@@ -1163,6 +1163,38 @@ input:checked + .slider:before {
     box-shadow: none;
 }
 
+.btn-group {
+    display: flex;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-left: 10px;
+}
+
+.btn-switch {
+    padding: 5px 12px;
+    background-color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    color: #333;
+}
+
+.btn-switch:not(:last-child) {
+    border-right: 1px solid #ccc;
+}
+
+.btn-switch.active {
+    background-color: var(--button-base-bg);
+    color: white;
+}
+
+.btn-switch:disabled {
+    background-color: #f0f0f0;
+    color: #999;
+    cursor: not-allowed;
+}
+
 
 .key-display {
     font-size: 18px;
