@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { updateStatusMessage } from "@/ts/LeftPanel.ts";
 import { queryMappings, refreshMappings } from "@/App.ts";
 import { nextTick } from "vue";
-import { setLanguage } from "@/ts/i18n.ts";
+import { setLanguage, translate } from "@/ts/i18n.ts";
 
 
 /**
@@ -91,7 +91,7 @@ export async function editButtonMap(id: number) {
 
         // 1. 恢复原始值和显示值
         state.rawKeyDisplayText = raw_key;
-        const display_key = raw_key.split('+').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+        const display_key = formatKeyDisplay(raw_key);
 
         // 2. 反向解析原始值，恢复 state.currentKeys 状态
         const parts = raw_key.split(' + ');
@@ -156,54 +156,9 @@ export async function addButtonMap() {
 
 
 export function formatKeyDisplay(rawKey: string): string {
-    return rawKey.split('+').map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+    if (!rawKey) return '';
+    return rawKey.split('+').map(part => translate(`keyMappings.${part}`) || part.toUpperCase()).join(' + ');
 }
-
-// 特殊键的显示名称映射
-// TODO: 国际化支持
-const keyDisplayNames: Record<string, string> = {
-    ' ': '空格键',
-    Control: 'Ctrl',
-    Shift: 'Shift',
-    Alt: 'Alt',
-    Meta: 'Cmd',
-    ArrowUp: '↑',
-    ArrowDown: '↓',
-    ArrowLeft: '←',
-    ArrowRight: '→',
-    Escape: 'Esc',
-    Tab: 'Tab',
-    CapsLock: 'Caps Lock',
-    Enter: 'Enter',
-    Backspace: 'Backspace',
-    Delete: 'Delete',
-    Insert: 'Insert',
-    Home: 'Home',
-    End: 'End',
-    PageUp: 'Page Up',
-    PageDown: 'Page Down',
-    ContextMenu: '菜单键',
-    F1: 'F1',
-    F2: 'F2',
-    F3: 'F3',
-    F4: 'F4',
-    F5: 'F5',
-    F6: 'F6',
-    F7: 'F7',
-    F8: 'F8',
-    F9: 'F9',
-    F10: 'F10',
-    F11: 'F11',
-    F12: 'F12',
-    MouseLeft: '鼠标左键',
-    MouseRight: '鼠标右键',
-    MouseMiddle: '鼠标中键',
-    MouseX1: '鼠标侧键1',
-    MouseX2: '鼠标侧键2',
-    MouseWheelUp: '滚轮上',
-    MouseWheelDown: '滚轮下',
-};
-
 
 // 更新按键显示
 function updateKeyDisplay() {
@@ -218,7 +173,7 @@ function updateKeyDisplay() {
     state.rawKeyDisplayText = parts.join('+');
 
     // 更新显示文本用于UI
-    state.keyDisplayText = parts.map(part => keyDisplayNames[part] || part.toUpperCase()).join(' + ');
+    state.keyDisplayText = formatKeyDisplay(state.rawKeyDisplayText);
 }
 
 // 移除按键监听器
