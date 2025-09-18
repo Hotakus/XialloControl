@@ -53,6 +53,9 @@ pub struct PresetItems {
     /// 切换模式
     #[serde(default)]
     pub sub_preset_switch_mode: Option<String>,
+
+    #[serde(default)]
+    pub stick_rotate_trigger_threshold: i16
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -75,6 +78,7 @@ impl Preset {
                 sub_preset_name: None,
                 sub_preset_switch_button: None,
                 sub_preset_switch_mode: None,
+                stick_rotate_trigger_threshold: 15
             },
         }
     }
@@ -395,6 +399,17 @@ pub fn update_stick_as_mouse(use_stick_as_mouse: bool, stick_as_mouse_simulation
     let mut preset = CURRENT_PRESET.write().unwrap();
     preset.items.use_stick_as_mouse = use_stick_as_mouse;
     preset.items.stick_as_mouse_simulation = stick_as_mouse_simulation;
+    if preset.save() {
+        Ok(())
+    } else {
+        Err("Failed to save preset".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn update_stick_rotation_threshold(threshold: i16) -> Result<(), String> {
+    let mut preset = CURRENT_PRESET.write().unwrap();
+    preset.items.stick_rotate_trigger_threshold = threshold;
     if preset.save() {
         Ok(())
     } else {

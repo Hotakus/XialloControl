@@ -588,3 +588,15 @@ export async function updateStickAsMouse() {
         updateStatusMessage(`保存摇杆模拟鼠标设置失败: ${error}`, true);
     }
 }
+
+export async function updateStickRotationThreshold() {
+    try {
+        await invoke("update_stick_rotation_threshold", {
+            threshold: state.current_preset.items.stick_rotate_trigger_threshold
+        });
+        // updateStatusMessage("摇杆旋转阈值已保存", false);
+    } catch (error) {
+        console.error("保存摇杆旋转阈值失败:", error);
+        updateStatusMessage(`保存摇杆旋转阈值失败: ${error}`, true);
+    }
+}

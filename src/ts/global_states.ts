@@ -24,6 +24,7 @@ export interface Preset {
         sub_preset_name: string | null;
         sub_preset_switch_button: string | null;
         sub_preset_switch_mode: string | null;
+        stick_rotate_trigger_threshold: 15,
     }
 }
 
@@ -147,7 +148,6 @@ export const state = reactive({
             sub_preset_switch_mode: null,
         }
     } as Preset,
-    stick_rotate_trigger_threshold: 15, // 摇杆旋转触发阈值
 
     presets: [] as string[],
 

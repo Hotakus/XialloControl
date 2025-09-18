@@ -59,7 +59,11 @@ pub(crate) fn get_calibrated_stick_values(
 
 /// 通用函数: 计算并更新单个摇杆的旋转状态, 并返回旋转状态
 pub fn update_joystick_rotation_state(source: JoystickSource, x: f32, y: f32) -> JoystickRotation {
-    const ROTATION_THRESHOLD: f32 = 15.0 * std::f32::consts::PI / 180.0; // 15度的弧度值
+    let rotation_threshold: f32 = {
+        let current_preset = preset::get_current_preset();
+        let a = current_preset.items.stick_rotate_trigger_threshold as f32;
+        a.to_radians()
+    };
     const JUMP_THRESHOLD: f32 = std::f32::consts::PI; // 角度跳变的阈值, 约180度
 
     let mut rotation_states = JOYSTICK_ROTATION_STATES.write().unwrap();
@@ -87,10 +91,10 @@ pub fn update_joystick_rotation_state(source: JoystickSource, x: f32, y: f32) ->
             }
 
             // 检查累加值是否达到阈值
-            if state.accumulated_angle_delta > ROTATION_THRESHOLD {
+            if state.accumulated_angle_delta > rotation_threshold {
                 rotation_this_frame = JoystickRotation::Clockwise;
                 state.accumulated_angle_delta = 0.0; // 触发后重置
-            } else if state.accumulated_angle_delta < -ROTATION_THRESHOLD {
+            } else if state.accumulated_angle_delta < -rotation_threshold {
                 rotation_this_frame = JoystickRotation::CounterClockwise;
                 state.accumulated_angle_delta = 0.0; // 触发后重置
             }

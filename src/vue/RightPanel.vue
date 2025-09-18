@@ -212,7 +212,8 @@
               <label>{{ $t('rightPanel.triggerAngleThreshold') }}：</label>
               <div class="polling-container">
                 <input type="number" id="stick_rotate_trigger_threshold_input" min="1" max="360" value="15"
-                  v-model="state.stick_rotate_trigger_threshold">
+                  v-model="state.current_preset.items.stick_rotate_trigger_threshold"
+                  @change="updateStickRotationThreshold()">
                 <span>{{ $t('rightPanel.degrees') }}</span>
               </div>
             </div>
@@ -318,7 +319,9 @@ import {
   confirmNewPreset,
   cancelNewPreset,
   deletePreset,
-  editPreset
+  editPreset,
+  updateStickAsMouse,
+  updateStickRotationThreshold,
 } from "@/ts/RightPanel.ts";
 import { state } from "@/ts/global_states.ts";
 import { onMounted, ref } from "vue";
