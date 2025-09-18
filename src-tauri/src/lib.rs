@@ -294,7 +294,8 @@ pub fn run() {
             preset::delete_preset,
             preset::rename_preset,
             preset::switch_to_preset,
-            preset::update_preset_items
+            preset::update_preset_items,
+            preset::update_stick_as_mouse
         ])
         .setup(|app| {
             let app_handle = app.handle();

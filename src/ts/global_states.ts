@@ -19,6 +19,8 @@ export interface Preset {
         deadzone: number;
         deadzone_left: number;
         mappings_file_name: string;
+        use_stick_as_mouse: boolean;
+        stick_as_mouse_simulation: string | null;
         sub_preset_name: string | null;
         sub_preset_switch_button: string | null;
         sub_preset_switch_mode: string | null;
@@ -145,9 +147,10 @@ export const state = reactive({
             sub_preset_switch_mode: null,
         }
     } as Preset,
+    stick_rotate_trigger_threshold: 15, // 摇杆旋转触发阈值
 
     presets: [] as string[],
-    
+
     // 新建预设相关状态
     isCreatingNewPreset: false,
     newPresetName: "",

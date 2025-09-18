@@ -574,3 +574,17 @@ export async function updateMappingsOrder(newOrder: any[]) {
         await queryMappings();
     }
 }
+
+
+export async function updateStickAsMouse() {
+    try {
+        await invoke("update_stick_as_mouse", {
+            useStickAsMouse: state.current_preset.items.use_stick_as_mouse,
+            stickAsMouseSimulation: state.current_preset.items.stick_as_mouse_simulation
+        });
+        // updateStatusMessage("摇杆模拟鼠标设置已保存", false);
+    } catch (error) {
+        console.error("保存摇杆模拟鼠标设置失败:", error);
+        updateStatusMessage(`保存摇杆模拟鼠标设置失败: ${error}`, true);
+    }
+}

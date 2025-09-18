@@ -37,6 +37,12 @@ pub struct PresetItems {
     #[serde(default = "default_deadzone")]
     pub deadzone_left: u8,
 
+    /// 摇杆模拟鼠标相关配置
+    #[serde(default)]
+    pub use_stick_as_mouse: bool,
+    #[serde(default)]
+    pub stick_as_mouse_simulation: Option<String>,
+
     // --- 副预设相关配置 ---
     /// 指定的副预设名称
     #[serde(default)]
@@ -64,6 +70,8 @@ impl Preset {
                 mappings_file_name: DEFAULT_MAPPINGS_FILE.into(),
                 deadzone: DEFAULT_DEADZONE,
                 deadzone_left: DEFAULT_DEADZONE,
+                use_stick_as_mouse: false,
+                stick_as_mouse_simulation: None,
                 sub_preset_name: None,
                 sub_preset_switch_button: None,
                 sub_preset_switch_mode: None,
@@ -375,6 +383,18 @@ pub fn update_deadzone(deadzone: u8, deadzone_left: u8) -> Result<(), String> {
     let mut preset = CURRENT_PRESET.write().unwrap();
     preset.set_deadzone(deadzone);
     preset.set_deadzone_left(deadzone_left);
+    if preset.save() {
+        Ok(())
+    } else {
+        Err("Failed to save preset".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn update_stick_as_mouse(use_stick_as_mouse: bool, stick_as_mouse_simulation: Option<String>) -> Result<(), String> {
+    let mut preset = CURRENT_PRESET.write().unwrap();
+    preset.items.use_stick_as_mouse = use_stick_as_mouse;
+    preset.items.stick_as_mouse_simulation = stick_as_mouse_simulation;
     if preset.save() {
         Ok(())
     } else {

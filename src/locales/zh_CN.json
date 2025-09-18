@@ -31,7 +31,6 @@
     "stickSettings": "摇杆设置",
     "rightStickDeadzone": "右摇杆死区:",
     "leftStickDeadzone": "左摇杆死区:",
-    "stickRotationBehavior": "摇杆旋转行为",
     "rightStickRotation": "右摇杆旋转:",
     "softwareSettings": "软件设置",
     "autoStart": "开机自启动:",
@@ -46,7 +45,14 @@
     "openDevTools": "打开开发者工具",
     "resetSettings": "重置设置",
     "githubProject": "GitHub 项目",
-    "mappingTo": "映射到"
+    "mappingTo": "映射到",
+    "useStickAsMouse": "使用摇杆模拟鼠标",
+    "stickAsMouseSimulation": "作为鼠标模拟：",
+    "leftStick": "左摇杆",
+    "rightStick": "右摇杆",
+    "stickRotationBehavior": "摇杆旋转触发设置",
+    "triggerAngleThreshold": "触发角度阈值",
+    "degrees": "度"
   },
   "buttons": {
     "A": "A 按钮",

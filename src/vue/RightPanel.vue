@@ -180,11 +180,41 @@
                 <span id="deadzone-left-value">{{ state.current_preset.items.deadzone_left }}%</span>
               </div>
             </div>
+
+            <div class="setting-item">
+              <label for="use-stick-as-mouse">{{ $t('rightPanel.useStickAsMouse') }}</label>
+              <label class="switch">
+                <input type="checkbox" id="use-stick-as-mouse" v-model="state.current_preset.items.use_stick_as_mouse"
+                  @change="updateStickAsMouse()">
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div class="setting-item" v-if="state.current_preset.items.use_stick_as_mouse">
+              <label for="stick-as-mouse-simulation">{{ $t('rightPanel.stickAsMouseSimulation') }}</label>
+              <div class="btn-group">
+                <button
+                  :class="['btn-switch', { 'active': state.current_preset.items.stick_as_mouse_simulation === 'left' }]"
+                  @click="state.current_preset.items.stick_as_mouse_simulation = 'left'; updateStickAsMouse()">
+                  {{ $t('rightPanel.leftStick') }}
+                </button>
+                <button
+                  :class="['btn-switch', { 'active': state.current_preset.items.stick_as_mouse_simulation === 'right' }]"
+                  @click="state.current_preset.items.stick_as_mouse_simulation = 'right'; updateStickAsMouse()">
+                  {{ $t('rightPanel.rightStick') }}
+                </button>
+              </div>
+            </div>
           </div>
           <div class="setting-group">
             <h3>{{ $t('rightPanel.stickRotationBehavior') }}</h3>
             <div class="setting-item">
-              <label>{{ $t('rightPanel.rightStickRotation') }}</label>
+              <label>{{ $t('rightPanel.triggerAngleThreshold') }}：</label>
+              <div class="polling-container">
+                <input type="number" id="stick_rotate_trigger_threshold_input" min="1" max="360" value="15"
+                  v-model="state.stick_rotate_trigger_threshold">
+                <span>{{ $t('rightPanel.degrees') }}</span>
+              </div>
             </div>
           </div>
 

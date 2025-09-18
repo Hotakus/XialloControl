@@ -31,7 +31,6 @@
     "stickSettings": "Stick Settings",
     "rightStickDeadzone": "Right Stick Deadzone:",
     "leftStickDeadzone": "Left Stick Deadzone:",
-    "stickRotationBehavior": "Stick Rotation Behavior",
     "rightStickRotation": "Right Stick Rotation:",
     "softwareSettings": "Software Settings",
     "autoStart": "Auto-start on boot:",
@@ -46,7 +45,14 @@
     "openDevTools": "Open Developer Tools",
     "resetSettings": "Reset Settings",
     "githubProject": "GitHub Project",
-    "mappingTo": "Mapping to"
+    "mappingTo": "Mapping to",
+    "useStickAsMouse": "Use Stick as Mouse",
+    "stickAsMouseSimulation": "As Mouse Simulation:",
+    "leftStick": "Left Stick",
+    "rightStick": "Right Stick",
+    "stickRotationBehavior": "Stick Rotation Behavior",
+    "triggerAngleThreshold": "Trigger Angle Threshold",
+    "degrees": "deg"
   },
   "buttons": {
     "A": "A",
