@@ -52,7 +52,8 @@
     "rightStick": "右摇杆",
     "stickRotationBehavior": "摇杆旋转触发设置",
     "triggerAngleThreshold": "触发角度阈值",
-    "degrees": "度"
+    "degrees": "度",
+    "mouseMoveSpeed": "鼠标移动速度"
   },
   "buttons": {
     "A": "A 按钮",
