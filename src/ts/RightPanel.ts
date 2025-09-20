@@ -157,7 +157,11 @@ export async function addButtonMap() {
 
 export function formatKeyDisplay(rawKey: string): string {
     if (!rawKey) return '';
-    return rawKey.split('+').map(part => translate(`keyMappings.${part}`) || part.toUpperCase()).join(' + ');
+    return rawKey.split('+').map(part => {
+        const translated = translate(`keyMappings.${part}`);
+        // 如果翻译结果等于原始的key，说明没有找到翻译，使用大写作为备选
+        return translated === `keyMappings.${part}` ? part.toUpperCase() : translated;
+    }).join(' + ');
 }
 
 // 更新按键显示
