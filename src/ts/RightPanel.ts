@@ -600,3 +600,14 @@ export async function updateStickRotationThreshold() {
         updateStatusMessage(`保存摇杆旋转阈值失败: ${error}`, true);
     }
 }
+
+export async function updateMouseMoveSpeed() {
+    try {
+        await invoke("update_mouse_move_speed", {
+            moveSpeed: state.current_preset.items.move_speed
+        });
+    } catch (error) {
+        console.error("保存鼠标移动速度失败:", error);
+        updateStatusMessage(`保存鼠标移动速度失败: ${error}`, true);
+    }
+}

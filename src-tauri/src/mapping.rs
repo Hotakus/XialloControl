@@ -3,6 +3,7 @@
 // --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
 use crate::controller::controller::{CURRENT_DEVICE, ControllerType};
 use crate::controller::datas::{ControllerButtons, ControllerDatas, JoystickRotation};
+use crate::preset;
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
@@ -158,6 +159,11 @@ struct MappingFile {
 
 // --- 操作指令相关定义 (๑>؂<๑)۶ ---
 
+// 定义可执行trait
+pub trait Executable {
+    fn execute(&self, enigo: &mut Enigo);
+}
+
 /// 主要操作类型，代表一个具体的键盘按键、鼠标点击或滚轮事件。
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "snake_case", untagged)]
@@ -171,6 +177,28 @@ pub enum PrimaryAction {
     MouseClick { button: enigo::Button },
     /// 滚动鼠标滚轮。
     MouseWheel { amount: i32 },
+}
+
+impl Executable for PrimaryAction {
+    fn execute(&self, enigo: &mut Enigo) {
+        match self {
+            PrimaryAction::KeyPress { key } => {
+                enigo
+                    .key(*key, enigo::Direction::Click)
+                    .expect("Failed to press key"); // 按下并释放
+            }
+            PrimaryAction::MouseClick { button } => {
+                enigo
+                    .button(*button, enigo::Direction::Click)
+                    .expect("Failed to clicked mouse button");
+            }
+            PrimaryAction::MouseWheel { amount } => {
+                enigo
+                    .scroll(*amount, enigo::Axis::Vertical)
+                    .expect("Failed to scroll mouse weight");
+            }
+        }
+    }
 }
 
 /// 完整的操作指令，包含修饰键和主要操作。
@@ -191,6 +219,27 @@ impl Default for Action {
             primary: PrimaryAction::KeyPress {
                 key: enigo::Key::Space,
             },
+        }
+    }
+}
+
+impl Executable for Action {
+    fn execute(&self, enigo: &mut Enigo) {
+        // 1. 按下所有修饰键
+        for modifier in &self.modifiers {
+            enigo
+                .key(*modifier, enigo::Direction::Press)
+                .expect("Failed to press modifier key");
+        }
+
+        // 2. 执行主操作
+        self.primary.execute(enigo);
+
+        // 3. 释放所有修饰键 (以相反顺序)
+        for modifier in self.modifiers.iter().rev() {
+            enigo
+                .key(*modifier, enigo::Direction::Release)
+                .expect("Failed to release modifier key");
         }
     }
 }
@@ -716,46 +765,59 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
 
 /// Enigo 工作线程，接收命令并执行实际的键盘/鼠标操作。
 /// 所有 Enigo 的操作都在这个线程中完成，以避免与主线程的阻塞和冲突。
+// fn enigo_worker(rx: Receiver<EnigoCommand>) {
+//     // 创建 Enigo 实例
+//     let mut enigo = Enigo::new(&enigo::Settings::default()).unwrap();
+
+//     while let Ok(cmd) = rx.recv() {
+//         match cmd {
+//             EnigoCommand::Execute(action) => {
+//                 // 1. 按下所有修饰键
+//                 for modifier in &action.modifiers {
+//                     enigo
+//                         .key(*modifier, enigo::Direction::Press)
+//                         .expect("Failed to press modifier key");
+//                 }
+
+//                 // 2. 执行主操作
+//                 match action.primary {
+//                     PrimaryAction::KeyPress { key } => {
+//                         enigo
+//                             .key(key, enigo::Direction::Click)
+//                             .expect("Failed to press key"); // 按下并释放
+//                     }
+//                     PrimaryAction::MouseClick { button } => {
+//                         enigo
+//                             .button(button, enigo::Direction::Click)
+//                             .expect("Failed to clicked mouse button");
+//                     }
+//                     PrimaryAction::MouseWheel { amount } => {
+//                         enigo
+//                             .scroll(amount, enigo::Axis::Vertical)
+//                             .expect("Failed to scroll mouse weight");
+//                     }
+//                 }
+
+//                 // 3. 释放所有修饰键 (以相反顺序)
+//                 for modifier in action.modifiers.iter().rev() {
+//                     enigo
+//                         .key(*modifier, enigo::Direction::Release)
+//                         .expect("Failed to release modifier key");
+//                 }
+//             }
+//         }
+//     }
+// }
+
 fn enigo_worker(rx: Receiver<EnigoCommand>) {
-    // 创建 Enigo 实例
-    let mut enigo = Enigo::new(&enigo::Settings::default()).unwrap();
+    let enigo = Enigo::new(&enigo::Settings::default()).unwrap();
+    *GLOBAL_ENIGO.write().unwrap() = Some(enigo);
 
-    while let Ok(cmd) = rx.recv() {
-        match cmd {
-            EnigoCommand::Execute(action) => {
-                // 1. 按下所有修饰键
-                for modifier in &action.modifiers {
-                    enigo
-                        .key(*modifier, enigo::Direction::Press)
-                        .expect("Failed to press modifier key");
-                }
-
-                // 2. 执行主操作
-                match action.primary {
-                    PrimaryAction::KeyPress { key } => {
-                        enigo
-                            .key(key, enigo::Direction::Click)
-                            .expect("Failed to press key"); // 按下并释放
-                    }
-                    PrimaryAction::MouseClick { button } => {
-                        enigo
-                            .button(button, enigo::Direction::Click)
-                            .expect("Failed to clicked mouse button");
-                    }
-                    PrimaryAction::MouseWheel { amount } => {
-                        enigo
-                            .scroll(amount, enigo::Axis::Vertical)
-                            .expect("Failed to scroll mouse weight");
-                    }
-                }
-
-                // 3. 释放所有修饰键 (以相反顺序)
-                for modifier in action.modifiers.iter().rev() {
-                    enigo
-                        .key(*modifier, enigo::Direction::Release)
-                        .expect("Failed to release modifier key");
-                }
-            }
+    while let Ok(EnigoCommand::Execute(action)) = rx.recv() {
+        if let Some(enigo_instance) = GLOBAL_ENIGO.write().unwrap().as_mut() {
+            action.execute(enigo_instance);
+        } else {
+            log::error!("Enigo 实例未初始化，无法执行操作");
         }
     }
 }
@@ -766,6 +828,16 @@ pub fn initialize() {
     log::debug!("初始化映射模块");
     // 确保全局映射缓存已加载
     load_mappings();
+    // 强制初始化 ENIGO_SENDER，确保 enigo_worker 线程提前启动
+    init_enigo_sender();
+}
+
+/// 强制初始化 ENIGO_SENDER，确保 enigo_worker 线程提前启动
+pub fn init_enigo_sender() {
+    log::debug!("初始化 ENIGO_SENDER");
+    // 通过访问 ENIGO_SENDER 来强制初始化它
+    let _ = &*ENIGO_SENDER;
+    log::debug!("ENIGO_SENDER 初始化完成");
 }
 
 /// 核心映射函数，将手柄输入映射到相应的操作。
@@ -785,10 +857,18 @@ pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
 
         // 检查是否为摇杆旋转映射
         let rotation_match = match composed_button {
-            "LeftStickCW" => Some(controller_datas.left_stick_rotation == JoystickRotation::Clockwise),
-            "LeftStickCCW" => Some(controller_datas.left_stick_rotation == JoystickRotation::CounterClockwise),
-            "RightStickCW" => Some(controller_datas.right_stick_rotation == JoystickRotation::Clockwise),
-            "RightStickCCW" => Some(controller_datas.right_stick_rotation == JoystickRotation::CounterClockwise),
+            "LeftStickCW" => {
+                Some(controller_datas.left_stick_rotation == JoystickRotation::Clockwise)
+            }
+            "LeftStickCCW" => {
+                Some(controller_datas.left_stick_rotation == JoystickRotation::CounterClockwise)
+            }
+            "RightStickCW" => {
+                Some(controller_datas.right_stick_rotation == JoystickRotation::Clockwise)
+            }
+            "RightStickCCW" => {
+                Some(controller_datas.right_stick_rotation == JoystickRotation::CounterClockwise)
+            }
             _ => None,
         };
 
@@ -800,7 +880,9 @@ pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
                     .or_insert_with(|| mapping.trigger_state.clone());
 
                 if trigger_state.should_trigger() {
-                    ENIGO_SENDER.send(EnigoCommand::Execute(mapping.action.clone())).unwrap();
+                    ENIGO_SENDER
+                        .send(EnigoCommand::Execute(mapping.action.clone()))
+                        .unwrap();
                 }
             } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
                 state.reset();
@@ -820,6 +902,88 @@ pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
             } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
                 state.reset();
             }
+        }
+    }
+}
+
+pub struct MouseMovementState {
+    move_x_remainder: f32,
+    move_y_remainder: f32,
+}
+
+impl Default for MouseMovementState {
+    fn default() -> Self {
+        Self {
+            move_x_remainder: 0.0,
+            move_y_remainder: 0.0,
+        }
+    }
+}
+
+static MOUSE_MOVEMENT_STATE: Lazy<RwLock<MouseMovementState>> =
+    Lazy::new(|| RwLock::new(MouseMovementState::default()));
+
+static GLOBAL_ENIGO: Lazy<RwLock<Option<Enigo>>> = Lazy::new(|| RwLock::new(None));
+
+pub fn handle_mouse_movement(controller_datas: &ControllerDatas) {
+    let (move_speed, stick_as_mouse_simulation) = {
+        let preset = preset::get_current_preset();
+        if !preset.items.use_stick_as_mouse {
+            return;
+        }
+        (
+            preset.items.move_speed,
+            preset.items.stick_as_mouse_simulation,
+        )
+    };
+
+    let mut stick_x: f32 = 0.0;
+    let mut stick_y: f32 = 0.0;
+
+    if let Some(which_stick) = stick_as_mouse_simulation {
+        (stick_x, stick_y) = match which_stick.as_str() {
+            "left" => (controller_datas.left_stick.x, controller_datas.left_stick.y),
+            "right" => (
+                controller_datas.right_stick.x,
+                controller_datas.right_stick.y,
+            ),
+            "touchpad" => (0.0, 0.0), // TODO: 触摸板模拟
+            _ => {
+                return;
+            }
+        };
+    } else {
+        // log::warn!("未指定用于鼠标模拟的摇杆");
+        return;
+    }
+
+    // --- 精度累积计算 ---
+    let (move_x, move_y) = {
+        let mut state = MOUSE_MOVEMENT_STATE.write().unwrap();
+
+        // 直接在状态上进行累积计算
+        state.move_x_remainder += stick_x * (move_speed as f32);
+        state.move_y_remainder += -stick_y * (move_speed as f32); // Y轴反转，以匹配屏幕坐标
+
+        // 取出整数部分进行移动
+        let move_x = state.move_x_remainder.trunc();
+        let move_y = state.move_y_remainder.trunc();
+
+        // 从累积值中减去已移动的部分
+        state.move_x_remainder -= move_x;
+        state.move_y_remainder -= move_y;
+
+        (move_x, move_y)
+    };
+
+    if move_x != 0.0 || move_y != 0.0 {
+        let mut enigo = GLOBAL_ENIGO.write().unwrap();
+        if let Some(enigo_instance) = enigo.as_mut() {
+            enigo_instance
+                .move_mouse(move_x as i32, move_y as i32, enigo::Coordinate::Rel)
+                .expect("error");
+        } else {
+            log::error!("enigo error")
         }
     }
 }

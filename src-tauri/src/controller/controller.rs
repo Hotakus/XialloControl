@@ -762,6 +762,8 @@ pub fn listen() {
 
                 pack_and_send_data(&CONTROLLER_DATA.read().unwrap());
 
+                mapping::handle_mouse_movement(&CONTROLLER_DATA.read().unwrap());
+
                 let use_sub_preset = handle_preset_switching_decision();
                 mapping::map(&CONTROLLER_DATA.read().unwrap(), use_sub_preset);
             }

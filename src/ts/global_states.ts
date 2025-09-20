@@ -25,6 +25,7 @@ export interface Preset {
         sub_preset_switch_button: string | null;
         sub_preset_switch_mode: string | null;
         stick_rotate_trigger_threshold: 15,
+        move_speed: number,
     }
 }
 

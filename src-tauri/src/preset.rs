@@ -55,7 +55,11 @@ pub struct PresetItems {
     pub sub_preset_switch_mode: Option<String>,
 
     #[serde(default)]
-    pub stick_rotate_trigger_threshold: i16
+    pub stick_rotate_trigger_threshold: i16,
+
+    /// 鼠标移动速度 (1-100)
+    #[serde(default)]
+    pub move_speed: u8,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -78,7 +82,8 @@ impl Preset {
                 sub_preset_name: None,
                 sub_preset_switch_button: None,
                 sub_preset_switch_mode: None,
-                stick_rotate_trigger_threshold: 15
+                stick_rotate_trigger_threshold: 15,
+                move_speed: 20,
             },
         }
     }
@@ -410,6 +415,16 @@ pub fn update_stick_as_mouse(use_stick_as_mouse: bool, stick_as_mouse_simulation
 pub fn update_stick_rotation_threshold(threshold: i16) -> Result<(), String> {
     let mut preset = CURRENT_PRESET.write().unwrap();
     preset.items.stick_rotate_trigger_threshold = threshold;
+    if preset.save() {
+        Ok(())
+    } else {
+        Err("Failed to save preset".to_string())
+    }
+}
+#[tauri::command]
+pub fn  update_mouse_move_speed(move_speed: u8) -> Result<(), String> {
+    let mut preset = CURRENT_PRESET.write().unwrap();
+    preset.items.move_speed = move_speed;
     if preset.save() {
         Ok(())
     } else {

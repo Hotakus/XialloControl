@@ -205,7 +205,17 @@
                 </button>
               </div>
             </div>
+
+            <div class="setting-item" v-if="state.current_preset.items.use_stick_as_mouse">
+              <label>{{ $t('rightPanel.mouseMoveSpeed') }}：</label>
+              <div class="polling-container">
+                <input type="number" min="1" max="100" value="20"
+                  v-model="state.current_preset.items.move_speed"
+                  @change="updateMouseMoveSpeed()">
+              </div>
+            </div>
           </div>
+
           <div class="setting-group">
             <h3>{{ $t('rightPanel.stickRotationBehavior') }}</h3>
             <div class="setting-item">
@@ -322,6 +332,7 @@ import {
   editPreset,
   updateStickAsMouse,
   updateStickRotationThreshold,
+  updateMouseMoveSpeed,
 } from "@/ts/RightPanel.ts";
 import { state } from "@/ts/global_states.ts";
 import { onMounted, ref } from "vue";
