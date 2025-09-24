@@ -271,14 +271,14 @@
               </div>
             </div>
 
-            <div class="setting-item">
+            <!-- <div class="setting-item">
               <label for="theme">{{ $t('rightPanel.uiTheme') }}</label>
               <select id="theme" v-model="state.theme" @change="changeTheme()">
                 <option value="light">{{ $t('rightPanel.lightMode') }}</option>
                 <option value="dark">{{ $t('rightPanel.darkMode') }}</option>
                 <option value="system">{{ $t('rightPanel.followSystem') }}</option>
               </select>
-            </div>
+            </div> -->
 
             <div class="setting-item">
               <label for="language">{{ $t('rightPanel.uiLanguage') }}</label>
@@ -289,18 +289,20 @@
               </select>
             </div>
           </div>
+
           <div class="setting-group">
-            <button id="reset-btn" class="btn btn-outline btn-settings" v-if="!state.is_release_env"
+            <!-- <button id="reset-btn" class="btn btn-outline btn-settings" v-if="!state.is_release_env"
               @click="openDevTools()">
               {{ $t('rightPanel.openDevTools') }}
-            </button>
-            <button id="reset-btn" class="btn btn-outline btn-settings" @click="resetSettings()">
+            </button> -->
+            <!-- <button id="reset-btn" class="btn btn-outline btn-settings" @click="resetSettings()">
               {{ $t('rightPanel.resetSettings') }}
-            </button>
+            </button> -->
             <button id="github-btn" class="btn btn-outline btn-settings" @click="openGithubLink()">
               {{ $t('rightPanel.githubProject') }}
             </button>
           </div>
+
         </div>
       </div>
     </div>
