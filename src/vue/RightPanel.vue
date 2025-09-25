@@ -67,7 +67,7 @@
         <div class="tab" :class="{ active: state.activeTab === 'buttonMapTab' }" role="tab" aria-selected="true"
           data-tab="buttonMapTab" @click="switchTab('buttonMapTab')">{{ $t('rightPanel.buttonMap') }}</div>
         <div class="tab" :class="{ active: state.activeTab === 'stickMapTab' }" role="tab" aria-selected="false"
-          data-tab="stickMapTab" @click="switchTab('stickMapTab')">{{ $t('rightPanel.pressureSetting') }}</div>
+          data-tab="stickMapTab" @click="switchTab('stickMapTab')">{{ $t('rightPanel.stickRelated') }}</div>
         <div class="tab" :class="{ active: state.activeTab === 'settingTab' }" role="tab" aria-selected="false"
           data-tab="settingTab" @click="switchTab('settingTab')">{{ $t('rightPanel.settings') }}</div>
       </div>
@@ -76,7 +76,7 @@
         role="tabpanel">
         <div class="tab-content-container">
           <div class="button-map-header">
-            <div class="button-map-title"><i class="fas fa-keyboard"></i> {{ $t('rightPanel.buttonMap') }}</div>
+            <div class="button-map-title"> {{ $t('rightPanel.buttonMap') }}</div>
             <div class="button-map-controls">
               <button id="add-button-map" :title="$t('rightPanel.addMapping')" class="icon-button" @click="addButtonMap()">
                 <svg t="1753626247148" class="icon" viewBox="0 0 1024 1024" version="1.1"
