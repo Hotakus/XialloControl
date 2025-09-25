@@ -31,9 +31,9 @@
     </div>
 
     <div class="card controller-image">
-        <button id="open-joystick-cali-modal" class="btn btn-outline btn-settings" @click="openCaliModal()">
+        <!-- <button id="open-joystick-cali-modal" class="btn btn-outline btn-settings" @click="openCaliModal()">
           校准
-        </button>
+        </button> -->
       <component :is="currentControllerSvg" class="controller-svg" />
     </div>
   </div>
