@@ -794,50 +794,6 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
 
 /// Enigo 工作线程，接收命令并执行实际的键盘/鼠标操作。
 /// 所有 Enigo 的操作都在这个线程中完成，以避免与主线程的阻塞和冲突。
-// fn enigo_worker(rx: Receiver<EnigoCommand>) {
-//     // 创建 Enigo 实例
-//     let mut enigo = Enigo::new(&enigo::Settings::default()).unwrap();
-
-//     while let Ok(cmd) = rx.recv() {
-//         match cmd {
-//             EnigoCommand::Execute(action) => {
-//                 // 1. 按下所有修饰键
-//                 for modifier in &action.modifiers {
-//                     enigo
-//                         .key(*modifier, enigo::Direction::Press)
-//                         .expect("Failed to press modifier key");
-//                 }
-
-//                 // 2. 执行主操作
-//                 match action.primary {
-//                     PrimaryAction::KeyPress { key } => {
-//                         enigo
-//                             .key(key, enigo::Direction::Click)
-//                             .expect("Failed to press key"); // 按下并释放
-//                     }
-//                     PrimaryAction::MouseClick { button } => {
-//                         enigo
-//                             .button(button, enigo::Direction::Click)
-//                             .expect("Failed to clicked mouse button");
-//                     }
-//                     PrimaryAction::MouseWheel { amount } => {
-//                         enigo
-//                             .scroll(amount, enigo::Axis::Vertical)
-//                             .expect("Failed to scroll mouse weight");
-//                     }
-//                 }
-
-//                 // 3. 释放所有修饰键 (以相反顺序)
-//                 for modifier in action.modifiers.iter().rev() {
-//                     enigo
-//                         .key(*modifier, enigo::Direction::Release)
-//                         .expect("Failed to release modifier key");
-//                 }
-//             }
-//         }
-//     }
-// }
-
 fn enigo_worker(rx: Receiver<EnigoCommand>) {
     let enigo = Enigo::new(&enigo::Settings::default()).unwrap();
     *GLOBAL_ENIGO.write().unwrap() = Some(enigo);
