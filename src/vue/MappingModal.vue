@@ -39,6 +39,10 @@
                 <div class="detector-hint">点击上方区域, 然后按下按键或滚动滚轮</div>
                 <div class="key-display" id="key-display">{{ state.keyDisplayText }}</div>
               </div>
+              <div id="modal-error" class="status-message error" style="margin-top: 15px;"
+                v-show="state.modalErrorVisible">
+                {{ state.modalErrorMessage }}
+              </div>
             </div>
 
             <!-- Divider -->
@@ -99,9 +103,6 @@
               </div>
             </div>
           </div>
-          <div id="modal-error" class="status-message error" style="margin-top: 15px;" v-show="state.modalErrorVisible">
-            {{ state.modalErrorMessage }}
-          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" id="cancel-btn" @click="closeButtonMapModal()">取消</button>
@@ -128,7 +129,7 @@ function textInclude(text: string, pattens: string[]) {
 <style scoped>
 /* 如果只作用于这个组件，可以写 scoped 样式 */
 .modal-left-panel {
-  flex: 6;
+  flex: 5;
   display: flex;
   flex-direction: column;
   gap: 15px;
