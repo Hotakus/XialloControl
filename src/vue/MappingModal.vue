@@ -80,7 +80,7 @@
               </div>
 
               <!-- Amount for Mouse Wheel -->
-              <div v-if="textInclude(state.rawKeyDisplayText, mousewheel)">
+              <div v-if="textInclude(state.rawKeyDisplayText, mousewheel, false)">
                 <div class="form-group">
                   <label for="mousewheel-amount">滚轮滚动量</label>
                   <div class="slider-container">
@@ -91,7 +91,7 @@
                 </div>
               </div>
 
-              <div v-if="textInclude(state.selectedButton, trigger_text)">
+              <div v-if="textInclude(state.selectedButton, trigger_text, true)">
                 <div class="form-group">
                   <label for="mousewheel-amount">扳机触发阈值</label>
                   <div class="slider-container">
@@ -121,8 +121,12 @@ import { closeButtonMapModal, detectKey, mappingsConfirm } from "@/ts/MappingMod
 const trigger_text = ["lt", "rt"];
 const mousewheel = ["mousewheel"];
 
-function textInclude(text: string, pattens: string[]) {
-  return pattens.some(e => text.toLowerCase().includes(e));
+function textInclude(text: string, pattens: string[], strictMatch: boolean = false) {
+  if (strictMatch) {
+    return pattens.some(e => text.toLowerCase() === e.toLowerCase());
+  } else {
+    return pattens.some(e => text.toLowerCase().includes(e));
+  }
 }
 </script>
 
