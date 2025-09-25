@@ -426,6 +426,24 @@ pub fn update_mapping(
                 mapping.trigger_theshold = trigger_theshold.unwrap_or(0.3);
                 mapping.action = action;
                 mapping.trigger_state = trigger_state.clone();
+
+                // 同步更新 DYNAMIC_TRIGGER_STATES 中的触发状态
+                let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
+                if let Some(existing_trigger_state) = trigger_states.get_mut(&id) {
+                    // 更新现有的触发状态
+                    existing_trigger_state.continually_trigger = trigger_state.continually_trigger;
+                    existing_trigger_state.interval = trigger_state.interval;
+                    existing_trigger_state.initial_interval = trigger_state.initial_interval;
+                    existing_trigger_state.min_interval = trigger_state.min_interval;
+                    existing_trigger_state.acceleration = trigger_state.acceleration;
+                    // 注意：不更新 last_trigger，保持原有的时间状态
+                } else {
+                    // 如果不存在，则插入新的触发状态
+                    trigger_states.insert(id, trigger_state.clone());
+                }
+                drop(trigger_states);
+
+                log::error!("{:#?}", DYNAMIC_TRIGGER_STATES.read().unwrap());
             }
             Err(e) => {
                 log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
@@ -475,11 +493,17 @@ pub fn add_mapping(
                 composed_shortcut_key,
                 trigger_theshold: trigger_theshold.unwrap_or(0.3),
                 action,
-                trigger_state,
+                trigger_state: trigger_state.clone(),
             };
 
             cache.push(new_mapping);
             drop(cache);
+
+            // 同步更新 DYNAMIC_TRIGGER_STATES，添加新的触发状态
+            let mut dynamic_trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
+            dynamic_trigger_states.insert(id, trigger_state.clone());
+            drop(dynamic_trigger_states);
+
             save_mappings();
             true
         }
@@ -504,6 +528,12 @@ pub async fn delete_mapping(id: u64) -> bool {
 
     if deleted {
         drop(cache);
+
+        // 同步更新 DYNAMIC_TRIGGER_STATES，删除对应的触发状态
+        let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
+        trigger_states.remove(&id);
+        drop(trigger_states);
+
         save_mappings();
         log::info!("已成功删除 id {id} 的映射");
     } else {
