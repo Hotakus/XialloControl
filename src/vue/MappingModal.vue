@@ -1,8 +1,7 @@
 <template>
   <transition name="modal-fade">
-    <div
-        class="modal-overlay"
-        id="mapping-modal" :class="{active: state.showMappingModal}" @click.self="closeButtonMapModal()">
+    <div class="modal-overlay" id="mapping-modal" :class="{ active: state.showMappingModal }"
+      @click.self="closeButtonMapModal()">
       <div class="modal">
         <div class="modal-header">
           <span id="modal-title">
@@ -33,8 +32,8 @@
 
               <div class="form-group key-detector">
                 <label><i class="fas fa-keyboard"></i> 映射输出动作</label>
-                <div class="detector-area" :class="{active: state.keyListenerActive}" id="key-detector-area"
-                     @click="detectKey()">
+                <div class="detector-area" :class="{ active: state.keyListenerActive }" id="key-detector-area"
+                  @click="detectKey()">
                   {{ state.keyDetectorText }}
                 </div>
                 <div class="detector-hint">点击上方区域, 然后按下按键或滚动滚轮</div>
@@ -49,18 +48,28 @@
             <div class="modal-right-panel">
               <!-- Trigger State Settings -->
               <div v-if="state.selectedButton">
-                <div class="form-group">
+                <div class="form-group continually-trigger">
+                  <label>持续触发: </label>
+                  <label class="switch">
+                    <input type="checkbox" v-model="state.triggerState.continually_trigger">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+                <div class="form-group" v-if="state.triggerState.continually_trigger">
                   <label for="initial-interval">初始触发间隔 (ms)</label>
-                  <input type="number" id="initial-interval" class="form-control" v-model.number="state.triggerState.initial_interval">
+                  <input type="number" id="initial-interval" class="form-control"
+                    v-model.number="state.triggerState.initial_interval">
                 </div>
-                <div class="form-group">
+                <div class="form-group" v-if="state.triggerState.continually_trigger">
                   <label for="min-interval">最小触发间隔 (ms)</label>
-                  <input type="number" id="min-interval" class="form-control" v-model.number="state.triggerState.min_interval">
+                  <input type="number" id="min-interval" class="form-control"
+                    v-model.number="state.triggerState.min_interval">
                 </div>
-                <div class="form-group">
+                <div class="form-group" v-if="state.triggerState.continually_trigger">
                   <label for="acceleration">加速因子</label>
                   <div class="slider-container">
-                    <input type="range" id="acceleration" min="0.1" max="2" step="0.1" v-model.number="state.triggerState.acceleration">
+                    <input type="range" id="acceleration" min="0.1" max="2" step="0.1"
+                      v-model.number="state.triggerState.acceleration">
                     <span>{{ state.triggerState.acceleration }}</span>
                   </div>
                 </div>
@@ -71,7 +80,8 @@
                 <div class="form-group">
                   <label for="mousewheel-amount">滚轮滚动量</label>
                   <div class="slider-container">
-                    <input type="range" id="mousewheel-amount" min="1" max="20" step="1" v-model.number="state.mapping_amount">
+                    <input type="range" id="mousewheel-amount" min="1" max="20" step="1"
+                      v-model.number="state.mapping_amount">
                     <span>{{ state.mapping_amount }}</span>
                   </div>
                 </div>
@@ -81,7 +91,8 @@
                 <div class="form-group">
                   <label for="mousewheel-amount">扳机触发阈值</label>
                   <div class="slider-container">
-                    <input type="range" id="trigger_threshold" min="0.01" max="1" step="0.01" v-model.number="state.triggerTheshold">
+                    <input type="range" id="trigger_threshold" min="0.01" max="1" step="0.01"
+                      v-model.number="state.triggerTheshold">
                     <span>{{ state.triggerTheshold }}</span>
                   </div>
                 </div>
@@ -103,8 +114,8 @@
 
 <script setup lang="ts">
 // 可以写组件逻辑
-import {state} from "@/ts/global_states.ts";
-import {closeButtonMapModal, detectKey, mappingsConfirm} from "@/ts/MappingModal.ts";
+import { state } from "@/ts/global_states.ts";
+import { closeButtonMapModal, detectKey, mappingsConfirm } from "@/ts/MappingModal.ts";
 
 const trigger_text = ["lt", "rt"];
 const mousewheel = ["mousewheel"];

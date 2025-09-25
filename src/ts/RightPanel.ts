@@ -104,6 +104,7 @@ export async function editButtonMap(id: number) {
         state.currentKeys.key = parts.find(p => !['Control', 'Shift', 'Alt', 'Meta'].includes(p)) || null;
 
         // 3. 恢复 trigger state (假设后端返回的字段名是 snake_case)
+        state.triggerState.continually_trigger = mapping.continually_trigger ?? false;
         state.triggerState.initial_interval = mapping.initial_interval ?? 300;
         state.triggerState.min_interval = mapping.min_interval ?? 100;
         state.triggerState.acceleration = mapping.acceleration ?? 0.8;
@@ -160,6 +161,7 @@ export async function addButtonMap() {
     state.triggerTheshold = 0.3
     state.rawKeyDisplayText = ''; // 清空上次的按键检测结果
     state.keyDisplayText = '';
+    state.triggerState.continually_trigger = false;
     await openButtonMapModal("添加按键映射");
 }
 

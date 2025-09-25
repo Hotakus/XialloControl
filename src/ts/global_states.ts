@@ -105,6 +105,7 @@ export const state = reactive({
     editingMappingId: null as number | null,
     // 用于模态窗口中的触发状态绑定
     triggerState: {
+        continually_trigger: false,
         initial_interval: 300,
         min_interval: 100,
         acceleration: 0.8,

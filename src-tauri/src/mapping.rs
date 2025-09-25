@@ -22,6 +22,8 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct TriggerState {
+    /// 持续触发开关
+    continually_trigger: bool,
     /// 当前触发间隔（毫秒）。
     interval: u64,
     /// 初始触发间隔（毫秒），用于重置。
@@ -34,6 +36,10 @@ pub struct TriggerState {
     #[serde(skip)] // 跳过序列化和反序列化
     #[serde(default = "TriggerState::default_instant")] // 反序列化时自动调用
     last_trigger: Instant,
+    
+    #[serde(skip)] // 跳过序列化和反序列化
+    /// 按键是否被按下的状态，用于非连续触发模式
+    is_pressed: bool,
 }
 
 impl TriggerState {
@@ -45,25 +51,40 @@ impl TriggerState {
     /// 使用指定的参数创建一个新的 `TriggerState`。
     pub fn new(initial_interval: u64, min_interval: u64, acceleration: f64) -> Self {
         Self {
+            continually_trigger: false,
             interval: initial_interval,
             initial_interval,
             min_interval,
             acceleration,
             last_trigger: Instant::now(),
+            is_pressed: false,
         }
     }
 
     /// 检查是否应该触发。如果自上次触发以来经过的时间超过了当前间隔，则返回 `true`。
     /// 触发后，会自动更新下一次的触发间隔（加速）。
-    pub fn should_trigger(&mut self) -> bool {
-        if self.last_trigger.elapsed().as_millis() as u64 >= self.interval {
-            // 触发后加速，更新间隔时间
-            self.interval =
-                ((self.interval as f64) * self.acceleration).max(self.min_interval as f64) as u64;
-            self.last_trigger = Instant::now();
-            true
+    pub fn should_trigger(&mut self, button_is_pressed: bool) -> bool {
+        if self.continually_trigger {
+            // 连续触发模式：只有在按键被按下且时间间隔满足条件时才触发
+            if button_is_pressed && self.last_trigger.elapsed().as_millis() as u64 >= self.interval {
+                // 触发后加速，更新间隔时间
+                self.interval =
+                    ((self.interval as f64) * self.acceleration).max(self.min_interval as f64) as u64;
+                self.last_trigger = Instant::now();
+                true
+            } else {
+                false
+            }
         } else {
-            false
+            // 非连续触发模式：检测按键状态变化
+            if button_is_pressed != self.is_pressed {
+                // 按键状态发生变化，更新状态并返回true触发一次
+                self.is_pressed = button_is_pressed;
+                true
+            } else {
+                // 按键状态没有变化，不触发
+                false
+            }
         }
     }
 
@@ -71,24 +92,22 @@ impl TriggerState {
     pub fn reset(&mut self) {
         self.interval = self.initial_interval;
     }
+    
+    /// 获取按键是否被按下的状态
+    pub fn is_key_pressed(&self) -> bool {
+        self.is_pressed
+    }
+    
+    /// 设置按键状态
+    pub fn set_key_pressed(&mut self, pressed: bool) {
+        self.is_pressed = pressed;
+    }
 }
 
 impl Default for TriggerState {
     fn default() -> Self {
         Self::new(300, 100, 0.8)
     }
-}
-
-/// 定义摇杆输入的模式
-/// 摇杆映射的静态配置
-/// 它只关心触发的阈值是多少，具体的行为 (旋转/方向) 由 composed_button 决定
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
-#[serde(rename_all = "snake_case")]
-pub struct JoystickConfig {
-    /// 触发阈值.
-    /// 对于旋转, 单位是 "度".
-    /// 对于方向, 单位是累积位移.
-    pub threshold: f32,
 }
 
 /// 摇杆映射的动态状态, 用于追踪摇杆的实时数据
@@ -161,6 +180,8 @@ struct MappingFile {
 // 定义可执行trait
 pub trait Executable {
     fn execute(&self, enigo: &mut Enigo);
+    fn execute_press(&self, enigo: &mut Enigo);
+    fn execute_release(&self, enigo: &mut Enigo);
 }
 
 /// 主要操作类型，代表一个具体的键盘按键、鼠标点击或滚轮事件。
@@ -195,6 +216,45 @@ impl Executable for PrimaryAction {
                 enigo
                     .scroll(*amount, enigo::Axis::Vertical)
                     .expect("Failed to scroll mouse weight");
+            }
+        }
+    }
+    
+    fn execute_press(&self, enigo: &mut Enigo) {
+        match self {
+            PrimaryAction::KeyPress { key } => {
+                enigo
+                    .key(*key, enigo::Direction::Press)
+                    .expect("Failed to press key");
+            }
+            PrimaryAction::MouseClick { button } => {
+                enigo
+                    .button(*button, enigo::Direction::Press)
+                    .expect("Failed to press mouse button");
+            }
+            PrimaryAction::MouseWheel { amount } => {
+                // 滚轮没有按下和释放的概念，直接执行滚动
+                enigo
+                    .scroll(*amount, enigo::Axis::Vertical)
+                    .expect("Failed to scroll mouse weight");
+            }
+        }
+    }
+    
+    fn execute_release(&self, enigo: &mut Enigo) {
+        match self {
+            PrimaryAction::KeyPress { key } => {
+                enigo
+                    .key(*key, enigo::Direction::Release)
+                    .expect("Failed to release key");
+            }
+            PrimaryAction::MouseClick { button } => {
+                enigo
+                    .button(*button, enigo::Direction::Release)
+                    .expect("Failed to release mouse button");
+            }
+            PrimaryAction::MouseWheel { amount: _amount } => {
+                // 滚轮没有按下和释放的概念，不做任何操作
             }
         }
     }
@@ -241,6 +301,30 @@ impl Executable for Action {
                 .expect("Failed to release modifier key");
         }
     }
+    
+    fn execute_press(&self, enigo: &mut Enigo) {
+        // 1. 按下所有修饰键
+        for modifier in &self.modifiers {
+            enigo
+                .key(*modifier, enigo::Direction::Press)
+                .expect("Failed to press modifier key");
+        }
+
+        // 2. 执行主操作的按下
+        self.primary.execute_press(enigo);
+    }
+    
+    fn execute_release(&self, enigo: &mut Enigo) {
+        // 1. 执行主操作的释放
+        self.primary.execute_release(enigo);
+
+        // 2. 释放所有修饰键 (以相反顺序)
+        for modifier in self.modifiers.iter().rev() {
+            enigo
+                .key(*modifier, enigo::Direction::Release)
+                .expect("Failed to release modifier key");
+        }
+    }
 }
 
 // --- 错误处理和辅助类型 (•ω•) ---
@@ -261,6 +345,10 @@ pub enum ParseError {
 pub enum EnigoCommand {
     /// 执行一个 `Action`。
     Execute(Action),
+    /// 执行一个 `Action` 的按下操作。
+    ExecutePress(Action),
+    /// 执行一个 `Action` 的释放操作。
+    ExecuteRelease(Action),
 }
 
 // --- 全局静态变量 (づ￣ 3￣)づ ---
@@ -798,9 +886,19 @@ fn enigo_worker(rx: Receiver<EnigoCommand>) {
     let enigo = Enigo::new(&enigo::Settings::default()).unwrap();
     *GLOBAL_ENIGO.write().unwrap() = Some(enigo);
 
-    while let Ok(EnigoCommand::Execute(action)) = rx.recv() {
+    while let Ok(command) = rx.recv() {
         if let Some(enigo_instance) = GLOBAL_ENIGO.write().unwrap().as_mut() {
-            action.execute(enigo_instance);
+            match command {
+                EnigoCommand::Execute(action) => {
+                    action.execute(enigo_instance);
+                }
+                EnigoCommand::ExecutePress(action) => {
+                    action.execute_press(enigo_instance);
+                }
+                EnigoCommand::ExecuteRelease(action) => {
+                    action.execute_release(enigo_instance);
+                }
+            }
         } else {
             log::error!("Enigo 实例未初始化，无法执行操作");
         }
@@ -877,34 +975,68 @@ pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
 
         if let Some(is_rotating) = rotation_match {
             // --- 处理摇杆旋转映射 (虚拟按键) ---
-            if is_rotating {
-                let trigger_state = trigger_states
-                    .entry(mapping.get_id())
-                    .or_insert_with(|| mapping.trigger_state.clone());
+            let trigger_state = trigger_states
+                .entry(mapping.get_id())
+                .or_insert_with(|| mapping.trigger_state.clone());
 
-                if trigger_state.should_trigger() {
+            if trigger_state.should_trigger(is_rotating) {
+                if trigger_state.continually_trigger {
+                    // 连续触发模式：使用原有的 Execute 命令
                     ENIGO_SENDER
                         .send(EnigoCommand::Execute(mapping.action.clone()))
                         .unwrap();
+                } else {
+                    // 非连续触发模式：根据按键状态发送按下或释放命令
+                    if trigger_state.is_key_pressed() {
+                        ENIGO_SENDER
+                            .send(EnigoCommand::ExecutePress(mapping.action.clone()))
+                            .unwrap();
+                    } else {
+                        ENIGO_SENDER
+                            .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
+                            .unwrap();
+                    }
                 }
-            } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
-                state.reset();
+            } else if !is_rotating && trigger_state.continually_trigger {
+                // 连续触发模式下，如果摇杆停止旋转，重置触发状态
+                trigger_state.reset();
             }
         } else if let Some(button) = layout_map.get(composed_button) {
             handle_trigger_data(controller_datas, mapping);
             // --- 处理原始按键映射 ---
-            if controller_datas.get_button(*button) {
-                let trigger_state = trigger_states
-                    .entry(mapping.get_id())
-                    .or_insert_with(|| mapping.trigger_state.clone());
+            let trigger_state = trigger_states
+                .entry(mapping.get_id())
+                .or_insert_with(|| mapping.trigger_state.clone());
 
-                if trigger_state.should_trigger() {
+            if trigger_state.should_trigger(controller_datas.get_button(*button)) {
+                if trigger_state.continually_trigger {
+                    // 连续触发模式：使用原有的 Execute 命令
                     ENIGO_SENDER
                         .send(EnigoCommand::Execute(mapping.action.clone()))
                         .unwrap();
+                } else {
+                    // 非连续触发模式：根据按键状态发送按下或释放命令
+                    if trigger_state.is_key_pressed() {
+                        ENIGO_SENDER
+                            .send(EnigoCommand::ExecutePress(mapping.action.clone()))
+                            .unwrap();
+                    } else {
+                        ENIGO_SENDER
+                            .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
+                            .unwrap();
+                    }
                 }
-            } else if let Some(state) = trigger_states.get_mut(&mapping.get_id()) {
-                state.reset();
+            } else if !controller_datas.get_button(*button) {
+                if trigger_state.continually_trigger {
+                    // 连续触发模式下，如果按键被释放，重置触发状态
+                    trigger_state.reset();
+                } else if trigger_state.is_key_pressed() {
+                    // 非连续触发模式下，如果按键被释放但状态还是按下，需要触发释放操作
+                    trigger_state.set_key_pressed(false);
+                    ENIGO_SENDER
+                        .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
+                        .unwrap();
+                }
             }
         }
     }

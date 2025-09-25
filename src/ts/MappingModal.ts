@@ -33,6 +33,7 @@ export async function mappingsConfirm() {
 
     // For all mapping types, we now use trigger_state from the UI
     const trigger_state = {
+        continually_trigger: state.triggerState.continually_trigger,
         interval: state.triggerState.initial_interval,
         initial_interval: state.triggerState.initial_interval,
         min_interval: state.triggerState.min_interval,
