@@ -319,11 +319,16 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
             if d.vendor_id.eq_ignore_ascii_case(&vid) {
                 d.sub_product_id = Some(pid.clone());
                 d.device_path = Some(device.path().to_string_lossy().to_string());
+                if d.device_path.is_none() {
+                    log::error!("手柄信息错误：{d:#?}");
+                }
             }
         }
     }
 
-    connected_devices
+    connected_devices.into_iter().filter(|d| {
+        d.device_path.is_some()
+    }).collect::<Vec<DeviceInfo>>()
 }
 
 // ---------------------- 工具函数 ----------------------
