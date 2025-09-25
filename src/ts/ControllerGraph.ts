@@ -46,24 +46,28 @@ export enum ControllerButtons {
     LB = 4,
     RB = 5,
 
+    // Trigger
+    LT,
+    RT,
+
     // Thumb buttons
-    LStick = 6,
-    RStick = 7,
+    LStick,
+    RStick,
 
     // Back button
-    Back = 8,
+    Back,
 
     // Start button
-    Start = 9,
+    Start,
 
     // Guide button
-    Guide = 10,
+    Guide,
 
     // D-pad
-    Left = 11,
-    Right = 12,
-    Up = 13,
-    Down = 14
+    Left,
+    Right,
+    Up,
+    Down
 }
 
 const controllerSvgsBtnElements = {
