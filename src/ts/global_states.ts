@@ -109,6 +109,7 @@ export const state = reactive({
         min_interval: 100,
         acceleration: 0.8,
     },
+    triggerTheshold: 0.3,
     mapping_amount: 1, // For mouse wheel amount in mapping modal
 
     preventNextClick: false,

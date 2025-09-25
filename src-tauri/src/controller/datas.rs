@@ -20,6 +20,17 @@ pub struct ControllerTrigger {
     pub is_pressed: bool,   // true if pressed, false if released
 }
 
+impl ControllerTrigger {
+    pub fn check_triggered(&mut self, threshold: Option<f32>) {
+        let t = threshold.unwrap_or(0.3);
+        self.is_pressed = self.value >= t;
+    }
+
+    pub fn is_triggered(&mut self) -> bool {
+        self.is_pressed
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct ControllerLimits {
     pub sticks_value_min: f32,
@@ -63,6 +74,10 @@ pub enum ControllerButtons {
     // Shoulder buttons
     LB,
     RB,
+
+    // Trigger
+    LT,
+    RT,
 
     // Thumb buttons
     LStick,

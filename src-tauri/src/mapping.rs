@@ -109,6 +109,9 @@ pub struct Mapping {
     /// 组合后的快捷键字符串，例如 "Ctrl+C"。
     composed_shortcut_key: String,
 
+    // 扳机触发阈值
+    trigger_theshold: f32,
+
     #[serde(flatten)]
     /// 解析后的实际操作指令。
     action: Action,
@@ -116,10 +119,6 @@ pub struct Mapping {
     /// 触发选项，用于控制按键的重复触发行为。
     #[serde(flatten)]
     trigger_state: TriggerState,
-
-    /// 如果存在, 表示这是一个摇杆映射配置.
-    #[serde(flatten)]
-    joystick_config: Option<JoystickConfig>,
 }
 
 impl Mapping {
@@ -129,9 +128,9 @@ impl Mapping {
             id,
             composed_button,
             composed_shortcut_key,
+            trigger_theshold: 0.3,
             action: Action::default(),
             trigger_state: TriggerState::default(),
-            joystick_config: None,
         }
     }
 
@@ -407,7 +406,7 @@ pub fn update_mapping(
     composed_button: String,
     composed_shortcut_key: String,
     trigger_state: TriggerState,
-    joystick_config: Option<JoystickConfig>,
+    trigger_theshold: Option<f32>,
     amount: Option<i32>,
 ) -> bool {
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
@@ -424,15 +423,9 @@ pub fn update_mapping(
 
                 mapping.composed_button = composed_button;
                 mapping.composed_shortcut_key = composed_shortcut_key;
+                mapping.trigger_theshold = trigger_theshold.unwrap_or(0.3);
                 mapping.action = action;
                 mapping.trigger_state = trigger_state.clone();
-                mapping.joystick_config = joystick_config;
-
-                // 如果是按键映射，则更新其动态触发状态
-                if mapping.joystick_config.is_none() {
-                    let mut live_triggers = DYNAMIC_TRIGGER_STATES.write().unwrap();
-                    live_triggers.insert(id, trigger_state);
-                }
             }
             Err(e) => {
                 log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
@@ -453,11 +446,11 @@ pub fn add_mapping(
     composed_button: String,
     composed_shortcut_key: String,
     trigger_state: TriggerState,
-    joystick_config: Option<JoystickConfig>,
+    trigger_theshold: Option<f32>,
     amount: Option<i32>,
 ) -> bool {
     log::debug!(
-        "请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}', joystick={joystick_config:?}"
+        "请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}'"
     );
 
     // 对于所有映射类型，我们都从 composed_shortcut_key 解析出 Action
@@ -480,9 +473,9 @@ pub fn add_mapping(
                 id,
                 composed_button,
                 composed_shortcut_key,
+                trigger_theshold: trigger_theshold.unwrap_or(0.3),
                 action,
                 trigger_state,
-                joystick_config,
             };
 
             cache.push(new_mapping);
@@ -563,6 +556,8 @@ fn create_xbox_layout_map() -> HashMap<&'static str, ControllerButtons> {
     xbox_map.insert("B", ControllerButtons::East);
     xbox_map.insert("RB", ControllerButtons::RB);
     xbox_map.insert("LB", ControllerButtons::LB);
+    xbox_map.insert("RT", ControllerButtons::RT);
+    xbox_map.insert("LT", ControllerButtons::LT);
     xbox_map.insert("LeftStick", ControllerButtons::LStick);
     xbox_map.insert("RightStick", ControllerButtons::RStick);
     xbox_map.insert("Back", ControllerButtons::Back);
@@ -584,6 +579,8 @@ fn create_playstation_layout_map() -> HashMap<&'static str, ControllerButtons> {
     ps_map.insert("Circle", ControllerButtons::East);
     ps_map.insert("R1", ControllerButtons::RB);
     ps_map.insert("L1", ControllerButtons::LB);
+    ps_map.insert("RT", ControllerButtons::RT);
+    ps_map.insert("LT", ControllerButtons::LT);
     ps_map.insert("LeftStick", ControllerButtons::LStick);
     ps_map.insert("RightStick", ControllerButtons::RStick);
     ps_map.insert("Share", ControllerButtons::Back); // PlayStation 的 Share 键通常对应 Xbox 的 Back 键
@@ -626,6 +623,8 @@ fn create_switch_layout_map() -> HashMap<&'static str, ControllerButtons> {
     switch_map.insert("A", ControllerButtons::East); // Switch 的 A 对应 Xbox 的 B
     switch_map.insert("R", ControllerButtons::RB); // Switch 的 R 对应 Xbox 的 RB
     switch_map.insert("L", ControllerButtons::LB); // Switch 的 L 对应 Xbox 的 LB
+    switch_map.insert("RT", ControllerButtons::RT);
+    switch_map.insert("LT", ControllerButtons::LT);
     switch_map.insert("LeftStick", ControllerButtons::LStick);
     switch_map.insert("RightStick", ControllerButtons::RStick);
     switch_map.insert("Minus", ControllerButtons::Back); // Switch 的 Minus 对应 Xbox 的 Back
@@ -840,9 +839,27 @@ pub fn init_enigo_sender() {
     log::debug!("ENIGO_SENDER 初始化完成");
 }
 
+fn handle_trigger_data(controller_datas: &mut ControllerDatas, mapping: &Mapping) {
+    let trigger_some = match mapping.composed_button.as_str() {
+        "LT" => Some(controller_datas.left_trigger),
+        "RT" => Some(controller_datas.right_trigger),
+        _ => None
+    };
+
+    if let Some(mut trigger) = trigger_some {
+        trigger.check_triggered(Some(mapping.trigger_theshold));
+        // 根据映射的按键设置对应的按钮状态
+        match mapping.composed_button.as_str() {
+            "LT" => controller_datas.set_button(ControllerButtons::LT, trigger.is_triggered()),
+            "RT" => controller_datas.set_button(ControllerButtons::RT, trigger.is_triggered()),
+            _ => {}
+        }
+    }
+}
+
 /// 核心映射函数，将手柄输入映射到相应的操作。
 /// 遍历所有映射配置，检查手柄状态，并触发相应的操作。
-pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
+pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
     let mappings = if use_sub_preset {
         SUB_MAPPING_CACHE.read().unwrap().clone()
     } else {
@@ -888,6 +905,7 @@ pub fn map(controller_datas: &ControllerDatas, use_sub_preset: bool) {
                 state.reset();
             }
         } else if let Some(button) = layout_map.get(composed_button) {
+            handle_trigger_data(controller_datas, mapping);
             // --- 处理原始按键映射 ---
             if controller_datas.get_button(*button) {
                 let trigger_state = trigger_states

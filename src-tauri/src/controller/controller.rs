@@ -568,16 +568,12 @@ fn _poll_other_controllers(gamepad: Gamepad) {
     controller_data.right_stick.is_pressed = gamepad.is_pressed(gilrs::Button::RightThumb);
     controller_data.left_stick.is_pressed = gamepad.is_pressed(gilrs::Button::LeftThumb);
 
-    controller_data.left_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::LeftTrigger2);
-    controller_data.right_trigger.is_pressed = gamepad.is_pressed(gilrs::Button::RightTrigger2);
-
     controller_data.left_trigger.value = gamepad.button_data(gilrs::Button::LeftTrigger2)
                                                 .map(|data| data.value())
                                                 .unwrap_or(0.0);
     controller_data.right_trigger.value = gamepad.button_data(gilrs::Button::RightTrigger2)
                                                  .map(|data| data.value())
                                                  .unwrap_or(0.0);
-
 }
 
 /// 轮询非Xbox控制器状态
@@ -765,7 +761,7 @@ pub fn listen() {
                 mapping::handle_mouse_movement(&CONTROLLER_DATA.read().unwrap());
 
                 let use_sub_preset = handle_preset_switching_decision();
-                mapping::map(&CONTROLLER_DATA.read().unwrap(), use_sub_preset);
+                mapping::map(&mut CONTROLLER_DATA.write().unwrap(), use_sub_preset);
             }
 
             let elapsed = time_start.elapsed();

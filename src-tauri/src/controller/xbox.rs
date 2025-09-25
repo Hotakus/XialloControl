@@ -78,8 +78,13 @@ fn _poll_xbox_controller_state(state: XInputState) {
 
     controller_data.left_trigger.value = logic::normalize(lt, 0, 255, 0.0, 1.0).unwrap() as f32;
     controller_data.right_trigger.value = logic::normalize(rt, 0, 255, 0.0, 1.0).unwrap() as f32;
-    controller_data.left_trigger.is_pressed = state.left_trigger_bool();
-    controller_data.right_trigger.is_pressed = state.right_trigger_bool();
+    // controller_data.left_trigger.check_triggered(None);
+    // controller_data.right_trigger.check_triggered(None);
+    // let (l, r) = (controller_data.left_trigger.is_triggered(), controller_data.right_trigger.is_triggered());
+    // controller_data.set_button(ControllerButtons::LT, l);
+    // controller_data.set_button(ControllerButtons::RT, r);
+
+    // log::error!("({}-{})", controller_data.left_trigger.value, controller_data.right_trigger.value);
 
     controller_data.left_trigger.has_pressure = true;
 

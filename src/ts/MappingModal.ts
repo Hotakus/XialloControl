@@ -39,16 +39,13 @@ export async function mappingsConfirm() {
         acceleration: state.triggerState.acceleration,
     };
 
-    // joystick_config is no longer used for rotation, set to null
-    const joystick_config = null;
-
     let result = false;
     const payload = {
         id: state.editingMappingId,
         composedButton: composed_button,
         composedShortcutKey: raw_shortcut_key,
         triggerState: trigger_state,
-        joystickConfig: joystick_config,
+        triggerTheshold: state.triggerTheshold,
         amount: (() => {
             const lowerCaseKey = raw_shortcut_key.toLowerCase();
             if (lowerCaseKey.includes('mousewheelup')) {

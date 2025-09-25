@@ -116,6 +116,14 @@ export async function editButtonMap(id: number) {
             state.mapping_amount = 1; // 重置为默认值
         }
 
+        // 5. 恢复 触发阈值，如果存在
+        if (typeof mapping.trigger_theshold === 'number') {
+            // 使用绝对值，因为滑块只能表示大小，方向由按键本身决定
+            state.triggerTheshold = Math.abs(mapping.trigger_theshold);
+        } else {
+            state.mapping_amount = 0.3; // 重置为默认值
+        }
+
         // 使用转换后的中文值和恢复的状态打开模态窗口
         console.log("编辑按钮映射", id);
         await openButtonMapModal("编辑按键映射", mapping.composed_button, display_key, mapping.id);
@@ -149,6 +157,7 @@ export async function addButtonMap() {
     state.triggerState.min_interval = 100;
     state.triggerState.acceleration = 0.8;
     state.mapping_amount = 1; // 重置为默认值
+    state.triggerTheshold = 0.3
     state.rawKeyDisplayText = ''; // 清空上次的按键检测结果
     state.keyDisplayText = '';
     await openButtonMapModal("添加按键映射");
@@ -302,8 +311,8 @@ const buttonTextMapLists = {
         { value: 'Y' },
         { value: 'LB' },
         { value: 'RB' },
-        // { value: 'LeftStick' },
-        // { value: 'RightStick' },
+        { value: 'LT' },
+        { value: 'RT' },
         { value: 'Back' },
         { value: 'Start' },
         { value: 'Guide' },
@@ -319,8 +328,8 @@ const buttonTextMapLists = {
         { value: 'Triangle' },
         { value: 'L1' },
         { value: 'R1' },
-        // { value: 'LeftStick' },
-        // { value: 'RightStick' },
+        { value: 'LT' },
+        { value: 'RT' },
         { value: 'Share' },
         { value: 'Options' },
         { value: 'PS' },
@@ -336,8 +345,8 @@ const buttonTextMapLists = {
         { value: 'Y' },
         { value: 'L' },
         { value: 'R' },
-        // { value: 'LeftStick' },
-        // { value: 'RightStick' },
+        { value: 'LT' },
+        { value: 'RT' },
         { value: 'Minus' },
         { value: 'Plus' },
         { value: 'Home' },
