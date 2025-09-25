@@ -67,12 +67,22 @@
               </div>
 
               <!-- Amount for Mouse Wheel -->
-              <div v-if="state.rawKeyDisplayText.toLowerCase().includes('mousewheel')">
+              <div v-if="textInclude(state.rawKeyDisplayText, mousewheel)">
                 <div class="form-group">
                   <label for="mousewheel-amount">滚轮滚动量</label>
                   <div class="slider-container">
                     <input type="range" id="mousewheel-amount" min="1" max="20" step="1" v-model.number="state.mapping_amount">
                     <span>{{ state.mapping_amount }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="textInclude(state.selectedButton, trigger_text)">
+                <div class="form-group">
+                  <label for="mousewheel-amount">扳机触发阈值</label>
+                  <div class="slider-container">
+                    <input type="range" id="trigger_threshold" min="0.01" max="1" step="0.01" v-model.number="state.triggerTheshold">
+                    <span>{{ state.triggerTheshold }}</span>
                   </div>
                 </div>
               </div>
@@ -95,6 +105,13 @@
 // 可以写组件逻辑
 import {state} from "@/ts/global_states.ts";
 import {closeButtonMapModal, detectKey, mappingsConfirm} from "@/ts/MappingModal.ts";
+
+const trigger_text = ["lt", "rt"];
+const mousewheel = ["mousewheel"];
+
+function textInclude(text: string, pattens: string[]) {
+  return pattens.some(e => text.toLowerCase().includes(e));
+}
 </script>
 
 <style scoped>
