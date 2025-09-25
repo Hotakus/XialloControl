@@ -12,11 +12,12 @@
 //       }
 //     ],
 
+use crate::app_state::{AppState, AppStateWrapper};
 use crate::xeno_utils::get_config_path;
 use once_cell::sync::Lazy;
 use std::env;
-use std::sync::Mutex;
-use tauri::{AppHandle, WebviewWindow, Window};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Manager, WebviewWindow, Window};
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_log::fern;
@@ -25,6 +26,7 @@ use tauri_plugin_updater::{Update, UpdaterExt};
 use url::Url;
 
 mod adaptive_sampler;
+mod app_state;
 mod controller;
 mod mapping;
 mod preset;
@@ -301,9 +303,12 @@ pub fn run() {
         ])
         .setup(|app| {
             let app_handle = app.handle();
+            let app_state = Arc::new(AppState::new());
 
             // 在创建窗口前，先初始化设置
-            setup::initialize();
+            setup::initialize(app_handle.clone(), app_state.clone());
+
+            app.manage(AppStateWrapper { app_state });
 
             let main_window = create_main_window(app_handle.clone());
 
@@ -340,8 +345,6 @@ pub fn run() {
             });
 
             let _ = tray::initialize(app_handle.clone());
-
-            controller::initialize(app_handle.clone());
 
             Ok(())
         })

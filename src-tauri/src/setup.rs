@@ -1,10 +1,16 @@
-use crate::{adaptive_sampler, mapping, preset, setting};
+use std::sync::Arc;
 
-pub fn initialize() {
+use tauri::AppHandle;
+
+use crate::{adaptive_sampler, app_state::AppState, mapping, preset, setting, controller};
+
+pub fn initialize(app_handle: AppHandle, app_state: Arc<AppState>) {
     setting::initialize();
-    preset::initialize();
+    preset::initialize(app_state.clone());
 
     mapping::initialize();
 
     adaptive_sampler::initialize();
+
+    controller::initialize(app_handle.clone());
 }

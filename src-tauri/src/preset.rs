@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::app_state::AppState;
 use crate::setting::get_setting;
 use crate::xeno_utils::ensure_dir;
 use crate::{mapping, xeno_utils};
@@ -7,7 +8,7 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock};
 
 const PRESET_DIR: &str = "presets";
 const DEFAULT_PRESET_NAME: &str = "default";
@@ -24,6 +25,29 @@ pub static CURRENT_PRESET_LIST: Lazy<RwLock<Vec<Preset>>> = Lazy::new(|| RwLock:
 
 // 当前副预设
 pub static CURRENT_SUB_PRESET: Lazy<RwLock<Option<Preset>>> = Lazy::new(|| RwLock::new(None));
+
+#[derive(Debug)]
+pub struct PresetManager {
+    current_preset: RwLock<Preset>,
+    current_sub_preset: RwLock<Option<Preset>>,
+    current_preset_list: RwLock<Vec<Preset>>,
+}
+
+impl PresetManager {
+    pub fn new() -> Self {
+        Self {
+            current_preset: RwLock::new(Preset::new(DEFAULT_PRESET_NAME.to_string())),
+            current_sub_preset: RwLock::new(None),
+            current_preset_list: RwLock::new(vec![]),
+        }
+    }
+}
+
+impl Default for PresetManager {
+    fn default() -> Self {
+        PresetManager::new()
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PresetItems {
@@ -371,7 +395,7 @@ pub fn get_current_preset() -> Preset {
     CURRENT_PRESET.read().unwrap().clone()
 }
 
-pub fn initialize() {
+pub fn initialize(state: Arc<AppState>) {
     log::info!("初始化预设");
 
     // 加载上一个预设
@@ -400,7 +424,10 @@ pub fn update_deadzone(deadzone: u8, deadzone_left: u8) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn update_stick_as_mouse(use_stick_as_mouse: bool, stick_as_mouse_simulation: Option<String>) -> Result<(), String> {
+pub fn update_stick_as_mouse(
+    use_stick_as_mouse: bool,
+    stick_as_mouse_simulation: Option<String>,
+) -> Result<(), String> {
     let mut preset = CURRENT_PRESET.write().unwrap();
     preset.items.use_stick_as_mouse = use_stick_as_mouse;
     preset.items.stick_as_mouse_simulation = stick_as_mouse_simulation;
@@ -422,7 +449,7 @@ pub fn update_stick_rotation_threshold(threshold: i16) -> Result<(), String> {
     }
 }
 #[tauri::command]
-pub fn  update_mouse_move_speed(move_speed: u8) -> Result<(), String> {
+pub fn update_mouse_move_speed(move_speed: u8) -> Result<(), String> {
     let mut preset = CURRENT_PRESET.write().unwrap();
     preset.items.move_speed = move_speed;
     if preset.save() {

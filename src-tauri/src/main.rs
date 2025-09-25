@@ -9,6 +9,7 @@ pub mod setting;
 pub mod setup;
 pub mod tray;
 pub mod xeno_utils;
+pub mod app_state;
 
 fn main() {
     // simple_logger::init_with_level(log::Level::Debug).unwrap();
