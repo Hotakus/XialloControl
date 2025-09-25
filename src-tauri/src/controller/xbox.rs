@@ -106,11 +106,14 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
                 let xinput_caps_ex = xinput.get_capabilities_ex(i as u32).unwrap();
                 let vid = format!("{:04x}", xinput_caps_ex.vendor_id);
                 let pid = format!("{:04x}", xinput_caps_ex.product_id);
+                let spid = format!("{:04x}", xinput_caps_ex.revision_id);
+                
 
-                // log::warn!("{vid:#?}/{pid:#?} - {:#?}/{:#?}/{:#?}",
+                // log::warn!("{vid:#?}/{pid:#?}/{spid:#?} - {:#?}/{:#?}/{:#?} - {:#?}",
                 //     _device.vendor_id,
                 //     _device.product_id.as_deref().unwrap(),
-                //     _device.sub_product_id.as_deref().unwrap());
+                //     _device.sub_product_id.as_deref().unwrap(), 
+                //     xinput_caps_ex.capabilities.SubType);
 
                 let d_vid = &_device.vendor_id;
                 let d_pid = &_device.product_id.as_deref().unwrap();

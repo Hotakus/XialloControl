@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 // --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
-use crate::controller::controller::{CURRENT_DEVICE, ControllerType};
+use crate::controller::{CURRENT_DEVICE, ControllerType};
 use crate::controller::datas::{ControllerButtons, ControllerDatas, JoystickRotation};
 use crate::preset;
 use crate::xeno_utils;

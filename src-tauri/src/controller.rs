@@ -1,10 +1,15 @@
 #![allow(dead_code)]
 
+pub mod calibrate;
+pub mod datas;
+pub mod logic;
+pub mod xbox;
+pub mod ps4;
+
 // ---------------------- 外部依赖 ----------------------
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{CompactPressureDatas, ControllerButtons, ControllerDatas};
 use crate::{controller, mapping, preset, xeno_utils};
-use crate::controller::logic;
 use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
@@ -14,7 +19,6 @@ use std::time::Instant;
 use std::{thread, time::Duration};
 use tauri::{AppHandle, Emitter};
 
-use crate::controller::{ps4, xbox};
 use crate::setting::{self, get_setting, LastConnectedDevice};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputHandle;
