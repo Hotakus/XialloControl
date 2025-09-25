@@ -143,4 +143,10 @@ function textInclude(text: string, pattens: string[]) {
   align-items: center;
   gap: 5px;
 }
+
+.continually-trigger {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
 </style>

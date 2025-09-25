@@ -1011,14 +1011,14 @@ input:checked + .slider:before {
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
+    /* margin-bottom: 8px; */
     font-weight: 600;
     color: #2f3542;
 }
 
 .form-control {
     width: 100%;
-    padding: 12px 15px;
+    padding: 8px 8px;
     border: 1px solid #dce2eb;
     border-radius: 8px;
     background: #f8f9fa;
@@ -1686,5 +1686,5 @@ body.theme-dark .button-map-controls button:hover {
 }
 
 .modal-right-panel .form-group {
-    margin-bottom: 0;
+    margin-bottom: 5px;
 }
