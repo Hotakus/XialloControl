@@ -122,7 +122,20 @@ export async function editButtonMap(id: number) {
             // 使用绝对值，因为滑块只能表示大小，方向由按键本身决定
             state.triggerTheshold = Math.abs(mapping.trigger_theshold);
         } else {
-            state.mapping_amount = 0.3; // 重置为默认值
+            state.triggerTheshold = 0.3; // 重置为默认值
+        }
+
+        // 6. 恢复 按键检测模式和参数
+        if (mapping.check_mode) {
+            state.checkMode = mapping.check_mode;
+        } else {
+            state.checkMode = 'single'; // 重置为默认值
+        }
+
+        if (typeof mapping.check_mode_param === 'number') {
+            state.checkModeParam = mapping.check_mode_param;
+        } else {
+            state.checkModeParam = 300; // 重置为默认值
         }
 
         // 使用转换后的中文值和恢复的状态打开模态窗口
@@ -158,10 +171,15 @@ export async function addButtonMap() {
     state.triggerState.min_interval = 100;
     state.triggerState.acceleration = 0.8;
     state.mapping_amount = 1; // 重置为默认值
-    state.triggerTheshold = 0.3
+    state.triggerTheshold = 0.3;
     state.rawKeyDisplayText = ''; // 清空上次的按键检测结果
     state.keyDisplayText = '';
     state.triggerState.continually_trigger = false;
+
+    // 重置 check mode 和 param 为默认值
+    state.checkMode = 'single';
+    state.checkModeParam = 300;
+
     await openButtonMapModal("添加按键映射");
 }
 

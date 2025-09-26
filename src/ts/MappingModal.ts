@@ -56,6 +56,8 @@ export async function mappingsConfirm() {
             }
             return null;
         })(),
+        checkMode: state.checkMode,
+        checkModeParam: state.checkModeParam,
     };
 
     if (state.editingMappingId) {
