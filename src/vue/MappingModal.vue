@@ -33,15 +33,15 @@
               <div class="form-group check-mode">
                 <label for="btn-check-mode">检测模式: </label>
                 <div class="btn-group">
-                  <button @click="state.checkMode = checkModeOptions[0]"
+                  <button @click="state.checkMode = checkModeOptions[0]; state.triggerState.continually_trigger = false"
                     :class="['btn-switch', { 'active': state.checkMode === checkModeOptions[0] }]">
                     单击
                   </button>
-                  <button @click="state.checkMode = checkModeOptions[1]"
+                  <button @click="state.checkMode = checkModeOptions[1]; state.triggerState.continually_trigger = false"
                     :class="['btn-switch', { 'active': state.checkMode === checkModeOptions[1] }]">
                     双击
                   </button>
-                  <button @click="state.checkMode = checkModeOptions[2]"
+                  <button @click="state.checkMode = checkModeOptions[2]; state.triggerState.continually_trigger = true"
                     :class="['btn-switch', { 'active': state.checkMode === checkModeOptions[2] }]">
                     长按
                   </button>
@@ -51,7 +51,7 @@
               <div class="form-group check-mode check-mode-div"
                 v-if="textInclude(state.checkMode, checkModeOptions.filter(e => e != 'single'), false)">
                 <label v-if="state.checkMode === 'double'">└ 双击最大间隔</label>
-                <label v-if="state.checkMode === 'long'">└ 长按最小间隔</label>
+                <label v-if="state.checkMode === 'long'">└ 长按触发时长</label>
                 <div class="check-mode-control">
                   <input type="number" class="form-control" v-model.number="state.checkModeParam">
                   <span>ms</span>
@@ -82,7 +82,7 @@
                 <div class="form-group continually-trigger">
                   <label>映射持续触发: </label>
                   <label class="switch">
-                    <input type="checkbox" v-model="state.triggerState.continually_trigger">
+                    <input type="checkbox" :disabled="!textInclude(state.checkMode, ['long'], false)" v-model="state.triggerState.continually_trigger">
                     <span class="slider round"></span>
                   </label>
                 </div>
