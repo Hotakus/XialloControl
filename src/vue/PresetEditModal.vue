@@ -23,6 +23,9 @@
                         </div>
                     </div>
 
+                    <!-- Divider -->
+                    <div class="divider"></div>
+
                     <div class="sub-preset-options">
                         <div class="form-group">
                             <label>{{ $t('presetEditModal.subPreset') }}</label>
@@ -117,9 +120,7 @@ const closePresetEditModal = () => {
 }
 
 .sub-preset-options {
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid #444;
+    margin-top: 0px;
 }
 
 .radio-group {
@@ -133,5 +134,13 @@ const closePresetEditModal = () => {
     align-items: center;
     gap: 5px;
     cursor: pointer;
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    background-color: #e0e4eb;
+    margin-top: 15px;
+    margin-bottom: 8px;
 }
 </style>
