@@ -87,8 +87,6 @@ fn _poll_xbox_controller_state(state: XInputState) {
     // log::error!("({}-{})", controller_data.left_trigger.value, controller_data.right_trigger.value);
 
     controller_data.left_trigger.has_pressure = true;
-
-    pack_and_send_data(&controller_data);
 }
 
 /// Xbox控制器轮询入口 (Windows)
