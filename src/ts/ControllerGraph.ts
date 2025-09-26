@@ -1,10 +1,10 @@
 // src/ts/ControllerGraph.ts
 
-import {appWindow, state} from "@/ts/global_states.ts";
-import {computed, nextTick, watch} from "vue";
+import { appWindow, state } from "@/ts/global_states.ts";
+import { computed, nextTick, watch } from "vue";
 
 // 这个操作只需要在模块加载时执行一次，所以直接放在顶层作用域
-const controllerSvgs = import.meta.glob('/src/assets/controller/*.svg', {eager: true, import: 'default'});
+const controllerSvgs = import.meta.glob('/src/assets/controller/*.svg', { eager: true, import: 'default' });
 
 /**
  * 根据名称获取预加载的SVG组件
@@ -89,8 +89,8 @@ const controllerSvgsBtnElements = {
 }
 
 const controllerSvgsPressureElements = {
-    'svg-gamepad-leftstick': ControllerButtons.LStick,
-    'svg-gamepad-rightstick': ControllerButtons.RStick,
+    'svg-gamepad-leftstick-body': ControllerButtons.LStick,
+    'svg-gamepad-rightstick-body': ControllerButtons.RStick,
     'svg-gamepad-lefttrigger': ControllerButtons.LB,
     'svg-gamepad-righttrigger': ControllerButtons.RB
 }
@@ -109,7 +109,6 @@ export function initControllerGraph() {
             element.style.fillOpacity = '0';
     }
 }
-
 
 /**
  * 更新扳机的视觉效果
@@ -152,11 +151,12 @@ function updateTriggerVisual(triggerId: string, value: number) {
 
 function updateStickVisual(stickId: string, x: number, y: number) {
     const element = document.querySelector<SVGGElement>(`#${stickId}`);
-    if (!element) {
+    const elementBody = document.querySelector<SVGGElement>(`#${stickId}-body`);
+    if (!element || !elementBody) {
         return;
     }
     const opacity = Math.min(Math.max(Math.sqrt(x * x + y * y), 0), 1) * 0.55;
-    element.style.fillOpacity = opacity.toString();
+    elementBody.style.fillOpacity = opacity.toString();
 
     let groupId = stickId + '-g';
     let groupElement = document.querySelector<SVGGElement>(`#${groupId}`);
@@ -164,6 +164,7 @@ function updateStickVisual(stickId: string, x: number, y: number) {
         return;
     }
 
+    // 计算元素边界信息
     let groupRect = groupElement.getBBox();
     let groupCenterX = groupRect.x + groupRect.width / 2;
     let groupCenterY = groupRect.y + groupRect.height / 2;
@@ -174,10 +175,12 @@ function updateStickVisual(stickId: string, x: number, y: number) {
     let elementCenterY = elementRect.y + elementRect.height / 2;
     let elementRadius = Math.min(elementRect.width, elementRect.height) / 2;
 
-    let maxOffset = groupRadius - elementRadius;
+    let maxOffset = groupRadius - elementRadius / 2;
 
     let offsetX = x * maxOffset;
     let offsetY = -y * maxOffset; // Y轴反向
+
+    element.style.transition = 'transform 0.05s ease';
     element.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
     element.style.transformOrigin = `${elementCenterX}px ${elementCenterY}px`;
 }
@@ -201,7 +204,7 @@ watch(() => state.current_controller_datas, async (newVal) => {
         let isPressed = checkBit(newVal.buttons, btnBit);
         const element = container.querySelector<HTMLElement>(`#${id}`);
         if (element) {
-            element.style.transition = 'fill-opacity 0.13s ease';
+            element.style.transition = 'fill-opacity 0.08s ease';
             element.style.fillOpacity = isPressed ? '0.5' : '0';
         }
     }
@@ -213,7 +216,7 @@ watch(() => state.current_controller_datas, async (newVal) => {
 
     updateStickVisual('svg-gamepad-leftstick', newVal.left_stick.x, newVal.left_stick.y);
     updateStickVisual('svg-gamepad-rightstick', newVal.right_stick.x, newVal.right_stick.y);
-}, {deep: true, immediate: true});
+}, { deep: true, immediate: true });
 
 
 watch(currentControllerSvg, async (newVal, oldVal) => {
@@ -221,7 +224,7 @@ watch(currentControllerSvg, async (newVal, oldVal) => {
     await nextTick();
     // 初始化控制器图形
     initControllerGraph();
-}, {immediate: true});
+}, { immediate: true });
 
 
 // CompactPressureDatas 接口
@@ -260,3 +263,4 @@ appWindow.listen('update_controller_compact_datas', (event) => {
 //     let datas = event.payload;
 //     console.log(`update_controller_pressure_datas: ${datas}`);
 // });
+
