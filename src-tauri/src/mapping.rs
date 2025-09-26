@@ -33,7 +33,7 @@ impl Default for CheckMode {
 }
 
 /// 按键检测的动态状态
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ButtonCheckState {
     /// 上次按下的时间
     pub last_press_time: Option<Instant>,
@@ -53,22 +53,6 @@ pub struct ButtonCheckState {
     pub last_button_state: bool,
     /// 第一次按下的时间，用于双击判断
     pub first_press_time: Option<Instant>,
-}
-
-impl Default for ButtonCheckState {
-    fn default() -> Self {
-        Self {
-            last_press_time: None,
-            last_release_time: None,
-            long_press_triggered: false,
-            single_press_pending: false,
-            double_press_triggered: false,
-            press_count: 0,
-            release_count: 0,
-            last_button_state: false,
-            first_press_time: None,
-        }
-    }
 }
 
 /// 触发状态，用于控制按键的重复触发和加速。
@@ -404,6 +388,72 @@ pub enum ParseError {
     UnknownKey(String),
 }
 
+/// 映射更新配置，用于配置对象模式重构 update_mapping 函数。
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct MappingUpdateConfig {
+    pub id: u64,
+    pub composed_button: Option<String>,
+    pub composed_shortcut_key: Option<String>,
+    pub trigger_state: Option<TriggerState>,
+    pub trigger_theshold: Option<f32>,
+    pub amount: Option<i32>,
+    pub check_mode: Option<CheckMode>,
+    pub check_mode_param: Option<u64>,
+}
+
+impl MappingUpdateConfig {
+    /// 创建一个新的配置对象，只需要提供必需的 id 参数
+    pub fn new(id: u64) -> Self {
+        Self {
+            id,
+            ..Default::default()
+        }
+    }
+
+    /// 设置组合按钮字符串
+    pub fn with_composed_button(mut self, button: String) -> Self {
+        self.composed_button = Some(button);
+        self
+    }
+
+    /// 设置组合快捷键字符串
+    pub fn with_composed_shortcut_key(mut self, key: String) -> Self {
+        self.composed_shortcut_key = Some(key);
+        self
+    }
+
+    /// 设置触发状态
+    pub fn with_trigger_state(mut self, state: TriggerState) -> Self {
+        self.trigger_state = Some(state);
+        self
+    }
+
+    /// 设置触发阈值
+    pub fn with_trigger_threshold(mut self, threshold: f32) -> Self {
+        self.trigger_theshold = Some(threshold);
+        self
+    }
+
+    /// 设置滚轮量
+    pub fn with_amount(mut self, amount: i32) -> Self {
+        self.amount = Some(amount);
+        self
+    }
+
+    /// 设置检测模式
+    pub fn with_check_mode(mut self, mode: CheckMode) -> Self {
+        self.check_mode = Some(mode);
+        self
+    }
+
+    /// 设置检测模式参数
+    pub fn with_check_mode_param(mut self, param: u64) -> Self {
+        self.check_mode_param = Some(param);
+        self
+    }
+}
+
 /// Enigo 命令类型，用于工作线程间通信。
 #[derive(Debug)]
 pub enum EnigoCommand {
@@ -729,78 +779,91 @@ pub fn set_mapping(mapping: Vec<Mapping>) {
 
 /// Tauri 命令：更新一个已存在的映射配置。
 #[tauri::command]
-pub fn update_mapping(
-    id: u64,
-    composed_button: String,
-    composed_shortcut_key: String,
-    trigger_state: TriggerState,
-    trigger_theshold: Option<f32>,
-    amount: Option<i32>,
-    check_mode: Option<CheckMode>,
-    check_mode_param: Option<u64>,
-) -> bool {
+pub fn update_mapping(config: MappingUpdateConfig) -> bool {
+    log::debug!("请求更新映射配置: {config:#?}");
+    let id = config.id;
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
     if let Some(mapping) = cache.iter_mut().find(|m| m.id == id) {
-        // 解析快捷键字符串来获取输出动作 (包括修饰键和滚轮基础量)
-        match parse_composed_key_to_action(&composed_shortcut_key) {
-            Ok(mut action) => {
-                // 如果是滚轮动作且自定义了 amount, 则覆盖
-                if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) =
-                    (&mut action.primary, amount)
-                {
-                    action.primary = PrimaryAction::MouseWheel { amount: new_amount };
-                }
-
-                mapping.composed_button = composed_button;
-                mapping.composed_shortcut_key = composed_shortcut_key;
-                mapping.trigger_theshold = trigger_theshold.unwrap_or(0.3);
-                mapping.check_mode = check_mode.unwrap_or_default();
-                mapping.check_mode_param = check_mode_param.unwrap_or(300);
-                mapping.action = action;
-                mapping.trigger_state = trigger_state.clone();
-
-                // 同步更新 DYNAMIC_TRIGGER_STATES 中的触发状态
-                let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
-                if let Some(existing_trigger_state) = trigger_states.get_mut(&id) {
-                    // 更新现有的触发状态
-                    existing_trigger_state.continually_trigger = trigger_state.continually_trigger;
-                    existing_trigger_state.interval = trigger_state.interval;
-                    existing_trigger_state.initial_interval = trigger_state.initial_interval;
-                    existing_trigger_state.min_interval = trigger_state.min_interval;
-                    existing_trigger_state.acceleration = trigger_state.acceleration;
-                    // 注意：不更新 last_trigger，保持原有的时间状态
-                } else {
-                    // 如果不存在，则插入新的触发状态
-                    trigger_states.insert(id, trigger_state.clone());
-                }
-                drop(trigger_states);
-
-                // 同步更新 BUTTON_CHECK_STATES 中的按键检测状态
-                let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
-                // 当检测模式或参数发生变化时，重置按键检测状态
-                if let Some(check_state) = button_check_states.get_mut(&id) {
-                    // 如果检测模式改变，重置整个状态
-                    if check_mode.is_some() && mapping.check_mode != check_mode.unwrap_or_default()
+        // 如果提供了新的组合快捷键字符串，则解析它
+        if let Some(composed_shortcut_key) = &config.composed_shortcut_key {
+            match parse_composed_key_to_action(composed_shortcut_key) {
+                Ok(mut action) => {
+                    // 如果是滚轮动作且自定义了 amount, 则覆盖
+                    if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) =
+                        (&mut action.primary, config.amount)
                     {
-                        *check_state = ButtonCheckState::default();
+                        action.primary = PrimaryAction::MouseWheel { amount: new_amount };
                     }
-                    // 如果检测模式参数改变，也重置状态
-                    if check_mode_param.is_some()
-                        && mapping.check_mode_param != check_mode_param.unwrap_or(300)
-                    {
-                        *check_state = ButtonCheckState::default();
-                    }
-                } else {
-                    // 如果不存在，则插入新的按键检测状态
-                    button_check_states.insert(id, ButtonCheckState::default());
-                }
-                drop(button_check_states);
 
-                log::error!("{:#?}", DYNAMIC_TRIGGER_STATES.read().unwrap());
-            }
-            Err(e) => {
-                log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
-                return false;
+                    // 更新映射的字段，只更新提供的字段
+                    if let Some(button) = &config.composed_button {
+                        mapping.composed_button = button.clone();
+                    }
+                    mapping.composed_shortcut_key = composed_shortcut_key.clone();
+                    if let Some(threshold) = config.trigger_theshold {
+                        mapping.trigger_theshold = threshold;
+                    }
+                    if let Some(mode) = config.check_mode {
+                        mapping.check_mode = mode;
+                    }
+                    if let Some(param) = config.check_mode_param {
+                        mapping.check_mode_param = param;
+                    }
+                    mapping.action = action;
+
+                    // 同步更新 DYNAMIC_TRIGGER_STATES 中的触发状态
+                    if let Some(trigger_state) = &config.trigger_state {
+                        // 更新 mapping 对象本身的 trigger_state 字段
+                        mapping.trigger_state.continually_trigger = trigger_state.continually_trigger;
+                        mapping.trigger_state.interval = trigger_state.interval;
+                        mapping.trigger_state.initial_interval = trigger_state.initial_interval;
+                        mapping.trigger_state.min_interval = trigger_state.min_interval;
+                        mapping.trigger_state.acceleration = trigger_state.acceleration;
+                        // 注意：不更新 last_trigger 和 is_pressed，保持原有的状态
+
+                        let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
+                        if let Some(existing_trigger_state) = trigger_states.get_mut(&id) {
+                            // 更新现有的触发状态
+                            existing_trigger_state.continually_trigger = trigger_state.continually_trigger;
+                            existing_trigger_state.interval = trigger_state.interval;
+                            existing_trigger_state.initial_interval = trigger_state.initial_interval;
+                            existing_trigger_state.min_interval = trigger_state.min_interval;
+                            existing_trigger_state.acceleration = trigger_state.acceleration;
+                            // 注意：不更新 last_trigger，保持原有的时间状态
+                        } else {
+                            // 如果不存在，则插入新的触发状态
+                            trigger_states.insert(id, trigger_state.clone());
+                        }
+                        drop(trigger_states);
+
+                        // 同步更新 BUTTON_CHECK_STATES 中的按键检测状态
+                        let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
+                        // 当检测模式或参数发生变化时，重置按键检测状态
+                        if let Some(check_state) = button_check_states.get_mut(&id) {
+                            // 如果检测模式改变，重置整个状态
+                            if config.check_mode.is_some() && mapping.check_mode != config.check_mode.unwrap_or_default()
+                            {
+                                *check_state = ButtonCheckState::default();
+                            }
+                            // 如果检测模式参数改变，也重置状态
+                            if config.check_mode_param.is_some()
+                                && mapping.check_mode_param != config.check_mode_param.unwrap_or(300)
+                            {
+                                *check_state = ButtonCheckState::default();
+                            }
+                        } else {
+                            // 如果不存在，则插入新的按键检测状态
+                            button_check_states.insert(id, ButtonCheckState::default());
+                        }
+                        drop(button_check_states);
+                    }
+
+                    log::error!("{:#?}", DYNAMIC_TRIGGER_STATES.read().unwrap());
+                }
+                Err(e) => {
+                    log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
+                    return false;
+                }
             }
         }
         drop(cache);
@@ -813,64 +876,62 @@ pub fn update_mapping(
 
 /// Tauri 命令：添加一个新的映射配置。
 #[tauri::command]
-pub fn add_mapping(
-    composed_button: String,
-    composed_shortcut_key: String,
-    trigger_state: TriggerState,
-    trigger_theshold: Option<f32>,
-    amount: Option<i32>,
-    check_mode: Option<CheckMode>,
-    check_mode_param: Option<u64>,
-) -> bool {
-    log::debug!("请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}'");
+pub fn add_mapping(config: MappingUpdateConfig) -> bool {
+    log::debug!("请求添加映射配置");
 
     // 对于所有映射类型，我们都从 composed_shortcut_key 解析出 Action
-    match parse_composed_key_to_action(&composed_shortcut_key) {
-        Ok(mut action) => {
-            // 如果是滚轮动作且自定义了 amount, 则覆盖
-            if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) =
-                (&mut action.primary, amount)
-            {
-                action.primary = PrimaryAction::MouseWheel { amount: new_amount };
+    if let Some(composed_shortcut_key) = &config.composed_shortcut_key {
+        match parse_composed_key_to_action(composed_shortcut_key) {
+            Ok(mut action) => {
+                // 如果是滚轮动作且自定义了 amount, 则覆盖
+                if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) =
+                    (&mut action.primary, config.amount)
+                {
+                    action.primary = PrimaryAction::MouseWheel { amount: new_amount };
+                }
+
+                let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
+                let id = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64;
+
+                let trigger_state = config.trigger_state.unwrap_or_default();
+                let new_mapping = Mapping {
+                    id,
+                    composed_button: config.composed_button.unwrap_or_default(),
+                    composed_shortcut_key: composed_shortcut_key.clone(),
+                    check_mode: config.check_mode.unwrap_or_default(),
+                    check_mode_param: config.check_mode_param.unwrap_or(300),
+                    trigger_theshold: config.trigger_theshold.unwrap_or(0.3),
+                    action,
+                    trigger_state: trigger_state.clone(),
+                };
+
+                cache.push(new_mapping);
+                drop(cache);
+
+                // 同步更新 DYNAMIC_TRIGGER_STATES，添加新的触发状态
+                let mut dynamic_trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
+                dynamic_trigger_states.insert(id, trigger_state);
+                drop(dynamic_trigger_states);
+
+                // 同步更新 BUTTON_CHECK_STATES，添加新的按键检测状态
+                let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
+                button_check_states.insert(id, ButtonCheckState::default());
+                drop(button_check_states);
+
+                save_mappings();
+                true
             }
-
-            let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
-            let id = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_millis() as u64;
-
-            let new_mapping = Mapping {
-                id,
-                composed_button,
-                composed_shortcut_key,
-                check_mode: check_mode.unwrap_or_default(),
-                check_mode_param: check_mode_param.unwrap_or(300),
-                trigger_theshold: trigger_theshold.unwrap_or(0.3),
-                action,
-                trigger_state: trigger_state.clone(),
-            };
-
-            cache.push(new_mapping);
-            drop(cache);
-
-            // 同步更新 DYNAMIC_TRIGGER_STATES，添加新的触发状态
-            let mut dynamic_trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
-            dynamic_trigger_states.insert(id, trigger_state.clone());
-            drop(dynamic_trigger_states);
-
-            // 同步更新 BUTTON_CHECK_STATES，添加新的按键检测状态
-            let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
-            button_check_states.insert(id, ButtonCheckState::default());
-            drop(button_check_states);
-
-            save_mappings();
-            true
+            Err(e) => {
+                log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
+                false
+            }
         }
-        Err(e) => {
-            log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
-            false
-        }
+    } else {
+        log::error!("添加映射失败，缺少 composed_shortcut_key");
+        false
     }
 }
 
@@ -1286,7 +1347,7 @@ pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
             let button_is_pressed = controller_datas.get_button(*button);
             let check_state = button_check_states
                 .entry(mapping.get_id())
-                .or_insert_with(ButtonCheckState::default);
+                .or_default();
 
             // 先进行按键检测，根据检测结果决定是否继续执行映射
             let should_trigger_mapping = check_button_press(
@@ -1328,24 +1389,22 @@ pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
             }
 
             // 只有当按键检测通过时，才执行原有的触发逻辑
-            if should_trigger_mapping {
-                if trigger_state.should_trigger(button_is_pressed) {
-                    if trigger_state.continually_trigger {
-                        // 连续触发模式：使用原有的 Execute 命令
+            if should_trigger_mapping && trigger_state.should_trigger(button_is_pressed) {
+                if trigger_state.continually_trigger {
+                    // 连续触发模式：使用原有的 Execute 命令
+                    ENIGO_SENDER
+                        .send(EnigoCommand::Execute(mapping.action.clone()))
+                        .unwrap();
+                } else {
+                    // 非连续触发模式：根据按键状态发送按下或释放命令
+                    if trigger_state.is_key_pressed() {
                         ENIGO_SENDER
-                            .send(EnigoCommand::Execute(mapping.action.clone()))
+                            .send(EnigoCommand::ExecutePress(mapping.action.clone()))
                             .unwrap();
                     } else {
-                        // 非连续触发模式：根据按键状态发送按下或释放命令
-                        if trigger_state.is_key_pressed() {
-                            ENIGO_SENDER
-                                .send(EnigoCommand::ExecutePress(mapping.action.clone()))
-                                .unwrap();
-                        } else {
-                            ENIGO_SENDER
-                                .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
-                                .unwrap();
-                        }
+                        ENIGO_SENDER
+                            .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
+                            .unwrap();
                     }
                 }
             }
@@ -1384,11 +1443,8 @@ pub fn handle_mouse_movement(controller_datas: &ControllerDatas) {
         )
     };
 
-    let mut stick_x: f32 = 0.0;
-    let mut stick_y: f32 = 0.0;
-
-    if let Some(which_stick) = stick_as_mouse_simulation {
-        (stick_x, stick_y) = match which_stick.as_str() {
+    let (stick_x, stick_y) = match stick_as_mouse_simulation {
+        Some(which_stick) => match which_stick.as_str() {
             "left" => (controller_datas.left_stick.x, controller_datas.left_stick.y),
             "right" => (
                 controller_datas.right_stick.x,
@@ -1398,11 +1454,12 @@ pub fn handle_mouse_movement(controller_datas: &ControllerDatas) {
             _ => {
                 return;
             }
-        };
-    } else {
-        // log::warn!("未指定用于鼠标模拟的摇杆");
-        return;
-    }
+        },
+        None => {
+            // log::warn!("未指定用于鼠标模拟的摇杆");
+            return;
+        }
+    };
 
     // --- 精度累积计算 ---
     let (move_x, move_y) = {

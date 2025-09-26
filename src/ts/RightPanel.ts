@@ -4,6 +4,7 @@ import { updateStatusMessage } from "@/ts/LeftPanel.ts";
 import { queryMappings, refreshMappings } from "@/App.ts";
 import { nextTick } from "vue";
 import { setLanguage, translate } from "@/ts/i18n.ts";
+import { MappingUpdateConfig } from "@/ts/MappingModal.ts";
 
 
 /**
@@ -103,11 +104,13 @@ export async function editButtonMap(id: number) {
         // 查找不是修饰键的部分作为主键
         state.currentKeys.key = parts.find(p => !['Control', 'Shift', 'Alt', 'Meta'].includes(p)) || null;
 
-        // 3. 恢复 trigger state (假设后端返回的字段名是 snake_case)
+        // 3. 恢复 trigger state (从扁平化的 mapping 字段中获取)
         state.triggerState.continually_trigger = mapping.continually_trigger ?? false;
         state.triggerState.initial_interval = mapping.initial_interval ?? 300;
         state.triggerState.min_interval = mapping.min_interval ?? 100;
         state.triggerState.acceleration = mapping.acceleration ?? 0.8;
+
+        console.log("恢复的 trigger state:", mapping);
 
         // 4. 恢复 amount (如果存在)
         if (typeof mapping.amount === 'number') {

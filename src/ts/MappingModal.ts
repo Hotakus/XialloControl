@@ -1,8 +1,28 @@
-import {state} from "@/ts/global_states.ts";
-import {updateStatusMessage} from "@/ts/LeftPanel.ts";
-import {queryMappings} from "@/App.ts";
-import {startKeyDetection, stopKeyDetection} from "@/ts/RightPanel.ts";
-import {invoke} from "@tauri-apps/api/core";
+import { state } from "@/ts/global_states.ts";
+import { updateStatusMessage } from "@/ts/LeftPanel.ts";
+import { queryMappings } from "@/App.ts";
+import { startKeyDetection, stopKeyDetection } from "@/ts/RightPanel.ts";
+import { invoke } from "@tauri-apps/api/core";
+
+/**
+ * 映射更新配置接口，对应后端的 MappingUpdateConfig 结构体
+ */
+export interface MappingUpdateConfig {
+    id: number;
+    composed_button?: string;
+    composed_shortcut_key?: string;
+    trigger_state?: {
+        continually_trigger: boolean;
+        interval: number;
+        initial_interval: number;
+        min_interval: number;
+        acceleration: number;
+    };
+    trigger_theshold?: number;
+    amount?: number | null;
+    check_mode?: string;
+    check_mode_param?: number;
+}
 
 export async function mappingsConfirm() {
     stopKeyDetection();
@@ -41,12 +61,12 @@ export async function mappingsConfirm() {
     };
 
     let result = false;
-    const payload = {
-        id: state.editingMappingId,
-        composedButton: composed_button,
-        composedShortcutKey: raw_shortcut_key,
-        triggerState: trigger_state,
-        triggerTheshold: state.triggerTheshold,
+    const payload: MappingUpdateConfig = {
+        id: state.editingMappingId || 0,
+        composed_button: composed_button,
+        composed_shortcut_key: raw_shortcut_key,
+        trigger_state: trigger_state,
+        trigger_theshold: state.triggerTheshold,
         amount: (() => {
             const lowerCaseKey = raw_shortcut_key.toLowerCase();
             if (lowerCaseKey.includes('mousewheelup')) {
@@ -56,15 +76,17 @@ export async function mappingsConfirm() {
             }
             return null;
         })(),
-        checkMode: state.checkMode,
-        checkModeParam: state.checkModeParam,
+        check_mode: state.checkMode,
+        check_mode_param: state.checkModeParam,
     };
 
+    console.log("提交的映射配置:", payload);
+
     if (state.editingMappingId) {
-        result = await invoke("update_mapping", payload);
+        result = await invoke<boolean>("update_mapping", { config: payload });
         updateStatusMessage('映射已更新');
     } else {
-        result = await invoke("add_mapping", payload);
+        result = await invoke<boolean>("add_mapping", { config: payload });
         updateStatusMessage('映射已添加');
     }
 
