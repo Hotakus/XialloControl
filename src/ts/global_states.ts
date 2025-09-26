@@ -112,6 +112,8 @@ export const state = reactive({
     },
     triggerTheshold: 0.3,
     mapping_amount: 1, // For mouse wheel amount in mapping modal
+    checkMode: "single",
+    checkModeParam: 300,
 
     preventNextClick: false,
     currentKeys: {

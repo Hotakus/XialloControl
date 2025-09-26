@@ -972,7 +972,7 @@ input:checked + .slider:before {
 .modal-header {
     background: var(--primary-bg);
     color: var(--primary-text);
-    padding: 10px 10px;
+    padding: 5px 10px;
     font-size: 18px;
     font-weight: bold;
     display: flex;
@@ -1002,11 +1002,11 @@ input:checked + .slider:before {
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 10px 20px;
 }
 
 .form-group {
-    margin-bottom: 5px;
+    /* margin-bottom: 5px; */
 }
 
 .form-group label {
@@ -1018,7 +1018,7 @@ input:checked + .slider:before {
 
 .form-control {
     width: 100%;
-    padding: 8px 8px;
+    padding: 6px 8px;
     border: 1px solid #dce2eb;
     border-radius: 8px;
     background: #f8f9fa;
@@ -1036,7 +1036,8 @@ input:checked + .slider:before {
     display: flex;
     flex-direction: column;
     /* gap: 12px; */
-    margin-top: 10px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .detector-area {
@@ -1078,7 +1079,7 @@ input:checked + .slider:before {
 }
 
 .modal-footer {
-    padding: 15px 20px;
+    padding: 12px 20px;
     background: #f8f9fa;
     display: flex;
     justify-content: flex-end;
