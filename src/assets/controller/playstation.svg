@@ -1,12 +1,24 @@
 <svg width="1024" height="1024" version="1.1" viewBox="0 0 270.93 270.93" xmlns="http://www.w3.org/2000/svg">
  <g>
   <g id="svg-gamepad-rightstick-g" transform="translate(110.51 34.876)" style="mix-blend-mode:darken;paint-order:normal">
-   <ellipse id="svg-gamepad-rightstick" cx="65.875" cy="93.828" rx="10.049" ry="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
+   <g id="svg-gamepad-rightstick">
+    <ellipse id="svg-gamepad-rightstick-body" cx="65.875" cy="93.828" rx="10.049" ry="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
+    <path d="m55.826 93.764 18.873-2e-6v0l1.2258 2e-6" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.543;stroke:#d4d4d4"/>
+    <path d="m65.875 83.714v20.099" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.543;stroke:#d4d4d4"/>
+   </g>
    <circle id="svg-gamepad-btn-rightstick" cx="65.875" cy="93.828" r="16.394" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:2.543;stroke:#808080"/>
+   <path d="m49.481 93.764 30.788-1e-5v0l1.9998 1e-5" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.88581;stroke:#d4d4d4"/>
+   <path d="m65.875 77.37v32.787" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.88581;stroke:#d4d4d4"/>
   </g>
   <g id="svg-gamepad-leftstick-g" transform="translate(28.327 34.811)" style="mix-blend-mode:darken;paint-order:normal">
-   <circle id="svg-gamepad-leftstick" cx="65.875" cy="93.828" r="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
+   <g id="svg-gamepad-leftstick">
+    <circle id="svg-gamepad-leftstick-body" cx="65.875" cy="93.828" r="10.049" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:1.743;stroke:#808080"/>
+    <path d="m55.826 93.828 18.873-2e-6v0l1.2258 2e-6" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.543;stroke:#d4d4d4"/>
+    <path d="m65.875 83.779v20.099" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.543;stroke:#d4d4d4"/>
+   </g>
    <ellipse id="svg-gamepad-btn-leftstick" cx="65.875" cy="93.828" rx="16.394" ry="16.394" style="fill-opacity:.50259;fill:#ff9c00;paint-order:normal;stroke-width:2.543;stroke:#808080"/>
+   <path d="m49.481 93.828 30.788-1e-5v0l1.9998 1e-5" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.88581;stroke:#d4d4d4"/>
+   <path d="m65.875 77.435v32.787" style="fill:#808080;mix-blend-mode:darken;paint-order:normal;stroke-linecap:round;stroke-linejoin:round;stroke-width:.88581;stroke:#d4d4d4"/>
   </g>
   <path id="svg-gamepad_base_frame" d="m41.225 56.166s-7.1517 6.8784-12.982 19.086c-5.8307 12.208-10.204 29.518-10.204 29.518s-7.2883 25.691-10.204 51.201c-2.9153 25.509-0.72883 34.073 4.0086 46.099 4.7374 12.026 27.149 16.763 36.442 6.3773 9.2926-10.386 8.5638-11.297 8.5638-11.297s5.284-9.6571 6.9239-14.759c1.6399-5.1018 9.6571-28.06 9.6571-28.06l2.0043-2.7331 2.1865-0.72883 1.6399 0.18221 1.0932 1.2755s3.2798 4.0086 13.666 4.7374c10.386 0.72883 17.128-6.7417 17.128-6.7417h48.467s5.1018 6.3773 15.488 6.7417 16.763-6.0129 16.763-6.0129 4.5552-0.18221 6.1951 5.1018c1.6399 5.284 10.275 31.955 17.748 43.937 7.4728 11.982 17.909 13.142 17.909 13.142s10.05 2.3191 18.811-4.3806 13.528-17.909 11.467-44.064c-2.0615-26.155-14.005-69.675-14.005-69.675s-3.8264-13.301-7.6528-21.501c-3.8264-8.1994-11.115-16.49-11.115-16.49l-1.8221-1.4577s-6.3773-3.0064-17.856-3.3709c-11.479-0.36442-17.492 2.9153-17.492 2.9153h-117.16s-10.021-2.3687-17.492-2.5509c-7.4706-0.18221-12.891 1.1388-18.175 3.5075z" style="fill:none;stroke-width:2;stroke:#808080"/>
   <g id="Dpad" style="stroke:#808080">
