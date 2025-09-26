@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 // --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
-use crate::controller::{CURRENT_DEVICE, ControllerType};
 use crate::controller::datas::{ControllerButtons, ControllerDatas, JoystickRotation};
+use crate::controller::{CURRENT_DEVICE, ControllerType};
 use crate::preset;
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
@@ -16,6 +16,60 @@ use std::thread;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 // --- 数据结构定义 (•̀ω•́)✧ ---
+
+/// 按键检测模式
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Copy)]
+#[serde(rename_all = "snake_case")]
+pub enum CheckMode {
+    Single,
+    Double,
+    Long,
+}
+
+impl Default for CheckMode {
+    fn default() -> Self {
+        Self::Single
+    }
+}
+
+/// 按键检测的动态状态
+#[derive(Clone, Debug)]
+pub struct ButtonCheckState {
+    /// 上次按下的时间
+    pub last_press_time: Option<Instant>,
+    /// 上次释放的时间
+    pub last_release_time: Option<Instant>,
+    /// 当前是否处于长按触发后的状态
+    pub long_press_triggered: bool,
+    /// 单击事件是否已准备好触发（在等待双击可能性时）
+    pub single_press_pending: bool,
+    /// 双击是否已经触发
+    pub double_press_triggered: bool,
+    /// 记录完整的按下次数
+    pub press_count: u32,
+    /// 记录完整的释放次数
+    pub release_count: u32,
+    /// 上一次的按键状态，用于检测状态变化
+    pub last_button_state: bool,
+    /// 第一次按下的时间，用于双击判断
+    pub first_press_time: Option<Instant>,
+}
+
+impl Default for ButtonCheckState {
+    fn default() -> Self {
+        Self {
+            last_press_time: None,
+            last_release_time: None,
+            long_press_triggered: false,
+            single_press_pending: false,
+            double_press_triggered: false,
+            press_count: 0,
+            release_count: 0,
+            last_button_state: false,
+            first_press_time: None,
+        }
+    }
+}
 
 /// 触发状态，用于控制按键的重复触发和加速。
 /// 当按键被持续按下时，它会以一定的间隔重复触发，并且间隔会逐渐减小（加速）。
@@ -36,7 +90,7 @@ pub struct TriggerState {
     #[serde(skip)] // 跳过序列化和反序列化
     #[serde(default = "TriggerState::default_instant")] // 反序列化时自动调用
     last_trigger: Instant,
-    
+
     #[serde(skip)] // 跳过序列化和反序列化
     /// 按键是否被按下的状态，用于非连续触发模式
     is_pressed: bool,
@@ -66,10 +120,11 @@ impl TriggerState {
     pub fn should_trigger(&mut self, button_is_pressed: bool) -> bool {
         if self.continually_trigger {
             // 连续触发模式：只有在按键被按下且时间间隔满足条件时才触发
-            if button_is_pressed && self.last_trigger.elapsed().as_millis() as u64 >= self.interval {
+            if button_is_pressed && self.last_trigger.elapsed().as_millis() as u64 >= self.interval
+            {
                 // 触发后加速，更新间隔时间
-                self.interval =
-                    ((self.interval as f64) * self.acceleration).max(self.min_interval as f64) as u64;
+                self.interval = ((self.interval as f64) * self.acceleration)
+                    .max(self.min_interval as f64) as u64;
                 self.last_trigger = Instant::now();
                 true
             } else {
@@ -92,12 +147,12 @@ impl TriggerState {
     pub fn reset(&mut self) {
         self.interval = self.initial_interval;
     }
-    
+
     /// 获取按键是否被按下的状态
     pub fn is_key_pressed(&self) -> bool {
         self.is_pressed
     }
-    
+
     /// 设置按键状态
     pub fn set_key_pressed(&mut self, pressed: bool) {
         self.is_pressed = pressed;
@@ -128,6 +183,13 @@ pub struct Mapping {
     /// 组合后的快捷键字符串，例如 "Ctrl+C"。
     composed_shortcut_key: String,
 
+    /// 按键检测模式。
+    #[serde(default)]
+    check_mode: CheckMode,
+    /// 按键检测模式的参数（例如，长按时间或双击间隔）。
+    #[serde(default)]
+    check_mode_param: u64,
+
     // 扳机触发阈值
     trigger_theshold: f32,
 
@@ -147,6 +209,8 @@ impl Mapping {
             id,
             composed_button,
             composed_shortcut_key,
+            check_mode: CheckMode::default(),
+            check_mode_param: 300,
             trigger_theshold: 0.3,
             action: Action::default(),
             trigger_state: TriggerState::default(),
@@ -219,7 +283,7 @@ impl Executable for PrimaryAction {
             }
         }
     }
-    
+
     fn execute_press(&self, enigo: &mut Enigo) {
         match self {
             PrimaryAction::KeyPress { key } => {
@@ -240,7 +304,7 @@ impl Executable for PrimaryAction {
             }
         }
     }
-    
+
     fn execute_release(&self, enigo: &mut Enigo) {
         match self {
             PrimaryAction::KeyPress { key } => {
@@ -301,7 +365,7 @@ impl Executable for Action {
                 .expect("Failed to release modifier key");
         }
     }
-    
+
     fn execute_press(&self, enigo: &mut Enigo) {
         // 1. 按下所有修饰键
         for modifier in &self.modifiers {
@@ -313,7 +377,7 @@ impl Executable for Action {
         // 2. 执行主操作的按下
         self.primary.execute_press(enigo);
     }
-    
+
     fn execute_release(&self, enigo: &mut Enigo) {
         // 1. 执行主操作的释放
         self.primary.execute_release(enigo);
@@ -382,6 +446,10 @@ pub static DYNAMIC_TRIGGER_STATES: Lazy<RwLock<HashMap<u64, TriggerState>>> =
 pub static JOYSTICK_MAPPING_STATES: Lazy<RwLock<HashMap<u64, JoystickMappingState>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
+/// 动态按键检测状态，存储每个映射的按键检测状态。
+pub static BUTTON_CHECK_STATES: Lazy<RwLock<HashMap<u64, ButtonCheckState>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
 /// Enigo 工作线程的发送器，用于向其发送执行命令。
 pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
     let (tx, rx): (Sender<EnigoCommand>, Receiver<EnigoCommand>) = channel();
@@ -389,6 +457,178 @@ pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
     thread::spawn(move || enigo_worker(rx));
     tx
 });
+
+// --- 按键检测核心逻辑 (ﾉ>ω<)ﾉ ---
+
+/// 检查按键状态并根据检测模式返回是否应该触发
+///
+/// # 参数
+/// * `button_is_pressed` - 按键当前是否被按下
+/// * `check_mode` - 检测模式（单击、双击、长按）
+/// * `check_mode_param` - 检测模式参数（双击间隔或长按时间）
+/// * `check_state` - 按键检测状态
+///
+/// # 返回值
+/// 返回一个布尔值，表示是否应该触发映射动作
+pub fn check_button_press(
+    button_is_pressed: bool,
+    check_mode: CheckMode,
+    check_mode_param: u64,
+    check_state: &mut ButtonCheckState,
+) -> bool {
+    let now = Instant::now();
+
+    match check_mode {
+        CheckMode::Single => {
+            // 单击模式：按键按下时触发
+            if button_is_pressed {
+                // 检查是否是第一次按下，或者从释放状态再次按下
+                if check_state.last_press_time.is_none() {
+                    // 第一次按下，直接触发
+                    check_state.last_press_time = Some(now);
+                    check_state.last_release_time = None;
+                    return true;
+                } else if check_state.last_release_time.is_some() {
+                    // 从释放状态再次按下，检查时间间隔防止误触
+                    let time_since_release = now
+                        .duration_since(check_state.last_release_time.unwrap())
+                        .as_millis() as u64;
+                    if time_since_release > 50 {
+                        check_state.last_press_time = Some(now);
+                        check_state.last_release_time = None;
+                        return true;
+                    }
+                }
+            } else if !button_is_pressed && check_state.last_press_time.is_some() {
+                // 按键释放，记录释放时间
+                check_state.last_release_time = Some(now);
+            }
+
+            false
+        }
+
+        CheckMode::Double => {
+            let now = Instant::now();
+
+            // 检测按键状态变化
+            let state_changed = button_is_pressed != check_state.last_button_state;
+
+            // 只有在状态真正发生变化时才进行处理
+            if state_changed {
+                if button_is_pressed {
+                    // 从释放变为按下 - 记录一次按下
+                    check_state.press_count += 1;
+                    check_state.last_press_time = Some(now);
+
+                    // 如果是第一次按下，记录第一次按下时间
+                    if check_state.press_count == 1 {
+                        check_state.first_press_time = Some(now);
+                    }
+
+                    // 检查是否满足双击条件（第二次按下时）
+                    if check_state.press_count >= 2 {
+                        if let Some(first_press_time) = check_state.first_press_time {
+                            let time_since_first_press =
+                                now.duration_since(first_press_time).as_millis() as u64;
+
+                            // 检查时间窗口
+                            if time_since_first_press <= check_mode_param {
+                                // 检查是否已经触发过双击（防止重复触发）
+                                if !check_state.double_press_triggered {
+                                    // 触发双击
+                                    check_state.double_press_triggered = true;
+                                    return true;
+                                }
+                            } else {
+                                // 超时，重置计数
+                                reset_double_click_state(check_state);
+                            }
+                        }
+                    }
+                } else {
+                    // 从按下变为释放 - 记录一次释放
+                    check_state.release_count += 1;
+                    check_state.last_release_time = Some(now);
+                }
+
+                // 更新上一次的按键状态
+                check_state.last_button_state = button_is_pressed;
+            } else if button_is_pressed {
+                // 状态没有变化但按键仍被按下
+                // 检查是否超时，超时则重置状态
+                if let Some(first_press_time) = check_state.first_press_time {
+                    let time_since_first_press =
+                        now.duration_since(first_press_time).as_millis() as u64;
+                    if time_since_first_press > check_mode_param {
+                        // 长按超时，重置状态
+                        reset_double_click_state(check_state);
+                    }
+                }
+            }
+
+            // 检查是否需要重置状态（超时或完成双击）
+            if should_reset_state(check_state, now, check_mode_param) {
+                reset_double_click_state(check_state);
+            }
+
+            false
+        }
+
+        CheckMode::Long => {
+            // 长按模式：按键按下超过指定时间后触发
+            if button_is_pressed {
+                if check_state.last_press_time.is_none() {
+                    // 开始按下
+                    check_state.last_press_time = Some(now);
+                    check_state.long_press_triggered = false;
+                } else {
+                    // 持续按下中
+                    let press_duration = now
+                        .duration_since(check_state.last_press_time.unwrap())
+                        .as_millis() as u64;
+                    if press_duration >= check_mode_param && !check_state.long_press_triggered {
+                        // 达到长按时间，触发一次
+                        check_state.long_press_triggered = true;
+                        return true;
+                    } else if press_duration >= check_mode_param && check_state.long_press_triggered
+                    {
+                        // 长按已经触发过，持续按下中，继续触发
+                        return true;
+                    }
+                }
+            } else {
+                // 按键释放，重置状态
+                check_state.last_press_time = None;
+                check_state.long_press_triggered = false;
+            }
+
+            false
+        }
+    }
+}
+
+/// 重置双击状态的辅助函数
+fn reset_double_click_state(check_state: &mut ButtonCheckState) {
+    check_state.press_count = 0;
+    check_state.release_count = 0;
+    check_state.double_press_triggered = false;
+    check_state.first_press_time = None;
+    check_state.single_press_pending = false;
+}
+
+/// 判断是否需要重置双击状态的辅助函数
+fn should_reset_state(check_state: &ButtonCheckState, now: Instant, timeout: u64) -> bool {
+    if let Some(first_press_time) = check_state.first_press_time {
+        let time_since_first_press = now.duration_since(first_press_time).as_millis() as u64;
+        // 超时或者已经完成双击
+        time_since_first_press > timeout
+            || (check_state.press_count >= 2
+                && check_state.release_count >= 2
+                && check_state.double_press_triggered)
+    } else {
+        false
+    }
+}
 
 // --- 核心逻辑函数 (ﾉ>ω<)ﾉ ---
 
@@ -496,6 +736,8 @@ pub fn update_mapping(
     trigger_state: TriggerState,
     trigger_theshold: Option<f32>,
     amount: Option<i32>,
+    check_mode: Option<CheckMode>,
+    check_mode_param: Option<u64>,
 ) -> bool {
     let mut cache = GLOBAL_MAPPING_CACHE.write().unwrap();
     if let Some(mapping) = cache.iter_mut().find(|m| m.id == id) {
@@ -512,6 +754,8 @@ pub fn update_mapping(
                 mapping.composed_button = composed_button;
                 mapping.composed_shortcut_key = composed_shortcut_key;
                 mapping.trigger_theshold = trigger_theshold.unwrap_or(0.3);
+                mapping.check_mode = check_mode.unwrap_or_default();
+                mapping.check_mode_param = check_mode_param.unwrap_or(300);
                 mapping.action = action;
                 mapping.trigger_state = trigger_state.clone();
 
@@ -530,6 +774,27 @@ pub fn update_mapping(
                     trigger_states.insert(id, trigger_state.clone());
                 }
                 drop(trigger_states);
+
+                // 同步更新 BUTTON_CHECK_STATES 中的按键检测状态
+                let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
+                // 当检测模式或参数发生变化时，重置按键检测状态
+                if let Some(check_state) = button_check_states.get_mut(&id) {
+                    // 如果检测模式改变，重置整个状态
+                    if check_mode.is_some() && mapping.check_mode != check_mode.unwrap_or_default()
+                    {
+                        *check_state = ButtonCheckState::default();
+                    }
+                    // 如果检测模式参数改变，也重置状态
+                    if check_mode_param.is_some()
+                        && mapping.check_mode_param != check_mode_param.unwrap_or(300)
+                    {
+                        *check_state = ButtonCheckState::default();
+                    }
+                } else {
+                    // 如果不存在，则插入新的按键检测状态
+                    button_check_states.insert(id, ButtonCheckState::default());
+                }
+                drop(button_check_states);
 
                 log::error!("{:#?}", DYNAMIC_TRIGGER_STATES.read().unwrap());
             }
@@ -554,10 +819,10 @@ pub fn add_mapping(
     trigger_state: TriggerState,
     trigger_theshold: Option<f32>,
     amount: Option<i32>,
+    check_mode: Option<CheckMode>,
+    check_mode_param: Option<u64>,
 ) -> bool {
-    log::debug!(
-        "请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}'"
-    );
+    log::debug!("请求添加映射配置: button='{composed_button}', action='{composed_shortcut_key}'");
 
     // 对于所有映射类型，我们都从 composed_shortcut_key 解析出 Action
     match parse_composed_key_to_action(&composed_shortcut_key) {
@@ -579,6 +844,8 @@ pub fn add_mapping(
                 id,
                 composed_button,
                 composed_shortcut_key,
+                check_mode: check_mode.unwrap_or_default(),
+                check_mode_param: check_mode_param.unwrap_or(300),
                 trigger_theshold: trigger_theshold.unwrap_or(0.3),
                 action,
                 trigger_state: trigger_state.clone(),
@@ -591,6 +858,11 @@ pub fn add_mapping(
             let mut dynamic_trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
             dynamic_trigger_states.insert(id, trigger_state.clone());
             drop(dynamic_trigger_states);
+
+            // 同步更新 BUTTON_CHECK_STATES，添加新的按键检测状态
+            let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
+            button_check_states.insert(id, ButtonCheckState::default());
+            drop(button_check_states);
 
             save_mappings();
             true
@@ -621,6 +893,11 @@ pub async fn delete_mapping(id: u64) -> bool {
         let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
         trigger_states.remove(&id);
         drop(trigger_states);
+
+        // 同步更新 BUTTON_CHECK_STATES，删除对应的按键检测状态
+        let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
+        button_check_states.remove(&id);
+        drop(button_check_states);
 
         save_mappings();
         log::info!("已成功删除 id {id} 的映射");
@@ -927,7 +1204,7 @@ fn handle_trigger_data(controller_datas: &mut ControllerDatas, mapping: &Mapping
     let trigger_some = match mapping.composed_button.as_str() {
         "LT" => Some(controller_datas.left_trigger),
         "RT" => Some(controller_datas.right_trigger),
-        _ => None
+        _ => None,
     };
 
     if let Some(mut trigger) = trigger_some {
@@ -952,6 +1229,7 @@ pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
 
     let layout_map = get_current_controller_layout_map();
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
+    let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
 
     for mapping in mappings.iter() {
         let composed_button = mapping.get_composed_button();
@@ -1003,39 +1281,72 @@ pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
             }
         } else if let Some(button) = layout_map.get(composed_button) {
             handle_trigger_data(controller_datas, mapping);
+
+            // --- 按键检测逻辑 ---
+            let button_is_pressed = controller_datas.get_button(*button);
+            let check_state = button_check_states
+                .entry(mapping.get_id())
+                .or_insert_with(ButtonCheckState::default);
+
+            // 先进行按键检测，根据检测结果决定是否继续执行映射
+            let should_trigger_mapping = check_button_press(
+                button_is_pressed,
+                mapping.check_mode,
+                mapping.check_mode_param,
+                check_state,
+            );
+
+            // log::error!("Mapping ID: {}, Button: {}, Pressed: {}, Mode: {:#?}, Should Trigger: {}", mapping.get_id(), composed_button, button_is_pressed, mapping.check_mode, should_trigger_mapping);
+
             // --- 处理原始按键映射 ---
             let trigger_state = trigger_states
                 .entry(mapping.get_id())
                 .or_insert_with(|| mapping.trigger_state.clone());
 
-            if trigger_state.should_trigger(controller_datas.get_button(*button)) {
-                if trigger_state.continually_trigger {
-                    // 连续触发模式：使用原有的 Execute 命令
-                    ENIGO_SENDER
-                        .send(EnigoCommand::Execute(mapping.action.clone()))
-                        .unwrap();
-                } else {
-                    // 非连续触发模式：根据按键状态发送按下或释放命令
-                    if trigger_state.is_key_pressed() {
-                        ENIGO_SENDER
-                            .send(EnigoCommand::ExecutePress(mapping.action.clone()))
-                            .unwrap();
-                    } else {
-                        ENIGO_SENDER
-                            .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
-                            .unwrap();
-                    }
-                }
-            } else if !controller_datas.get_button(*button) {
+            // 在非连续触发模式下，需要处理按键释放的情况，确保按键能正确释放
+            if !trigger_state.continually_trigger
+                && !button_is_pressed
+                && trigger_state.is_key_pressed()
+            {
+                // 非连续触发模式下，如果按键被释放但状态还是按下，需要触发释放操作
+                trigger_state.set_key_pressed(false);
+                ENIGO_SENDER
+                    .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
+                    .unwrap();
+            }
+
+            // 处理按键释放时的重置逻辑
+            if !button_is_pressed {
                 if trigger_state.continually_trigger {
                     // 连续触发模式下，如果按键被释放，重置触发状态
                     trigger_state.reset();
-                } else if trigger_state.is_key_pressed() {
-                    // 非连续触发模式下，如果按键被释放但状态还是按下，需要触发释放操作
-                    trigger_state.set_key_pressed(false);
-                    ENIGO_SENDER
-                        .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
-                        .unwrap();
+                }
+                // 长按模式下，如果按键被释放，重置触发状态
+                if mapping.check_mode == CheckMode::Long {
+                    trigger_state.reset();
+                }
+            }
+
+            // 只有当按键检测通过时，才执行原有的触发逻辑
+            if should_trigger_mapping {
+                if trigger_state.should_trigger(button_is_pressed) {
+                    if trigger_state.continually_trigger {
+                        // 连续触发模式：使用原有的 Execute 命令
+                        ENIGO_SENDER
+                            .send(EnigoCommand::Execute(mapping.action.clone()))
+                            .unwrap();
+                    } else {
+                        // 非连续触发模式：根据按键状态发送按下或释放命令
+                        if trigger_state.is_key_pressed() {
+                            ENIGO_SENDER
+                                .send(EnigoCommand::ExecutePress(mapping.action.clone()))
+                                .unwrap();
+                        } else {
+                            ENIGO_SENDER
+                                .send(EnigoCommand::ExecuteRelease(mapping.action.clone()))
+                                .unwrap();
+                        }
+                    }
                 }
             }
         }
