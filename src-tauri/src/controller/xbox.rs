@@ -105,12 +105,11 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
                 let vid = format!("{:04x}", xinput_caps_ex.vendor_id);
                 let pid = format!("{:04x}", xinput_caps_ex.product_id);
                 let spid = format!("{:04x}", xinput_caps_ex.revision_id);
-                
 
                 // log::warn!("{vid:#?}/{pid:#?}/{spid:#?} - {:#?}/{:#?}/{:#?} - {:#?}",
                 //     _device.vendor_id,
                 //     _device.product_id.as_deref().unwrap(),
-                //     _device.sub_product_id.as_deref().unwrap(), 
+                //     _device.sub_product_id.as_deref().unwrap(),
                 //     xinput_caps_ex.capabilities.SubType);
 
                 let d_vid = &_device.vendor_id;
@@ -132,7 +131,7 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
                 }
             }
             Err(_) => {
-                log::error!("Xbox 控制器连接错误，设备索引 {i} 不存在");
+                log::warn!("Xbox 控制器连接错误，设备索引 {i} 不存在");
                 got_device = false;
             }
         }
