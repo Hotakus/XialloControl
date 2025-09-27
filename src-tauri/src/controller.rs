@@ -30,7 +30,7 @@ use std::collections::HashMap;
 /// 用于追踪 Toggle 模式下的副预设激活状态
 static IS_SUB_PRESET_ACTIVE: Lazy<RwLock<bool>> = Lazy::new(|| RwLock::new(false));
 /// 用于检测按键单击事件 (按下后立即释放)
-static mut TOGGLE_BUTTON_LAST_STATE: bool = false;
+static TOGGLE_BUTTON_LAST_STATE: Lazy<RwLock<bool>> = Lazy::new(|| RwLock::new(false));
 
 // ---------------------- 结构体定义 ----------------------
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -589,7 +589,7 @@ fn poll_other_controllers(device: &DeviceInfo) {
 
         // 匹配当前设备
         if vid.eq_ignore_ascii_case(&device.vendor_id)
-            && pid.eq_ignore_ascii_case(device.product_id.as_deref().unwrap())
+            && device.product_id.as_deref().is_some_and(|d_pid| pid.eq_ignore_ascii_case(d_pid))
         {
             _poll_other_controllers(gamepad);
         }
@@ -625,8 +625,7 @@ fn poll_controller(device: &DeviceInfo) {
                 #[cfg(target_os = "windows")]
                 {
                     log::warn!("未知控制器，尝试使用 Xbox 轮询方法: {device:#?}");
-                    // xbox::poll_xbox_controller(device)
-                    todo!("实现未知控制器的轮询逻辑");
+                    // TODO: 实现未知控制器的轮询逻辑
                 }
                 #[cfg(not(target_os = "windows"))]
                 {
@@ -681,12 +680,13 @@ fn handle_preset_switching_decision() -> bool {
                         use_sub_preset = is_button_pressed;
                     }
                     "Toggle" => {
-                        unsafe {
-                            if is_button_pressed && !TOGGLE_BUTTON_LAST_STATE {
+                        {
+                            let mut last_state = TOGGLE_BUTTON_LAST_STATE.write().unwrap();
+                            if is_button_pressed && !*last_state {
                                 let mut active = IS_SUB_PRESET_ACTIVE.write().unwrap();
                                 *active = !*active;
                             }
-                            TOGGLE_BUTTON_LAST_STATE = is_button_pressed;
+                            *last_state = is_button_pressed;
                         }
                         use_sub_preset = *IS_SUB_PRESET_ACTIVE.read().unwrap();
                     }
@@ -754,12 +754,16 @@ pub fn listen() {
             if let Some(device) = &last_device {
                 poll_controller(device);
 
-                logic::apply_deadzone(&mut CONTROLLER_DATA.write().unwrap());
-                logic::check_sticks_rotation(&mut CONTROLLER_DATA.write().unwrap());
+                // 一次性获取锁，减少锁操作
+                let mut controller_data = CONTROLLER_DATA.write().unwrap();
+                logic::apply_deadzone(&mut controller_data);
+                logic::check_sticks_rotation(&mut controller_data);
 
-                pack_and_send_data(&CONTROLLER_DATA.read().unwrap());
+                let data_snapshot = *controller_data;
+                drop(controller_data); // 释放写锁
 
-                mapping::handle_mouse_movement(&CONTROLLER_DATA.read().unwrap());
+                pack_and_send_data(&data_snapshot);
+                mapping::handle_mouse_movement(&data_snapshot);
 
                 let use_sub_preset = handle_preset_switching_decision();
                 mapping::map(&mut CONTROLLER_DATA.write().unwrap(), use_sub_preset);
