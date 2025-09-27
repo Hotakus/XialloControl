@@ -272,27 +272,12 @@ pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
 }
 
 // ---------------------- 设备检测 ----------------------
-/// 检测当前连接的设备并匹配支持列表
-///
-/// # 参数
-/// - `config`: 支持的设备配置列表
-///
-/// # 返回
-/// 已连接且被支持的设备列表（包含运行时信息）
-pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo> {
-    let api = match HidApi::new() {
-        Ok(api) => api,
-        Err(e) => {
-            log::error!("初始化 hidapi 失败: {e}");
-            return Vec::new();
-        }
-    };
-
-    let mut connected_devices = Vec::new();
+fn list_controllers_from_gilrs() -> Vec<DeviceInfo> {
     let gilrs_guard = GLOBAL_GILRS.lock().unwrap();
     let gilrs = gilrs_guard.as_ref().unwrap();
 
-    for (id, gamepad) in gilrs.gamepads() {
+    let mut devices = Vec::new();
+    for (_id, gamepad) in gilrs.gamepads() {
         let vid_opt = gamepad.vendor_id();
         let pid_opt = gamepad.product_id();
 
@@ -310,29 +295,43 @@ pub fn list_supported_connected_devices(config: &[DeviceInfo]) -> Vec<DeviceInfo
                 device_path: None,
                 controller_type: detect_controller_type(&vid_str),
             };
-            connected_devices.push(device_info);
+            devices.push(device_info);
         }
     }
 
-    // 遍历所有检测到的HID设备
-    for device in api.device_list() {
+    devices
+}
+
+fn list_controllers_should_manage() -> Vec<DeviceInfo> {
+    let mut devices = list_controllers_from_gilrs();
+    let hidapi = match HidApi::new() {
+        Ok(api) => api,
+        Err(e) => {
+            log::error!("初始化 hidapi 失败: {e}");
+            return Vec::new();
+        }
+    };
+
+    // 遍历所有检测到的HID设备，并将路径信息和子PID补全
+    for device in hidapi.device_list() {
         let vid = format!("{:04x}", device.vendor_id());
         let pid = format!("{:04x}", device.product_id());
 
-        for d in connected_devices.iter_mut() {
+        for d in devices.iter_mut() {
             if d.vendor_id.eq_ignore_ascii_case(&vid) {
+                log::error!("({}/{}) - ({vid},{pid})", d.vendor_id, d.product_id.as_deref().unwrap_or("Unknown"));
                 d.sub_product_id = Some(pid.clone());
                 d.device_path = Some(device.path().to_string_lossy().to_string());
                 if d.device_path.is_none() {
-                    log::error!("手柄信息错误：{d:#?}");
+                    log::warn!("手柄路径缺失：{d:#?}");
                 }
             }
         }
     }
 
-    connected_devices.into_iter().filter(|d| {
-        d.device_path.is_some()
-    }).collect::<Vec<DeviceInfo>>()
+    devices.into_iter().filter(|d| {
+        !((d.vendor_id.eq("0000") || d.vendor_id.is_empty()) && d.product_id.is_none())
+    }).collect()
 }
 
 // ---------------------- 工具函数 ----------------------
@@ -362,22 +361,15 @@ pub fn get_xinput() -> XInputHandle {
         .clone()
 }
 
-/// 内部：获取支持的设备列表
-fn _list_supported_devices() -> Vec<DeviceInfo> {
-    let config = load_or_create_config(SUPPORTED_DEVICES_FILE);
-    list_supported_connected_devices(&config)
-}
-
 /// 内部：查询可用设备
 fn _query_devices() -> Vec<DeviceInfo> {
-    _list_supported_devices()
+    list_controllers_should_manage()
 }
 
 /// 内部：按名称查找设备
 fn _find_device_by_name(name: &str) -> Option<DeviceInfo> {
-    _list_supported_devices()
-        .into_iter()
-        .find(|d| d.name == name)
+    let devices = _query_devices();
+    devices.into_iter().find(|d| d.name == name)
 }
 
 // ---------------------- Tauri 命令接口 ----------------------
