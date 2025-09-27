@@ -1134,6 +1134,19 @@ fn set_primary(
     }
 }
 
+/// 将数字转换为对应的功能键
+fn get_function_key(num: u8) -> enigo::Key {
+    // 利用 Rust 的枚举值在内存中是连续的特性
+    // 通过 unsafe 代码进行指针运算来获取对应的枚举值
+    unsafe {
+        let base_key = enigo::Key::F1;
+        let base_ptr = &base_key as *const enigo::Key as *const u8;
+        let offset_ptr = base_ptr.add((num - 1) as usize);
+        let target_ptr = offset_ptr as *const enigo::Key;
+        *target_ptr
+    }
+}
+
 /// 解析按键组合字符串，生成结构化的 `Action`。
 /// 例如 "Ctrl+Alt+A" 会被解析成一个带有 `[Control, Alt]` 修饰键和 `KeyPress { key: 'A' }` 主操作的 `Action`。
 fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
@@ -1200,6 +1213,19 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                 let key = match key_str {
                     "space" => enigo::Key::Space,
                     "enter" => enigo::Key::Unicode('\r'),
+                    "backspace" => enigo::Key::Backspace,
+                    s if s.starts_with("f") && s[1..].chars().all(|c| c.is_ascii_digit()) => {
+                        // 功能键 F1-F24
+                        let num_str = &s[1..];
+                        if let Ok(num) = num_str.parse::<u8>() {
+                            match num {
+                                1..=24 => get_function_key(num),
+                                _ => return Err(ParseError::UnknownKey(key_str.to_string())),
+                            }
+                        } else {
+                            return Err(ParseError::UnknownKey(key_str.to_string()));
+                        }
+                    }
                     // 匹配单个字符的按键
                     s if s.len() == 1 => enigo::Key::Unicode(s.chars().next().unwrap()),
                     _ => return Err(ParseError::UnknownKey(key_str.to_string())),
