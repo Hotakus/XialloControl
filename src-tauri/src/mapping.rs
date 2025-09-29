@@ -1235,8 +1235,16 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
         }
     }
 
+    // 如果没有主操作但有修饰键，则将最后一个修饰键作为主操作
     if let Some(primary) = primary_action {
         Ok(Action { modifiers, primary })
+    } else if !modifiers.is_empty() {
+        // 将最后一个修饰键作为主操作
+        let primary_key = modifiers.pop().unwrap();
+        Ok(Action {
+            modifiers,
+            primary: PrimaryAction::KeyPress { key: primary_key },
+        })
     } else {
         Err(ParseError::NoPrimaryAction)
     }

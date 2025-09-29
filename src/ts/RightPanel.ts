@@ -250,7 +250,17 @@ function handleKeyDown(e: any) {
 }
 
 function handleKeyUp(e: any) {
-    if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+    // 如果是修饰键，检查是否只有修饰键被按下
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+        const hasModifiers = state.currentKeys.ctrl || state.currentKeys.shift || state.currentKeys.alt || state.currentKeys.meta;
+        const hasMainKey = state.currentKeys.key !== null;
+
+        // 如果只有修饰键而没有主键，则停止检测（完成单独修饰键的映射）
+        if (hasModifiers && !hasMainKey) {
+            stopKeyDetection();
+        }
+    } else {
+        // 如果不是修饰键，正常停止检测
         stopKeyDetection();
     }
 }
