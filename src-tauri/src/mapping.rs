@@ -245,6 +245,12 @@ pub enum PrimaryAction {
     MouseClick { button: enigo::Button },
     /// 滚动鼠标滚轮。
     MouseWheel { amount: i32 },
+    /// 空操作，不执行任何动作。
+    None {
+        /// 标记字段，用于序列化和反序列化
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        none: Option<bool>,
+    },
 }
 
 impl Executable for PrimaryAction {
@@ -264,6 +270,9 @@ impl Executable for PrimaryAction {
                 enigo
                     .scroll(*amount, enigo::Axis::Vertical)
                     .expect("Failed to scroll mouse weight");
+            }
+            PrimaryAction::None { .. } => {
+                // 空操作，不执行任何动作
             }
         }
     }
@@ -286,6 +295,9 @@ impl Executable for PrimaryAction {
                     .scroll(*amount, enigo::Axis::Vertical)
                     .expect("Failed to scroll mouse weight");
             }
+            PrimaryAction::None { .. } => {
+                // 空操作，不执行任何动作
+            }
         }
     }
 
@@ -303,6 +315,9 @@ impl Executable for PrimaryAction {
             }
             PrimaryAction::MouseWheel { amount: _amount } => {
                 // 滚轮没有按下和释放的概念，不做任何操作
+            }
+            PrimaryAction::None { .. } => {
+                // 空操作，不执行任何动作
             }
         }
     }
@@ -1235,15 +1250,14 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
         }
     }
 
-    // 如果没有主操作但有修饰键，则将最后一个修饰键作为主操作
+    // 如果没有主操作但有修饰键，保持修饰键不变，使用空操作作为主操作
     if let Some(primary) = primary_action {
         Ok(Action { modifiers, primary })
     } else if !modifiers.is_empty() {
-        // 将最后一个修饰键作为主操作
-        let primary_key = modifiers.pop().unwrap();
+        // 保持修饰键不变，使用空操作作为主操作
         Ok(Action {
             modifiers,
-            primary: PrimaryAction::KeyPress { key: primary_key },
+            primary: PrimaryAction::None { none: None },
         })
     } else {
         Err(ParseError::NoPrimaryAction)
