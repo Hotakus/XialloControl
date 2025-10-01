@@ -134,6 +134,7 @@
     "MouseX1": "Side Mouse 1",
     "MouseX2": "Side Mouse 2",
     "MouseWheelUp": "Wheel Up",
-    "MouseWheelDown": "Wheel Down"
+    "MouseWheelDown": "Wheel Down",
+    "VirtualKeyboard": "Virtual Keyboard"
   }
 }

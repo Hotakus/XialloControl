@@ -43,7 +43,12 @@ export async function mappingsConfirm() {
     if (state.currentKeys.alt) shortcut_parts.push('Alt');
     if (state.currentKeys.meta) shortcut_parts.push('Meta');
     if (state.currentKeys.key) shortcut_parts.push(state.currentKeys.key);
-    const raw_shortcut_key = shortcut_parts.join('+');
+    let raw_shortcut_key = shortcut_parts.join('+');
+
+    // 如果是虚拟键盘模式，直接设置为VirtualKeyboard
+    if (state.asOpenVirtualKeyboard) {
+        raw_shortcut_key = 'VirtualKeyboard';
+    }
 
     if (!raw_shortcut_key) {
         state.modalErrorMessage = '请设置映射输出动作';
@@ -101,6 +106,9 @@ export async function mappingsConfirm() {
 
 
 export async function detectKey() {
+    if (state.asOpenVirtualKeyboard) {
+        return;
+    };
     if (!state.keyListenerActive) {
         if (state.preventNextClick) {
             state.preventNextClick = false;
@@ -114,4 +122,11 @@ export async function detectKey() {
 export async function closeButtonMapModal() {
     stopKeyDetection(true);
     state.showMappingModal = false;
+}
+
+
+export function asOpenVirtualKeyboard() {
+    if (state.asOpenVirtualKeyboard) {
+
+    }
 }

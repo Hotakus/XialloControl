@@ -58,14 +58,26 @@
                 </div>
               </div>
 
+              <!-- <div class="form-group continually-trigger">
+                <label>打开虚拟键盘: </label>
+                <label class="switch">
+                  <input type="checkbox" @click="updateVirtualKeyboardDisplay()">
+                  <span class="slider round"></span>
+                </label>
+              </div> -->
+
               <div class="form-group key-detector">
                 <label>映射输出动作: </label>
-                <div class="detector-area" :class="{ active: state.keyListenerActive }" id="key-detector-area"
+                <div class="detector-area"
+                  :class="{ active: state.keyListenerActive, disabled: state.asOpenVirtualKeyboard }"
+                  id="key-detector-area"
                   @click="detectKey()">
                   {{ state.keyDetectorText }}
                 </div>
-                <div class="detector-hint">点击上方区域, 然后按下按键或滚动滚轮</div>
-                <div class="key-display" id="key-display">{{ state.keyDisplayText }}</div>
+                <div class="detector-hint" v-if="!state.asOpenVirtualKeyboard">点击上方区域, 然后按下按键或滚动滚轮</div>
+                <div class="key-display" id="key-display">
+                  {{ state.keyDisplayText }}
+                </div>
               </div>
               <div id="modal-error" class="status-message error" v-show="state.modalErrorVisible">
                 {{ state.modalErrorMessage }}
@@ -82,7 +94,8 @@
                 <div class="form-group continually-trigger">
                   <label>映射持续触发: </label>
                   <label class="switch">
-                    <input type="checkbox" :disabled="!textInclude(state.checkMode, ['long'], false)" v-model="state.triggerState.continually_trigger">
+                    <input type="checkbox" :disabled="!textInclude(state.checkMode, ['long'], false)"
+                      v-model="state.triggerState.continually_trigger">
                     <span class="slider round"></span>
                   </label>
                 </div>
@@ -153,10 +166,25 @@
 // 可以写组件逻辑
 import { state } from "@/ts/global_states.ts";
 import { closeButtonMapModal, detectKey, mappingsConfirm } from "@/ts/MappingModal.ts";
+import { updateKeyDisplay } from "@/ts/RightPanel";
+
+
 
 const checkModeOptions = ["single", "double", "long"];
 const trigger_text = ["lt", "rt"];
 const mousewheel = ["mousewheel"];
+
+// 处理虚拟键盘状态变化，更新显示文本
+function updateVirtualKeyboardDisplay() {
+  state.asOpenVirtualKeyboard = !state.asOpenVirtualKeyboard;
+  if (state.asOpenVirtualKeyboard) {
+    state.rawKeyDisplayText = "VirtualKeyboard";
+    updateKeyDisplay();
+  } else {
+    state.keyDisplayText = "";
+    state.rawKeyDisplayText = "";
+  }
+}
 
 function textInclude(text: string, pattens: string[], strictMatch: boolean = false) {
   if (strictMatch) {
@@ -259,5 +287,12 @@ function textInclude(text: string, pattens: string[], strictMatch: boolean = fal
   background-color: #e0e4eb;
   margin-top: 10px;
   margin-bottom: 6px;
+}
+
+.detector-area.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+  pointer-events: none;
 }
 </style>

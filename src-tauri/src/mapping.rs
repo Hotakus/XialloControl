@@ -10,6 +10,8 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::Command;
+use std::sync::Mutex;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, RwLock};
 use std::thread;
@@ -245,6 +247,12 @@ pub enum PrimaryAction {
     MouseClick { button: enigo::Button },
     /// 滚动鼠标滚轮。
     MouseWheel { amount: i32 },
+    /// 打开虚拟键盘。
+    VirtualKeyboard {
+        /// 标记字段，用于序列化和反序列化
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        virtual_keyboard: Option<bool>,
+    },
     /// 空操作，不执行任何动作。
     None {
         /// 标记字段，用于序列化和反序列化
@@ -271,6 +279,10 @@ impl Executable for PrimaryAction {
                     .scroll(*amount, enigo::Axis::Vertical)
                     .expect("Failed to scroll mouse weight");
             }
+            PrimaryAction::VirtualKeyboard { .. } => {
+                // 切换虚拟键盘状态（打开/关闭）
+                toggle_virtual_keyboard();
+            }
             PrimaryAction::None { .. } => {
                 // 空操作，不执行任何动作
             }
@@ -295,6 +307,10 @@ impl Executable for PrimaryAction {
                     .scroll(*amount, enigo::Axis::Vertical)
                     .expect("Failed to scroll mouse weight");
             }
+            PrimaryAction::VirtualKeyboard { .. } => {
+                // 虚拟键盘没有按下和释放的概念，直接执行切换操作
+                toggle_virtual_keyboard();
+            }
             PrimaryAction::None { .. } => {
                 // 空操作，不执行任何动作
             }
@@ -315,6 +331,9 @@ impl Executable for PrimaryAction {
             }
             PrimaryAction::MouseWheel { amount: _amount } => {
                 // 滚轮没有按下和释放的概念，不做任何操作
+            }
+            PrimaryAction::VirtualKeyboard { .. } => {
+                // 虚拟键盘没有按下和释放的概念，不做任何操作
             }
             PrimaryAction::None { .. } => {
                 // 空操作，不执行任何动作
@@ -511,6 +530,10 @@ pub static DYNAMIC_TRIGGER_STATES: Lazy<RwLock<HashMap<u64, TriggerState>>> =
 pub static JOYSTICK_MAPPING_STATES: Lazy<RwLock<HashMap<u64, JoystickMappingState>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
+/// 全局变量来跟踪虚拟键盘进程
+static VIRTUAL_KEYBOARD_PROCESS: Lazy<Mutex<Option<std::process::Child>>> =
+    Lazy::new(|| Mutex::new(None));
+
 /// 动态按键检测状态，存储每个映射的按键检测状态。
 pub static BUTTON_CHECK_STATES: Lazy<RwLock<HashMap<u64, ButtonCheckState>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
@@ -522,6 +545,33 @@ pub static ENIGO_SENDER: Lazy<Sender<EnigoCommand>> = Lazy::new(|| {
     thread::spawn(move || enigo_worker(rx));
     tx
 });
+
+
+pub fn toggle_virtual_keyboard() {
+    let mut lock = VIRTUAL_KEYBOARD_PROCESS.lock().unwrap();
+    if let Some(child) = lock.as_mut() {
+        // 如果进程存在，尝试关闭它
+        if let Err(e) = child.kill() {
+            log::error!("关闭虚拟键盘失败: {e}");
+        } else {
+            log::info!("虚拟键盘已关闭");
+            *lock = None; // 清除进程句柄
+        }
+    } else {
+        // 启动 TabTip.exe 作为虚拟键盘
+        match Command::new("osk.exe")
+            .spawn()
+        {
+            Ok(child) => {
+                log::info!("虚拟键盘已启动");
+                *lock = Some(child); // 保存进程句柄
+            }
+            Err(e) => {
+                log::error!("启动虚拟键盘失败: {e}");
+            }
+        }
+    }
+}
 
 // --- 按键检测核心逻辑 (ﾉ>ω<)ﾉ ---
 
@@ -695,6 +745,9 @@ fn should_reset_state(check_state: &ButtonCheckState, now: Instant, timeout: u64
     }
 }
 
+// --- 虚拟键盘相关函数 (ﾉ>ω<)ﾉ ---
+
+
 // --- 核心逻辑函数 (ﾉ>ω<)ﾉ ---
 
 /// 设置相对 全局配置目录 的映射配置文件路径。
@@ -829,7 +882,8 @@ pub fn update_mapping(config: MappingUpdateConfig) -> bool {
                     // 同步更新 DYNAMIC_TRIGGER_STATES 中的触发状态
                     if let Some(trigger_state) = &config.trigger_state {
                         // 更新 mapping 对象本身的 trigger_state 字段
-                        mapping.trigger_state.continually_trigger = trigger_state.continually_trigger;
+                        mapping.trigger_state.continually_trigger =
+                            trigger_state.continually_trigger;
                         mapping.trigger_state.interval = trigger_state.interval;
                         mapping.trigger_state.initial_interval = trigger_state.initial_interval;
                         mapping.trigger_state.min_interval = trigger_state.min_interval;
@@ -856,13 +910,15 @@ pub fn update_mapping(config: MappingUpdateConfig) -> bool {
                         // 当检测模式或参数发生变化时，重置按键检测状态
                         if let Some(check_state) = button_check_states.get_mut(&id) {
                             // 如果检测模式改变，重置整个状态
-                            if config.check_mode.is_some() && mapping.check_mode != config.check_mode.unwrap_or_default()
+                            if config.check_mode.is_some()
+                                && mapping.check_mode != config.check_mode.unwrap_or_default()
                             {
                                 *check_state = ButtonCheckState::default();
                             }
                             // 如果检测模式参数改变，也重置状态
                             if config.check_mode_param.is_some()
-                                && mapping.check_mode_param != config.check_mode_param.unwrap_or(300)
+                                && mapping.check_mode_param
+                                    != config.check_mode_param.unwrap_or(300)
                             {
                                 *check_state = ButtonCheckState::default();
                             }
@@ -1223,6 +1279,15 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                 set_primary(&mut primary_action, PrimaryAction::MouseWheel { amount: 1 })?
             }
 
+            "virtualkeyboard" => {
+                set_primary(
+                    &mut primary_action,
+                    PrimaryAction::VirtualKeyboard {
+                        virtual_keyboard: Some(true),
+                    },
+                )?;
+            }
+
             // 主操作 - 其他键盘按键
             key_str => {
                 let key = match key_str {
@@ -1393,9 +1458,7 @@ pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
 
             // --- 按键检测逻辑 ---
             let button_is_pressed = controller_datas.get_button(*button);
-            let check_state = button_check_states
-                .entry(mapping.get_id())
-                .or_default();
+            let check_state = button_check_states.entry(mapping.get_id()).or_default();
 
             // 先进行按键检测，根据检测结果决定是否继续执行映射
             let should_trigger_mapping = check_button_press(

@@ -114,6 +114,7 @@ export const state = reactive({
     mapping_amount: 1, // For mouse wheel amount in mapping modal
     checkMode: "single",
     checkModeParam: 300,
+    asOpenVirtualKeyboard: false,
 
     preventNextClick: false,
     currentKeys: {

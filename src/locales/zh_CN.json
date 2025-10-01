@@ -138,6 +138,7 @@
     "MouseX1": "鼠标侧键1",
     "MouseX2": "鼠标侧键2",
     "MouseWheelUp": "滚轮上",
-    "MouseWheelDown": "滚轮下"
+    "MouseWheelDown": "滚轮下",
+    "VirtualKeyboard": "虚拟键盘"
   }
 }

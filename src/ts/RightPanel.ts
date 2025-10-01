@@ -196,8 +196,7 @@ export function formatKeyDisplay(rawKey: string): string {
     }).join(' + ');
 }
 
-// 更新按键显示
-function updateKeyDisplay() {
+function updateKey() {
     const parts: string[] = [];
     if (state.currentKeys.ctrl) parts.push('Control');
     if (state.currentKeys.shift) parts.push('Shift');
@@ -207,6 +206,14 @@ function updateKeyDisplay() {
 
     // 更新原始文本用于逻辑判断
     state.rawKeyDisplayText = parts.join('+');
+}
+
+// 更新按键显示
+export function updateKeyDisplay() {
+
+    if (!state.asOpenVirtualKeyboard) {
+        updateKey();
+    }
 
     // 更新显示文本用于UI
     state.keyDisplayText = formatKeyDisplay(state.rawKeyDisplayText);
