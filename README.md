@@ -68,6 +68,10 @@
   <img src="./imgs/img001.png" alt="XialloControl界面预览" width="800">
 </p>
 
+<p align="center">
+  <img src="./imgs/img002.png" alt="XialloControl界面预览" width="800">
+</p>
+
 ---
 
 ### 手柄和平台支持情况
