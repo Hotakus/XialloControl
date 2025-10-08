@@ -1,7 +1,7 @@
 <h1 align="center">XialloControl</h1>
 
 <p align="center">
-  <strong>通用手柄映射软件（支持各种主流手柄 Xbox、PS、SwitchPro）</strong>
+  <strong>通用手柄映射软件（支持各种主流手柄 Xbox、PS）</strong>
 </p>
 
 <p align="center">
