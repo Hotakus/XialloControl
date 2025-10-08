@@ -67,10 +67,10 @@ onMounted(async () => {
   justify-content: center;
 }
 .new-update-btn:hover {
-  background-color: #d32f2f;
+  background-color: rgb(202, 69, 69);
 }
 .new-update-btn:active {
-  background-color: #c62828; /* A slightly darker red for click feedback */
+  background-color: #c44545; /* A slightly darker red for click feedback */
   transform: none; /* Remove any scaling or movement */
 }
 </style>
