@@ -66,38 +66,23 @@
 
 #### 主界面：
 <p align="center">
-  <img src="./imgs/img001.png" alt="XialloControl界面预览" width="800">
+  <img src="./imgs/img001.png" alt="XialloControl界面预览" width="600">
 </p>
 
 #### 添加映射：
 <p align="center">
-  <img src="./imgs/img002.png" alt="XialloControl界面预览" width="800">
+  <img src="./imgs/img002.png" alt="XialloControl界面预览" width="600">
 </p>
 
 #### 摇杆设置：
 <p align="center">
-  <img src="./imgs/img003.png" alt="XialloControl界面预览" width="800">
+  <img src="./imgs/img003.png" alt="XialloControl界面预览" width="600">
 </p>
 
 #### 软件设置：
 <p align="center">
-  <img src="./imgs/img004.png" alt="XialloControl界面预览" width="800">
+  <img src="./imgs/img004.png" alt="XialloControl界面预览" width="600">
 </p>
-
----
-
-### 手柄和平台支持情况
-#### 平台：
-
-| 平台  |  Windows  |    Linux    |   MacOS   |
-| :---: | :-------: | :---------: | :-------: |
-| 情况  | ✅基本支持 | ⚠️计划支持 | ⚠️需要测试 |
-
-#### 手柄：
-| 手柄  |   Xbox    |    DS4    |    DS5        |   SwitchPro   |
-| :-------: | :-------: | :-------: | :-------: | :-------: |
-| 情况 | ✅基本支持 | ✅基本支持 | ⚠️需要测试  | ⚠️需要测试 |
-
 
 ---
 
