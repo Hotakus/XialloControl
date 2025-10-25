@@ -9,7 +9,7 @@ export async function initApp() {
     await checkBuildEnv();
     await queryGlobalSettings();
     await queryPresetList();
-    // await loadPreset();
+    await loadPreset(state.previousPreset);
     await queryMappings();
     updateStatusMessage("请选择一个设备并点击连接按钮");
 
@@ -26,16 +26,28 @@ export async function queryPresetList() {
     try {
         const presets: string[] = await invoke("check_presets_list");
         state.presets = presets;
-        if (!state.presets.includes(state.previousPreset)) {
-            state.previousPreset = "default";
-        }
+        // if (!state.presets.includes(state.previousPreset)) {
+        //     state.previousPreset = "default";
+        // }
 
-        const preset = await invoke<Preset>("load_preset", { name: state.previousPreset });
-        state.current_preset = preset;
+        // const preset = await invoke<Preset>("load_preset", { name: state.previousPreset });
+        // state.current_preset = preset;
+        // loadPreset(state.previousPreset);
 
-        console.log("预设列表:", preset);
+        console.log("预设列表:", state.presets);
     } catch (error) {
         console.error("加载预设列表失败:", error);
+    }
+}
+
+export async function loadPreset(presetName: string) {
+    try {
+        const preset = await invoke<Preset>("load_preset", { name: presetName });
+        state.current_preset = preset;
+        state.previousPreset = presetName;
+        console.log("已加载预设:", presetName, preset);
+    } catch (error) {
+        console.error("加载预设失败:", error);
     }
 }
 

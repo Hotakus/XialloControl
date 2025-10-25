@@ -1,7 +1,7 @@
 import { Preset, state } from "@/ts/global_states.ts";
 import { invoke } from "@tauri-apps/api/core";
 import { updateStatusMessage } from "@/ts/LeftPanel.ts";
-import { queryMappings, refreshMappings } from "@/App.ts";
+import { queryMappings, queryPresetList, refreshMappings } from "@/App.ts";
 import { nextTick } from "vue";
 import { setLanguage, translate } from "@/ts/i18n.ts";
 import { MappingUpdateConfig } from "@/ts/MappingModal.ts";
@@ -482,6 +482,11 @@ export async function resetSettings() {
 export const openGithubLink = () => {
     invoke("open_url", { url: "https://github.com/Hotakus/XialloControl" });
 };
+
+export const createExamplePresets = () => {
+    invoke("create_example_presets");
+    queryPresetList();
+}
 
 export async function saveDeadzoneSettings() {
     try {
