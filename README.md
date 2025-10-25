@@ -64,12 +64,24 @@
 
 ### 🖼️ 界面预览
 
+#### 主界面：
 <p align="center">
   <img src="./imgs/img001.png" alt="XialloControl界面预览" width="800">
 </p>
 
+#### 添加映射：
 <p align="center">
   <img src="./imgs/img002.png" alt="XialloControl界面预览" width="800">
+</p>
+
+#### 摇杆设置：
+<p align="center">
+  <img src="./imgs/img003.png" alt="XialloControl界面预览" width="800">
+</p>
+
+#### 软件设置：
+<p align="center">
+  <img src="./imgs/img004.png" alt="XialloControl界面预览" width="800">
 </p>
 
 ---
