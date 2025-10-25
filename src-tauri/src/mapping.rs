@@ -422,6 +422,16 @@ pub enum ParseError {
     UnknownKey(String),
 }
 
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseError::NoPrimaryAction => write!(f, "没有找到主操作"),
+            ParseError::MultiplePrimaryActions => write!(f, "找到了多个主操作"),
+            ParseError::UnknownKey(key) => write!(f, "无法识别的按键字符串: {}", key),
+        }
+    }
+}
+
 /// 映射更新配置，用于配置对象模式重构 update_mapping 函数。
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
