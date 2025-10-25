@@ -263,6 +263,10 @@
             <button id="github-btn" class="btn btn-outline btn-settings" @click="openGithubLink()">
               {{ $t('rightPanel.githubProject') }}
             </button>
+
+            <button id="create-example-presets-btn" class="btn btn-outline btn-settings" @click="createExamplePresets()">
+              {{ $t('rightPanel.createExamplePresets') }}
+            </button>
           </div>
 
         </div>
@@ -297,6 +301,7 @@ import {
   updateStickAsMouse,
   updateStickRotationThreshold,
   updateMouseMoveSpeed,
+  createExamplePresets,
 } from "@/ts/RightPanel.ts";
 import { state } from "@/ts/global_states.ts";
 import { onMounted, ref } from "vue";
