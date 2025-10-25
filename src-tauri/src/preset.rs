@@ -1,9 +1,17 @@
 #![allow(dead_code)]
 
+pub mod preset_data;
+pub mod ps4_csp;
+pub mod xbox_csp;
+pub mod ps4_example;
+pub mod xbox_example;
+
 use crate::app_state::AppState;
 use crate::setting::get_setting;
 use crate::xeno_utils::ensure_dir;
 use crate::{mapping, xeno_utils};
+use crate::preset::preset_data::PresetData;
+use crate::mapping::{MappingUpdateConfig, CheckMode, TriggerState, save_mappings_to_file, create_empty_mapping_file, create_mapping_from_config};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -456,6 +464,123 @@ pub fn update_mouse_move_speed(move_speed: u8) -> Result<(), String> {
         Ok(())
     } else {
         Err("Failed to save preset".to_string())
+    }
+}
+
+/// 检查并创建示例预设（如果不存在）
+fn create_example_presets_if_not_exist() {
+    let preset_list = check_presets_list();
+    
+    // 检查 PS4 示例预设
+    if !preset_list.contains(&"PS4 FPS游戏预设".to_string()) {
+        log::info!("创建 PS4 FPS 游戏示例预设");
+        let ps4_preset_data = crate::preset::ps4_example::get_fps_preset_data();
+        match preset_construct(&ps4_preset_data) {
+            Ok(_) => log::info!("PS4 FPS 游戏示例预设创建成功"),
+            Err(e) => log::error!("创建 PS4 FPS 游戏示例预设失败: {}", e),
+        }
+    }
+    
+    // // 检查 Xbox 示例预设
+    // if !preset_list.contains(&"Xbox FPS游戏预设".to_string()) {
+    //     log::info!("创建 Xbox FPS 游戏示例预设");
+    //     let xbox_preset_data = crate::preset::xbox_example::get_fps_preset_data();
+    //     match preset_construct(&xbox_preset_data) {
+    //         Ok(_) => log::info!("Xbox FPS 游戏示例预设创建成功"),
+    //         Err(e) => log::error!("创建 Xbox FPS 游戏示例预设失败: {}", e),
+    //     }
+    // }
+    
+    // 重新加载预设列表以包含新创建的示例预设
+    let updated_list = check_presets_list();
+    load_presets_from_list_to_global(updated_list);
+}
+
+#[tauri::command]
+pub fn create_example_presets() {
+    create_example_presets_if_not_exist();
+}
+
+/// 根据预设数据构造实际的映射文件和预设
+///
+/// # 参数
+/// * `preset_data` - 预设数据
+///
+/// # 返回值
+/// * `Result<Preset, String>` - 成功返回创建的 Preset 对象，失败返回错误信息
+#[tauri::command]
+pub fn preset_construct(preset_data: &PresetData) -> Result<Preset, String> {
+    // 1. 创建新的 Preset 对象
+    let mut preset = Preset::new(preset_data.name.clone());
+
+    // 2. 配置预设参数
+    preset.items.deadzone = preset_data.preset_config.deadzone;
+    preset.items.deadzone_left = preset_data.preset_config.deadzone_left;
+    preset.items.use_stick_as_mouse = preset_data.preset_config.use_stick_as_mouse;
+    preset.items.stick_as_mouse_simulation = preset_data.preset_config.stick_as_mouse_simulation.clone();
+    preset.items.move_speed = preset_data.preset_config.move_speed;
+    preset.items.stick_rotate_trigger_threshold = preset_data.preset_config.stick_rotate_trigger_threshold;
+    preset.items.sub_preset_name = preset_data.preset_config.sub_preset_name.clone();
+    preset.items.sub_preset_switch_button = preset_data.preset_config.sub_preset_switch_button.clone();
+    preset.items.sub_preset_switch_mode = preset_data.preset_config.sub_preset_switch_mode.clone();
+
+    // 3. 保存预设文件
+    if !preset.save() {
+        return Err("保存预设文件失败".to_string());
+    }
+
+    // 4. 设置映射文件路径
+    let mapping_path = std::path::PathBuf::from("presets")
+        .join(&preset.name)
+        .join(&preset.items.mappings_file_name);
+    
+    // 创建空的映射文件
+    if let Err(e) = create_empty_mapping_file(mapping_path.clone()) {
+        return Err(format!("创建映射文件失败: {}", e));
+    }
+
+    // log::error!("---------- {:#?}", preset_data.mappings);
+
+    // 5. 转换并收集映射
+    let mut mappings = Vec::new();
+    for mapping_data in &preset_data.mappings {
+        let config = MappingUpdateConfig::new(0) // ID 会在 create_mapping_from_config 中重新生成
+            .with_composed_button(mapping_data.button.clone())
+            .with_composed_shortcut_key(mapping_data.action.clone())
+            .with_check_mode(parse_check_mode(&mapping_data.check_mode)?)
+            .with_check_mode_param(mapping_data.check_mode_param)
+            .with_trigger_threshold(mapping_data.trigger_threshold)
+            .with_trigger_state(TriggerState::new(
+                mapping_data.initial_interval,
+                mapping_data.min_interval,
+                mapping_data.acceleration,
+            ));
+
+            // log::error!("---------- {:#?}", mapping_data);
+
+        // 使用辅助函数创建映射对象
+        let mapping = create_mapping_from_config(config)?;
+        mappings.push(mapping);
+    }
+
+    // 6. 保存所有映射到文件
+    if let Err(e) = save_mappings_to_file(mappings, mapping_path) {
+        return Err(format!("保存映射文件失败: {}", e));
+    }
+
+    // 7. 保存全局映射状态
+    // mapping::save_mappings();
+
+    // 7. 返回创建的 Preset 对象
+    Ok(preset)
+}
+
+fn parse_check_mode(mode_str: &str) -> Result<CheckMode, String> {
+    match mode_str {
+        "single" => Ok(CheckMode::Single),
+        "double" => Ok(CheckMode::Double),
+        "long" => Ok(CheckMode::Long),
+        _ => Err(format!("未知的检测模式: {}", mode_str)),
     }
 }
 

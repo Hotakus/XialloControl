@@ -300,6 +300,7 @@ pub fn run() {
             preset::update_stick_as_mouse,
             preset::update_stick_rotation_threshold,
             preset::update_mouse_move_speed,
+            preset::create_example_presets,
         ])
         .setup(|app| {
             let app_handle = app.handle();
