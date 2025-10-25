@@ -855,6 +855,114 @@ pub fn set_mapping(mapping: Vec<Mapping>) {
     log::debug!("映射缓存已更新并保存");
 }
 
+/// 将映射配置保存到指定文件路径（不影响全局状态）
+///
+/// # 参数
+/// * `mappings` - 要保存的映射列表
+/// * `file_path` - 目标文件路径
+///
+/// # 返回值
+/// * `Result<(), String>` - 成功返回 Ok(())，失败返回错误信息
+pub fn save_mappings_to_file(mappings: Vec<Mapping>, file_path: PathBuf) -> Result<(), String> {
+    // 确保配置目录存在
+    let config_path = xeno_utils::get_config_path(file_path.to_str().unwrap());
+    xeno_utils::ensure_config_dir();
+
+    let mapping_file = MappingFile {
+        mappings: mappings.to_vec(),
+    };
+
+    match xeno_utils::write_toml_file(&config_path, &mapping_file) {
+        Ok(_) => {
+            log::info!("映射配置已保存到: {config_path:#?}");
+            Ok(())
+        }
+        Err(e) => {
+            log::error!("保存映射配置失败: {e:#?}");
+            Err(format!("保存映射配置失败: {e}"))
+        }
+    }
+}
+
+/// 从 MappingUpdateConfig 创建 Mapping 对象（不添加到全局缓存）
+/// 这个函数复用了 add_mapping 中的映射创建逻辑
+///
+/// # 参数
+/// * `config` - 映射更新配置
+///
+/// # 返回值
+/// * `Result<Mapping, String>` - 成功返回创建的 Mapping 对象，失败返回错误信息
+pub fn create_mapping_from_config(config: MappingUpdateConfig) -> Result<Mapping, String> {
+    // 对于所有映射类型，我们都从 composed_shortcut_key 解析出 Action
+    if let Some(composed_shortcut_key) = &config.composed_shortcut_key {
+        match parse_composed_key_to_action(composed_shortcut_key) {
+            Ok(mut action) => {
+                // 如果是滚轮动作且自定义了 amount, 则覆盖
+                if let (PrimaryAction::MouseWheel { .. }, Some(new_amount)) =
+                    (&mut action.primary, config.amount)
+                {
+                    action.primary = PrimaryAction::MouseWheel { amount: new_amount };
+                }
+
+                let id = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u64;
+
+                let trigger_state = config.trigger_state.unwrap_or_default();
+                let new_mapping = Mapping {
+                    id,
+                    composed_button: config.composed_button.unwrap_or_default(),
+                    composed_shortcut_key: composed_shortcut_key.clone(),
+                    check_mode: config.check_mode.unwrap_or_default(),
+                    check_mode_param: config.check_mode_param.unwrap_or(300),
+                    trigger_theshold: config.trigger_theshold.unwrap_or(0.3),
+                    action,
+                    trigger_state: trigger_state.clone(),
+                };
+
+                Ok(new_mapping)
+            }
+            Err(e) => {
+                log::error!("解析快捷键/动作失败 '{composed_shortcut_key}': {e:?}");
+                Err(format!("解析快捷键/动作失败: {e}"))
+            }
+        }
+    } else {
+        log::error!("创建映射失败，缺少 composed_shortcut_key");
+        Err("创建映射失败，缺少 composed_shortcut_key".to_string())
+    }
+}
+
+/// 创建空的映射文件
+///
+/// # 参数
+/// * `file_path` - 目标文件路径
+///
+/// # 返回值
+/// * `Result<(), String>` - 成功返回 Ok(())，失败返回错误信息
+pub fn create_empty_mapping_file(file_path: PathBuf) -> Result<(), String> {
+    // 确保配置目录存在
+    let config_path = xeno_utils::get_config_path(file_path.to_str().unwrap());
+    xeno_utils::ensure_config_dir();
+
+    // 创建空映射文件
+    let mapping_file = MappingFile {
+        mappings: vec![],
+    };
+
+    match xeno_utils::write_toml_file(&config_path, &mapping_file) {
+        Ok(_) => {
+            log::info!("空映射文件已创建: {config_path:#?}");
+            Ok(())
+        }
+        Err(e) => {
+            log::error!("创建空映射文件失败: {e:#?}");
+            Err(format!("创建空映射文件失败: {e}"))
+        }
+    }
+}
+
 /// Tauri 命令：更新一个已存在的映射配置。
 #[tauri::command]
 pub fn update_mapping(config: MappingUpdateConfig) -> bool {
