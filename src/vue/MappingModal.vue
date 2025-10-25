@@ -101,12 +101,12 @@
                 </div>
                 <div class="form-group" v-if="state.triggerState.continually_trigger">
                   <label for="initial-interval">初始触发间隔 (ms)</label>
-                  <input type="number" id="initial-interval" class="form-control"
+                  <input type="number" id="initial-interval" class="form-control" step="50"
                     v-model.number="state.triggerState.initial_interval">
                 </div>
                 <div class="form-group" v-if="state.triggerState.continually_trigger">
                   <label for="min-interval">最小触发间隔 (ms)</label>
-                  <input type="number" id="min-interval" class="form-control"
+                  <input type="number" id="min-interval" class="form-control" step="50"
                     v-model.number="state.triggerState.min_interval">
                 </div>
                 <div class="form-group" v-if="state.triggerState.continually_trigger">
