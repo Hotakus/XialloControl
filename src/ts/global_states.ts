@@ -44,6 +44,8 @@ export const state = reactive({
 
     titlebar_visible: true,
 
+    selectedMappingId: null as number | null,
+
     statusMessage: '选择设备后点击连接按钮',
     statusMessageIsError: false,
     statusMessageIsSuccess: false,

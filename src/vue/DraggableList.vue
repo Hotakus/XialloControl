@@ -1,7 +1,12 @@
 <template>
-  <VueDraggable ref="el" v-model="state.mappings" :disabled="disabled" :force-fallback="true" :animation="200"
+  <VueDraggable ref="draggableContainer" v-model="state.mappings" :disabled="disabled" :force-fallback="true" :animation="200"
     ghostClass="ghost" class="button-map" @start="onStart" @update="onUpdate" @end="onEnd">
-    <div v-for="mapping in state.mappings" :key="mapping.id" class="button-map-item">
+    <div v-for="mapping in state.mappings" :key="mapping.id"
+    @click="selectMapping(mapping.id)"
+    class="button-map-item"
+    :class="{ selected: state.selectedMappingId === mapping.id }"
+    >
+      <div class="selection-indicator"></div>
       <div class="button-icon">
         <component
           :is="getButtonIcon(mapping.composed_button)"
@@ -48,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   type DraggableEvent,
   SortableEvent,
@@ -64,7 +69,7 @@ import {
 } from "@/ts/RightPanel.ts";
 import { state } from '@/ts/global_states'
 
-const el = ref<UseDraggableReturn>()
+const draggableContainer = ref<UseDraggableReturn>()
 const disabled = ref(false)
 
 const onStart = (e: SortableEvent) => {
@@ -79,6 +84,41 @@ const onUpdate = () => {
   // console.log('update')
   updateMappingsOrder(state.mappings)
 }
+
+const selectMapping = (id: number) => {
+  state.selectedMappingId = id;
+  console.log("Selected mapping ID:", state.selectedMappingId);
+}
+
+// 添加全局点击事件监听器相关逻辑
+const handleClickOutside = (event: MouseEvent) => {
+  // 获取所有列表项元素
+  const items = document.querySelectorAll('.button-map-item');
+  let isInside = false;
+
+  // 检查点击的元素是否在任何一个列表项内
+  items.forEach(item => {
+    if (item.contains(event.target as Node)) {
+      isInside = true;
+    }
+  });
+
+  // 如果点击的元素不在任何列表项内，则取消选择
+  if (!isInside) {
+    state.selectedMappingId = null;
+    console.log("Clicked outside, deselected.");
+  }
+};
+
+onMounted(() => {
+  // 添加全局点击事件监听器
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  // 移除全局点击事件监听器
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -95,5 +135,32 @@ const onUpdate = () => {
 
 .button-else-text {
   color: #808080ff;
+}
+
+.button-map-item {
+  position: relative;
+  padding-left: 10px;
+}
+
+.button-map-item.selected {
+  /* border-bottom: 2px solid rgb(146, 128, 128); */
+  /* box-shadow: 0 0 10px var(--accent-color); */
+}
+
+.selection-indicator {
+  position: absolute;
+  left: 3px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background-color: var(--accent-color, #409eff);
+  border-radius: 2px 2px 2px 2px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.13s ease-in-out;
+}
+
+.button-map-item.selected .selection-indicator {
+  transform: scaleX(1);
 }
 </style>
