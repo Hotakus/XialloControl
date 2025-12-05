@@ -1340,16 +1340,32 @@ fn set_primary(
     }
 }
 
+fn offset_f_key(start: enigo::Key, offset: u8) -> Option<enigo::Key> {
+    let f_keys = [
+        enigo::Key::F1, enigo::Key::F2, enigo::Key::F3, enigo::Key::F4, enigo::Key::F5, enigo::Key::F6,
+        enigo::Key::F7, enigo::Key::F8, enigo::Key::F9, enigo::Key::F10, enigo::Key::F11, enigo::Key::F12,
+        enigo::Key::F13, enigo::Key::F14, enigo::Key::F15, enigo::Key::F16, enigo::Key::F17, enigo::Key::F18,
+        enigo::Key::F19, enigo::Key::F20, enigo::Key::F21, enigo::Key::F22, enigo::Key::F23, enigo::Key::F24,
+    ];
+
+    // 找出 start 在表里的位置
+    let idx = f_keys.iter().position(|&k| k == start)?;
+
+    // 偏移 + 越界检查
+    let new_idx = idx + offset as usize;
+    if new_idx < f_keys.len() {
+        Some(f_keys[new_idx])
+    } else {
+        None
+    }
+}
+
 /// 将数字转换为对应的功能键
 fn get_function_key(num: u8) -> enigo::Key {
-    // 利用 Rust 的枚举值在内存中是连续的特性
-    // 通过 unsafe 代码进行指针运算来获取对应的枚举值
-    unsafe {
-        let base_key = enigo::Key::F1;
-        let base_ptr = &base_key as *const enigo::Key as *const u8;
-        let offset_ptr = base_ptr.add((num - 1) as usize);
-        let target_ptr = offset_ptr as *const enigo::Key;
-        *target_ptr
+    if (1..=24).contains(&num) {
+        offset_f_key(enigo::Key::F1, num - 1).unwrap_or(enigo::Key::F1)
+    } else {
+        enigo::Key::F1 // 默认返回 F1，虽然不应该到这里
     }
 }
 
