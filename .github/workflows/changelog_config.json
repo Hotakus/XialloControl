@@ -61,7 +61,7 @@
     "on_property": "mergedAt"
   },
   "pr_template": "##{{NUMBER}} - #{{TITLE}} by @#{{AUTHOR}}",
-  "template": "## 更新日志: \n #{{CHANGELOG}}\n #{{UNCATEGORIZED}}",
+  "template": "## 更新日志: \n #{{CHANGELOG}}\n",
   "empty_template": "- 暂无改动",
   "trim_values": true,
   "max_tags_to_fetch": 200,
