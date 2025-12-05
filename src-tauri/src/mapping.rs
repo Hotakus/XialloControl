@@ -3,7 +3,7 @@
 // --- 依赖项和常量 ฅ^•ﻌ•^ฅ ---
 use crate::controller::datas::{ControllerButtons, ControllerDatas, JoystickRotation};
 use crate::controller::{CURRENT_DEVICE, ControllerType};
-use crate::preset;
+use crate::{mapping, preset};
 use crate::xeno_utils;
 use enigo::{Enigo, Keyboard, Mouse};
 use once_cell::sync::Lazy;
@@ -158,6 +158,13 @@ pub struct JoystickMappingState {
     accumulated_value: f32,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+pub enum MappingTag {
+    Normal,      // 普通映射
+    Group,       // 组映射
+    Tail,        // 尾部标识
+}
+
 /// 映射配置，将一个手柄按钮组合映射到一个键盘或鼠标操作。
 #[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -186,6 +193,9 @@ pub struct Mapping {
     /// 触发选项，用于控制按键的重复触发行为。
     #[serde(flatten)]
     trigger_state: TriggerState,
+
+    #[serde(default)]
+    mapping_tag: Option<MappingTag>,
 }
 
 impl Mapping {
@@ -200,6 +210,7 @@ impl Mapping {
             trigger_theshold: 0.3,
             action: Action::default(),
             trigger_state: TriggerState::default(),
+            mapping_tag: None,
         }
     }
 
@@ -444,6 +455,7 @@ pub struct MappingUpdateConfig {
     pub amount: Option<i32>,
     pub check_mode: Option<CheckMode>,
     pub check_mode_param: Option<u64>,
+    pub mapping_tag: Option<MappingTag>,
 }
 
 impl MappingUpdateConfig {
@@ -919,6 +931,7 @@ pub fn create_mapping_from_config(config: MappingUpdateConfig) -> Result<Mapping
                     trigger_theshold: config.trigger_theshold.unwrap_or(0.3),
                     action,
                     trigger_state: trigger_state.clone(),
+                    mapping_tag: None,
                 };
 
                 Ok(new_mapping)
@@ -994,6 +1007,9 @@ pub fn update_mapping(config: MappingUpdateConfig) -> bool {
                     }
                     if let Some(param) = config.check_mode_param {
                         mapping.check_mode_param = param;
+                    }
+                    if let Some(tag) = &config.mapping_tag {
+                        mapping.mapping_tag = Some(tag.clone());
                     }
                     mapping.action = action;
 
@@ -1095,6 +1111,7 @@ pub fn add_mapping(config: MappingUpdateConfig) -> bool {
                     trigger_theshold: config.trigger_theshold.unwrap_or(0.3),
                     action,
                     trigger_state: trigger_state.clone(),
+                    mapping_tag: config.mapping_tag.clone(),
                 };
 
                 cache.push(new_mapping);
@@ -1510,18 +1527,53 @@ fn handle_trigger_data(controller_datas: &mut ControllerDatas, mapping: &Mapping
     }
 }
 
+
+// 统计分类mapping，预计在映射更新时被统一调用
+pub fn map_classification(mapping: &Vec<Mapping>) {
+    let max = MappingTag::Tail as u8;
+
+    // for mapping in mapping.iter() {
+    //     if let Some(tag) = mapping.tag {
+    //         tag_counts[tag as usize] += 1;
+    //     }
+    // }
+
+    // log::debug!("Mapping classification: {:?}", tag_counts);
+}
+
+pub fn deal_normal_mapping(controller_datas: &mut ControllerDatas, mapping: &Mapping) {
+    // 处理普通映射的逻辑
+}
+
 /// 核心映射函数，将手柄输入映射到相应的操作。
 /// 遍历所有映射配置，检查手柄状态，并触发相应的操作。
 pub fn map(controller_datas: &mut ControllerDatas, use_sub_preset: bool) {
-    let mappings = if use_sub_preset {
+    let mut mappings = if use_sub_preset {
         SUB_MAPPING_CACHE.read().unwrap().clone()
     } else {
         GLOBAL_MAPPING_CACHE.read().unwrap().clone()
     };
 
+    // mappings.retain_mut(|mapping| {
+    //     let tag = mapping.mapping_tag.as_ref().unwrap_or(&MappingTag::Normal);
+    //     match tag {
+    //         MappingTag::Group => {
+    //             // _map(controller_datas, mappings.clone(), use_sub_preset);
+    //         }
+    //         MappingTag::Normal => {
+    //             // 继续处理正常映射
+    //             deal_normal_mapping(controller_datas, mapping);
+    //         }
+    //         _ => {
+    //         }
+    //     }
+    //     false
+    // });
+
     let layout_map = get_current_controller_layout_map();
     let mut trigger_states = DYNAMIC_TRIGGER_STATES.write().unwrap();
     let mut button_check_states = BUTTON_CHECK_STATES.write().unwrap();
+
 
     for mapping in mappings.iter() {
         let composed_button = mapping.get_composed_button();

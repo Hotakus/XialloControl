@@ -625,6 +625,8 @@ fn poll_controller(device: &DeviceInfo) {
                 #[cfg(target_os = "windows")]
                 {
                     log::warn!("未知控制器，尝试使用 Xbox 轮询方法: {device:#?}");
+                    // xbox::poll_xbox_controller(device)
+                    poll_other_controllers(device);
                     // TODO: 实现未知控制器的轮询逻辑
                 }
                 #[cfg(not(target_os = "windows"))]
