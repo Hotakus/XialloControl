@@ -1429,7 +1429,7 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                     "space" => enigo::Key::Space,
                     "enter" => enigo::Key::Unicode('\r'),
                     "backspace" => enigo::Key::Backspace,
-                    s if s.starts_with("f") && s[1..].chars().all(|c| c.is_ascii_digit()) => {
+                    s if s.starts_with("f") && s.len() > 1 && s[1..].chars().all(|c| c.is_ascii_digit()) => {
                         // 功能键 F1-F24
                         let num_str = &s[1..];
                         if let Ok(num) = num_str.parse::<u8>() {
