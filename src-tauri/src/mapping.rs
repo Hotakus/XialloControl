@@ -1429,6 +1429,16 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                     "space" => enigo::Key::Space,
                     "enter" => enigo::Key::Unicode('\r'),
                     "backspace" => enigo::Key::Backspace,
+                    "tab" => enigo::Key::Tab,
+                    "delete" => enigo::Key::Delete,
+                    "pageup" => enigo::Key::PageUp,
+                    "pagedown" => enigo::Key::PageDown,
+                    "home" => enigo::Key::Home,
+                    "end" => enigo::Key::End,
+                    "capslock" => enigo::Key::CapsLock,
+                    "printscreen" => enigo::Key::PrintScr,
+                    "scrolllock" => enigo::Key::Scroll,
+                    "pause" => enigo::Key::Pause,
                     s if s.starts_with("f") && s.len() > 1 && s[1..].chars().all(|c| c.is_ascii_digit()) => {
                         // 功能键 F1-F24
                         let num_str = &s[1..];
