@@ -1372,6 +1372,40 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
             "shift" => modifiers.push(enigo::Key::Shift),
             "alt" => modifiers.push(enigo::Key::Alt),
             "meta" | "cmd" | "win" => modifiers.push(enigo::Key::Meta),
+            "tab" => modifiers.push(enigo::Key::Tab),
+            "backspace" => modifiers.push(enigo::Key::Backspace),
+            "delete" => modifiers.push(enigo::Key::Delete),
+            "pageup" => modifiers.push(enigo::Key::PageUp),
+            "pagedown" => modifiers.push(enigo::Key::PageDown),
+            "home" => modifiers.push(enigo::Key::Home),
+            "end" => modifiers.push(enigo::Key::End),
+            "capslock" => modifiers.push(enigo::Key::CapsLock),
+            "printscreen" => modifiers.push(enigo::Key::PrintScr),
+            "scrolllock" => modifiers.push(enigo::Key::Scroll),
+            "pause" => modifiers.push(enigo::Key::Pause),
+            "escape" | "esc" => modifiers.push(enigo::Key::Escape),
+            "insert" => modifiers.push(enigo::Key::Insert),
+
+            // s if s.starts_with("f") && s.len() > 1 && s[1..].chars().all(|c| c.is_ascii_digit()) => {
+            //     // 功能键 F1-F24
+            //     let num_str = &s[1..];
+            //     if let Ok(num) = num_str.parse::<u8>() {
+            //         match num {
+            //             1..=24 => get_function_key(num),
+            //             _ => return Err(ParseError::UnknownKey(key_str.to_string())),
+            //         }
+            //     } else {
+            //         return Err(ParseError::UnknownKey(key_str.to_string()));
+            //     }
+            // }
+
+            s if s.starts_with("f") && s.len() > 1 && s[1..].chars().all(|c| c.is_ascii_digit()) => {
+                // 功能键 F1-F24
+                let num_str = &s[1..];
+                if let Ok(num) = num_str.parse::<u8>() {
+                    modifiers.push(get_function_key(num));
+                }
+            }
 
             // 主操作 - 鼠标按钮
             "mouseleft" => set_primary(
@@ -1428,29 +1462,6 @@ fn parse_composed_key_to_action(composed: &str) -> Result<Action, ParseError> {
                 let key = match key_str {
                     "space" => enigo::Key::Space,
                     "enter" => enigo::Key::Unicode('\r'),
-                    "backspace" => enigo::Key::Backspace,
-                    "tab" => enigo::Key::Tab,
-                    "delete" => enigo::Key::Delete,
-                    "pageup" => enigo::Key::PageUp,
-                    "pagedown" => enigo::Key::PageDown,
-                    "home" => enigo::Key::Home,
-                    "end" => enigo::Key::End,
-                    "capslock" => enigo::Key::CapsLock,
-                    "printscreen" => enigo::Key::PrintScr,
-                    "scrolllock" => enigo::Key::Scroll,
-                    "pause" => enigo::Key::Pause,
-                    s if s.starts_with("f") && s.len() > 1 && s[1..].chars().all(|c| c.is_ascii_digit()) => {
-                        // 功能键 F1-F24
-                        let num_str = &s[1..];
-                        if let Ok(num) = num_str.parse::<u8>() {
-                            match num {
-                                1..=24 => get_function_key(num),
-                                _ => return Err(ParseError::UnknownKey(key_str.to_string())),
-                            }
-                        } else {
-                            return Err(ParseError::UnknownKey(key_str.to_string()));
-                        }
-                    }
                     // 匹配单个字符的按键
                     s if s.len() == 1 => enigo::Key::Unicode(s.chars().next().unwrap()),
                     _ => return Err(ParseError::UnknownKey(key_str.to_string())),
