@@ -38,7 +38,7 @@ jobs:
           failOnError: true
           owner: 'Hotakus'
           repo: 'XialloControl'
-          mode: 'PR'
+          mode: 'HYBRID'
       - name: Print Changelog
         run: |
           echo "Changelog: ${{ steps.changelog_builder.outputs.changelog }}"
