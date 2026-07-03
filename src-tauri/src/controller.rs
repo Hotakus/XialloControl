@@ -10,7 +10,7 @@ pub mod ps4;
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{CompactPressureDatas, ControllerButtons, ControllerDatas};
 use crate::{controller, mapping, preset, xeno_utils};
-use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
+use gilrs::{Axis, Event, EventType, Gamepad, Gilrs, GilrsBuilder};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -206,7 +206,21 @@ pub fn detect_controller_type(vid: &str) -> ControllerType {
         "045e" => ControllerType::Xbox,        // Microsoft
         "054c" => ControllerType::PlayStation, // Sony
         "057e" => ControllerType::Switch,      // Nintendo
-        "20bc" => ControllerType::Betop,       // BETOP
+        "20bc" | "11c0" | "8380" => ControllerType::Betop, // BETOP（多 VID）
+        // 以下厂商手柄多数遵循 Xbox 布局（XInput 兼容），归入 Xbox 类型复用其 layout
+        // VID 来源：Linux kernel hid-ids.h + mdqinc/SDL_GameControllerDB
+        "1532"   // Razer
+        | "2dc8"  // 8BitDo
+        | "046d"  // Logitech
+        | "0f0d"  // HORI
+        | "044f"  // Thrustmaster
+        | "0738"  // Mad Catz
+        | "28de"  // Valve Steam Controller
+        | "04b4"  // Flydigi（Cypress Semiconductor 子授权芯片）
+        | "2f24"  // GameSir（ShenZhen HuiJiaZhi 代工）
+        | "146b"  // Nacon（Bigben Interactive / NACON SA）
+        | "0079"  // Mayflash（Shenzhen Longshengwei，同 DragonRise）
+        => ControllerType::Xbox,
         _ => ControllerType::Other,
     }
 }
@@ -273,8 +287,11 @@ pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
 
 // ---------------------- 设备检测 ----------------------
 fn list_controllers_from_gilrs() -> Vec<DeviceInfo> {
-    let gilrs_guard = GLOBAL_GILRS.lock().unwrap();
-    let gilrs = gilrs_guard.as_ref().unwrap();
+    let gilrs_guard = GLOBAL_GILRS.lock().unwrap_or_else(|e| e.into_inner());
+    let gilrs = match gilrs_guard.as_ref() {
+        Some(g) => g,
+        None => return Vec::new(),
+    };
 
     let mut devices = Vec::new();
     for (_id, gamepad) in gilrs.gamepads() {
@@ -295,6 +312,14 @@ fn list_controllers_from_gilrs() -> Vec<DeviceInfo> {
                 device_path: None,
                 controller_type: detect_controller_type(&vid_str),
             };
+            log::info!(
+                "检测到设备: {} (vid:{}, pid:{}, uuid_invalid:{}) 映射源: {:?}",
+                device_info.name,
+                device_info.vendor_id,
+                device_info.product_id.as_deref().unwrap_or("unknown"),
+                device_info.uuid_is_invalid,
+                gamepad.mapping_source()
+            );
             devices.push(device_info);
         }
     }
@@ -599,16 +624,11 @@ fn poll_other_controllers(device: &DeviceInfo) {
 /// 根据控制器类型分发轮询任务
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
-        // Xbox控制器特殊处理
+        // Xbox 控制器在 Windows 下优先走 XInput API（性能更好，不依赖 gilrs 事件队列）
         ControllerType::Xbox => {
             #[cfg(target_os = "windows")]
             {
-                // windows下，若 UUID 非法，则特殊处理轮询
-                if device.uuid_is_invalid {
-                    xbox::poll_xbox_controller(device)
-                } else {
-                    poll_other_controllers(device)
-                }
+                xbox::poll_xbox_controller(device)
             }
             #[cfg(not(target_os = "windows"))]
             {
@@ -620,24 +640,8 @@ fn poll_controller(device: &DeviceInfo) {
             poll_other_controllers(device);
         }
         _ => {
-            if device.uuid_is_invalid {
-                // TODO：未知控制器处理方法，windows 下拟调用xbox方法，其他平台报错
-                #[cfg(target_os = "windows")]
-                {
-                    log::warn!("未知控制器，尝试使用 Xbox 轮询方法");
-                    // log::warn!("未知控制器，尝试使用 Xbox 轮询方法: {device:#?}");
-                    // xbox::poll_xbox_controller(device)
-                    poll_other_controllers(device);
-                    // TODO: 实现未知控制器的轮询逻辑
-                }
-                #[cfg(not(target_os = "windows"))]
-                {
-                    log::error!("不受支持的控制器：{device:#?}");
-                    disconnect_device();
-                }
-            } else {
-                poll_other_controllers(device)
-            }
+            // 非标准控制器统一走 gilrs（依赖 SDL DB 映射，gilrs-core UUID 修复后生效）
+            poll_other_controllers(device)
         }
     }
 }
@@ -783,7 +787,10 @@ pub fn listen() {
 /// 初始化 Gilrs 事件监听线程
 pub fn gilrs_listen() {
     thread::spawn(move || {
-        let gilrs = Gilrs::new().expect("Failed to init Gilrs");
+        let gilrs = GilrsBuilder::new()
+        .add_mappings(include_str!("gamecontrollerdb_ext.txt"))
+        .build()
+        .expect("Failed to init Gilrs");
         {
             *GLOBAL_GILRS.lock().unwrap() = Some(gilrs);
         }
