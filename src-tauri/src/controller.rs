@@ -287,8 +287,20 @@ pub fn load_or_create_config(path: &str) -> Vec<DeviceInfo> {
 
 // ---------------------- 设备检测 ----------------------
 fn list_controllers_from_gilrs() -> Vec<DeviceInfo> {
-    let gilrs_guard = GLOBAL_GILRS.lock().unwrap();
-    let gilrs = gilrs_guard.as_ref().unwrap();
+    eprintln!("[DBG 1] list_controllers_from_gilrs 进入，准备 lock GLOBAL_GILRS");
+    let gilrs_guard = GLOBAL_GILRS.lock().unwrap_or_else(|e| {
+        eprintln!("[DBG 1.5] GLOBAL_GILRS 已被毒化: {:?}", e);
+        e.into_inner()
+    });
+    eprintln!("[DBG 2] lock 成功，准备 as_ref");
+    let gilrs = match gilrs_guard.as_ref() {
+        Some(g) => g,
+        None => {
+            eprintln!("[DBG 2.5] GLOBAL_GILRS 内部是 None（gilrs_listen 线程尚未完成初始化）");
+            return Vec::new();
+        }
+    };
+    eprintln!("[DBG 3] gilrs 实例存在，开始遍历 gamepads");
 
     let mut devices = Vec::new();
     for (_id, gamepad) in gilrs.gamepads() {
@@ -784,13 +796,16 @@ pub fn listen() {
 /// 初始化 Gilrs 事件监听线程
 pub fn gilrs_listen() {
     thread::spawn(move || {
+        eprintln!("[DBG A] gilrs_listen 线程启动，准备构建 GilrsBuilder");
         let gilrs = GilrsBuilder::new()
         .add_mappings(include_str!("gamecontrollerdb_ext.txt"))
         .build()
         .expect("Failed to init Gilrs");
+        eprintln!("[DBG B] GilrsBuilder::build() 完成，准备写入 GLOBAL_GILRS");
         {
             *GLOBAL_GILRS.lock().unwrap() = Some(gilrs);
         }
+        eprintln!("[DBG C] GLOBAL_GILRS 已写入，进入事件循环");
 
         loop {
             if let Some(gilrs) = GLOBAL_GILRS.lock().unwrap_or_else(|poisoned| {
