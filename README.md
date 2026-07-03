@@ -86,6 +86,44 @@
 
 ---
 
+### 🛠️ 开发与运行
+
+#### 前置环境
+
+| 依赖 | 说明 |
+|------|------|
+| Rust 工具链 | stable 通道，edition 2024 |
+| Node.js + pnpm | 包管理器固定为 pnpm（见 `pnpm-lock.yaml`） |
+| WebView2 Runtime | Windows 平台运行依赖 |
+| MSVC 构建工具 | Rust MSVC target 链接所需 |
+| Git 子模块 | `src-tauri/third-party/gilrs` 通过 `.gitmodules` 引入 |
+
+#### 命令
+
+```powershell
+# 克隆时一并拉取 gilrs 子模块
+git clone --recurse-submodules <repo>
+
+# 已克隆则补拉一次子模块
+git submodule update --init --recursive
+
+# 安装前端依赖（必须使用 pnpm，禁止 npm/yarn）
+pnpm install
+
+# 启动开发环境（自动启动 Vite 于 1420 端口 + Tauri 窗口）
+pnpm tauri dev
+
+# 类型检查 + 前端生产构建（产物输出到 dist/）
+pnpm build
+
+# 打包发行版（生成 NSIS / WiX 安装器到 src-tauri/target/release/bundle/）
+pnpm tauri build
+```
+
+> `tauri.conf.json5` 中 `app.windows` 为空数组，主窗口在 `src-tauri/src/lib.rs` 的 `setup` 钩子里动态创建。Vite 端口固定为 1420，`strictPort: true`，端口被占用会直接报错而非自动切换。
+
+---
+
 ### 📜 许可证
 
 本项目的代码部分遵循 [GNU General Public License v3.0](LICENSE.txt) 许可证开源。
