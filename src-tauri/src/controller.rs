@@ -295,6 +295,14 @@ fn list_controllers_from_gilrs() -> Vec<DeviceInfo> {
                 device_path: None,
                 controller_type: detect_controller_type(&vid_str),
             };
+            log::info!(
+                "检测到设备: {} (vid:{}, pid:{}, uuid_invalid:{}) 映射源: {:?}",
+                device_info.name,
+                device_info.vendor_id,
+                device_info.product_id.as_deref().unwrap_or("unknown"),
+                device_info.uuid_is_invalid,
+                gamepad.mapping_source()
+            );
             devices.push(device_info);
         }
     }
