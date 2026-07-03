@@ -621,16 +621,11 @@ fn poll_other_controllers(device: &DeviceInfo) {
 /// 根据控制器类型分发轮询任务
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
-        // Xbox控制器特殊处理
+        // Xbox 控制器在 Windows 下优先走 XInput API（性能更好，不依赖 gilrs 事件队列）
         ControllerType::Xbox => {
             #[cfg(target_os = "windows")]
             {
-                // windows下，若 UUID 非法，则特殊处理轮询
-                if device.uuid_is_invalid {
-                    xbox::poll_xbox_controller(device)
-                } else {
-                    poll_other_controllers(device)
-                }
+                xbox::poll_xbox_controller(device)
             }
             #[cfg(not(target_os = "windows"))]
             {
@@ -642,24 +637,8 @@ fn poll_controller(device: &DeviceInfo) {
             poll_other_controllers(device);
         }
         _ => {
-            if device.uuid_is_invalid {
-                // TODO：未知控制器处理方法，windows 下拟调用xbox方法，其他平台报错
-                #[cfg(target_os = "windows")]
-                {
-                    log::warn!("未知控制器，尝试使用 Xbox 轮询方法");
-                    // log::warn!("未知控制器，尝试使用 Xbox 轮询方法: {device:#?}");
-                    // xbox::poll_xbox_controller(device)
-                    poll_other_controllers(device);
-                    // TODO: 实现未知控制器的轮询逻辑
-                }
-                #[cfg(not(target_os = "windows"))]
-                {
-                    log::error!("不受支持的控制器：{device:#?}");
-                    disconnect_device();
-                }
-            } else {
-                poll_other_controllers(device)
-            }
+            // 非标准控制器统一走 gilrs（依赖 SDL DB 映射，gilrs-core UUID 修复后生效）
+            poll_other_controllers(device)
         }
     }
 }
