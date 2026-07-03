@@ -37,3 +37,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OpenCode local data
+.omo/
