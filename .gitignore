@@ -40,3 +40,8 @@ dist-ssr
 
 # OpenCode local data
 .omo/
+
+# Local design/plan docs (not for remote)
+*_design.md
+*_plan.md
+project_analysis_for_ai.md
