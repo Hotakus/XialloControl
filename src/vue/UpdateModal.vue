@@ -30,8 +30,8 @@ import { computed } from 'vue';
 import { marked } from 'marked';
 
 const startUpdate = async () => {
-    await performUpdate();
     closeUpdateModal();
+    await performUpdate();
 };
 
 const renderedBody = computed(() => {
