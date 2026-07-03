@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="10024"
+   height="1024"
+   viewBox="0 0 2652.1833 270.93333"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
+   sodipodi:docname="logo_assets.svg"
+   inkscape:export-filename="C:\Users\Hotakus\Desktop\tmp1.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showguides="true"
+     inkscape:zoom="0.25669573"
+     inkscape:cx="7023.8799"
+     inkscape:cy="44.800121"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g11">
+    <sodipodi:guide
+       position="135.46667,135.46667"
+       orientation="1,0"
+       id="guide1"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="135.46667,135.46667"
+       orientation="0,-1"
+       id="guide2"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="207.17621,163.73768"
+       orientation="0,-1"
+       id="guide3"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="203.69751,163.73768"
+       orientation="1,0"
+       id="guide4"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <rect
+       x="2997.7125"
+       y="583.37549"
+       width="115.20356"
+       height="124.14228"
+       id="rect4" />
+  </defs>
+  <g
+     inkscape:label="图层 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g2"
+       inkscape:label="xbox"
+       style="display:inline"
+       transform="translate(45.899239,-4.3647198)"
+       inkscape:export-filename="C:\Users\Hotakus\Desktop\tmp2.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
+      <path
+         style="mix-blend-mode:darken;fill:none;fill-opacity:1;stroke:#808080;stroke-width:2.065;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         d="m 41.344267,68.092397 c 0,0 -7.10614,3.82638 -11.11473,15.66994 -4.00859,11.843555 -20.5895704,56.849073 -23.1404904,72.154593 -2.55092,15.30552 -7.65276004,43.00122 -1.63988,57.3957 6.0128904,14.39448 20.7717804,20.04295 20.7717804,20.04295 0,0 2.73313,1.63987 8.74601,-3.27976 6.01289,-4.91963 31.15767,-35.89509 31.15767,-35.89509 0,0 9.47485,-12.39018 21.31841,-12.39018 11.84356,0 90.375453,0 90.375453,0 0,0 10.38589,-0.91105 17.49202,4.19079 7.10614,5.10184 37.35276,41.90798 37.35276,41.90798 l 3.82638,3.82638 c 0,0 2.73313,6.01288 14.94111,-2.55092 12.20797,-8.5638 13.80435,-18.86381 13.80435,-18.86381 0,0 4.89595,-9.79191 0.51538,-37.62155 -4.38061,-27.82964 -25.25284,-95.471113 -32.72561,-101.011273 -7.47277,-5.54016 -13.57173,-9.95305 -27.60179,-13.41501 -14.03006,-3.46197 -19.31411,-3.18865 -19.31411,-3.18865 0,0 -4.1908,0 -6.74172,1.09325 -2.55092,1.09325 -89.033693,0 -89.033693,0 0,0 -1.61052,-1.62544 -10.24286,-0.78797 -8.63234,0.83746 -27.88913,4.44419 -38.74644,12.72263 z"
+         id="path18"
+         inkscape:label="xbox_base_frame" />
+      <circle
+         style="fill:none;stroke:#808080;stroke-width:3.25062;stroke-linecap:round;stroke-linejoin:round"
+         id="path2"
+         cx="203.69751"
+         cy="107.19565"
+         r="18.427778" />
+      <g
+         id="Dpad"
+         inkscape:label="Dpad"
+         style="fill:none;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+         transform="matrix(0.95513358,0,0,0.95513358,16.728856,17.73082)">
+        <path
+           d="m 51.195325,73.143856 c -0.937888,0 -1.693437,0.755032 -1.693437,1.69292 v 9.030456 c 0,0.562551 0.273692,1.056743 0.693498,1.364258 l 5.597074,5.597074 5.575887,-5.598107 c 0.417068,-0.30778 0.68678,-0.802827 0.68678,-1.363225 v -9.030456 c 0,-0.937888 -0.755032,-1.69292 -1.69292,-1.69292 z"
+           style="opacity:1;fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-up" />
+        <path
+           d="m 76.260094,89.070216 c 0,-0.937888 -0.755032,-1.693437 -1.69292,-1.693437 h -9.030456 c -0.562551,0 -1.056743,0.273692 -1.364258,0.693498 l -5.597074,5.597074 5.598107,5.575887 c 0.30778,0.417068 0.802827,0.68678 1.363225,0.68678 h 9.030456 c 0.937888,0 1.69292,-0.755032 1.69292,-1.69292 z"
+           style="fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-right" />
+        <path
+           d="m 60.375746,114.03279 c 0.937888,0 1.693437,-0.75504 1.693437,-1.69292 v -9.03046 c 0,-0.56255 -0.273692,-1.05674 -0.693498,-1.36425 l -5.597078,-5.597081 -5.57588,5.598111 c -0.41707,0.30778 -0.68678,0.80283 -0.68678,1.36322 v 9.03046 c 0,0.93788 0.75503,1.69292 1.69292,1.69292 z"
+           style="fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-down" />
+        <path
+           d="m 35.165232,98.264486 c 0,0.937888 0.755032,1.693437 1.69292,1.693437 h 9.030456 c 0.562551,0 1.056743,-0.273692 1.364258,-0.693498 l 5.597078,-5.597074 -5.598111,-5.575887 c -0.30778,-0.417068 -0.802827,-0.68678 -1.363225,-0.68678 h -9.030456 c -0.937888,0 -1.69292,0.755032 -1.69292,1.69292 z"
+           style="fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-left" />
+      </g>
+    </g>
+    <g
+       id="g4"
+       transform="translate(377.24625)"
+       inkscape:export-filename="C:\Users\Hotakus\Desktop\tmp1.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96">
+      <g
+         id="Dpad-9"
+         inkscape:label="Dpad"
+         style="display:inline;fill:none;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+         transform="matrix(0.95513358,0,0,0.95513358,16.728856,17.73082)">
+        <path
+           d="m 51.195325,73.143856 c -0.937888,0 -1.693437,0.755032 -1.693437,1.69292 v 9.030456 c 0,0.562551 0.273692,1.056743 0.693498,1.364258 l 5.597074,5.597074 5.575887,-5.598107 c 0.417068,-0.30778 0.68678,-0.802827 0.68678,-1.363225 v -9.030456 c 0,-0.937888 -0.755032,-1.69292 -1.69292,-1.69292 z"
+           style="opacity:1;fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-up-8" />
+        <path
+           d="m 76.260094,89.070216 c 0,-0.937888 -0.755032,-1.693437 -1.69292,-1.693437 h -9.030456 c -0.562551,0 -1.056743,0.273692 -1.364258,0.693498 l -5.597074,5.597074 5.598107,5.575887 c 0.30778,0.417068 0.802827,0.68678 1.363225,0.68678 h 9.030456 c 0.937888,0 1.69292,-0.755032 1.69292,-1.69292 z"
+           style="fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-right-1" />
+        <path
+           d="m 60.375746,114.03279 c 0.937888,0 1.693437,-0.75504 1.693437,-1.69292 v -9.03046 c 0,-0.56255 -0.273692,-1.05674 -0.693498,-1.36425 l -5.597078,-5.597081 -5.57588,5.598111 c -0.41707,0.30778 -0.68678,0.80283 -0.68678,1.36322 v 9.03046 c 0,0.93788 0.75503,1.69292 1.69292,1.69292 z"
+           style="fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-down-8" />
+        <path
+           d="m 35.165232,98.264486 c 0,0.937888 0.755032,1.693437 1.69292,1.693437 h 9.030456 c 0.562551,0 1.056743,-0.273692 1.364258,-0.693498 l 5.597078,-5.597074 -5.598111,-5.575887 c -0.30778,-0.417068 -0.802827,-0.68678 -1.363225,-0.68678 h -9.030456 c -0.937888,0 -1.69292,0.755032 -1.69292,1.69292 z"
+           style="fill:none;fill-opacity:0.502591;stroke:#808080;stroke-width:2.98911;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-dpad-left-2" />
+      </g>
+      <path
+         style="fill:none;stroke:#808080;stroke-width:2;stroke-dasharray:none;stroke-opacity:1"
+         d="m 41.219272,63.706854 c 0,0 -7.15168,6.878373 -12.98236,19.086348 -5.83067,12.207976 -10.20368,29.517798 -10.20368,29.517798 0,0 -7.28834,25.69141 -10.2036803,51.20061 -2.91534,25.5092 -0.72884,34.07301 4.0085903,46.09877 4.73742,12.02577 27.14908,16.76319 36.44171,6.3773 9.29264,-10.38589 8.56381,-11.29693 8.56381,-11.29693 0,0 5.28405,-9.65706 6.92392,-14.75889 1.63988,-5.10184 9.65706,-28.06013 9.65706,-28.06013 l 2.0043,-2.73313 2.1865,-0.72883 1.63988,0.18221 1.09325,1.27546 c 0,0 3.27975,4.00859 13.66564,4.73742 10.385888,0.72883 17.127608,-6.74172 17.127608,-6.74172 h 48.46748 c 0,0 5.10184,6.3773 15.48773,6.74172 10.38589,0.36442 16.76319,-6.01288 16.76319,-6.01288 0,0 4.55522,-0.18221 6.19509,5.10184 1.63988,5.28405 10.27505,31.95499 17.74782,43.9372 7.47278,11.98221 17.90889,13.14178 17.90889,13.14178 0,0 10.0496,2.31913 18.81078,-4.3806 8.76118,-6.69973 13.52828,-17.90889 11.46684,-44.06359 -2.06146,-26.15471 -14.00488,-69.67467 -14.00488,-69.67467 0,0 -3.82638,-13.301228 -7.65276,-21.500615 -3.82638,-8.199384 -11.11472,-16.489876 -11.11472,-16.489876 l -1.82209,-1.457668 c 0,0 -6.3773,-3.006442 -17.85644,-3.370861 -11.47914,-0.364416 -17.49202,2.915338 -17.49202,2.915338 H 76.886612 c 0,0 -10.02148,-2.368711 -17.49203,-2.550919 -7.47055,-0.182208 -12.89126,1.138803 -18.17531,3.507515 z"
+         id="svg-gamepad_base_frame"
+         sodipodi:nodetypes="cscssscscccccsccscsscsscsccsccsc" />
+      <circle
+         style="display:inline;fill:none;stroke:#808080;stroke-width:3.25062;stroke-linecap:round;stroke-linejoin:round"
+         id="path2-8"
+         cx="175.4024"
+         cy="135.46666"
+         r="18.427778" />
+    </g>
+    <g
+       id="g11"
+       inkscape:label="Btn"
+       transform="matrix(4.5562707,0,0,4.5562707,-151.45123,-291.30714)">
+      <circle
+         style="display:none;fill:none;stroke:#808080;stroke-width:1;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+         id="svg-gamepad-btn-frame"
+         cx="214.26247"
+         cy="93.667351"
+         r="27.6"
+         inkscape:label="svg-gamepad-btn-frame" />
+      <g
+         id="svg-gamepad-btn-west"
+         style="display:inline;stroke:#808080;stroke-opacity:1"
+         transform="matrix(5.9660731,0,0,5.9660731,-753.58471,-465.15891)"
+         inkscape:export-filename="C:\Users\Hotakus\Desktop\rect.png"
+         inkscape:export-xdpi="96"
+         inkscape:export-ydpi="96">
+        <circle
+           style="display:none;opacity:1;fill:#ff697b;fill-opacity:0.5;stroke:#808080;stroke-width:1.4;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-btn-west-frame"
+           cx="196.60307"
+           cy="93.667351"
+           r="8.5" />
+        <rect
+           style="display:inline;opacity:1;fill:none;fill-opacity:0.504202;stroke:#ff697b;stroke-width:1.383;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect4-5"
+           width="8.5839996"
+           height="8.5839996"
+           x="192.31107"
+           y="89.375351"
+           rx="0.11622287" />
+      </g>
+      <g
+         id="svg-gamepad-btn-south"
+         style="display:inline;stroke:#808080;stroke-opacity:1"
+         transform="matrix(6.0525352,0,0,6.0525352,-714.84062,-566.4113)"
+         inkscape:export-filename="C:\Users\Hotakus\Desktop\cross.png"
+         inkscape:export-xdpi="96"
+         inkscape:export-ydpi="96">
+        <circle
+           style="display:none;opacity:1;fill:#1896f9;fill-opacity:0.5;stroke:#808080;stroke-width:1.4;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-btn-south-frame"
+           cx="200.07083"
+           cy="108.94678"
+           r="8.5" />
+        <path
+           style="fill:#000000;fill-opacity:1;stroke:#1896f9;stroke-width:1.463;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           d="m 195.85798,104.66315 8.79011,8.79012"
+           id="path7" />
+        <path
+           style="display:inline;fill:#000000;fill-opacity:1;stroke:#1896f9;stroke-width:1.463;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           d="m 204.64809,104.66315 -8.79011,8.79012"
+           id="path7-5" />
+      </g>
+      <g
+         id="svg-gamepad-btn-north"
+         transform="matrix(6.2160665,0,0,6.3285158,-882.82057,-490.91534)"
+         style="display:inline;stroke:#808080;stroke-opacity:1"
+         inkscape:export-filename="C:\Users\Hotakus\Desktop\triangle.png"
+         inkscape:export-xdpi="96"
+         inkscape:export-ydpi="96">
+        <circle
+           style="display:none;opacity:1;fill:#00c4d7;fill-opacity:0.5;stroke:#808080;stroke-width:1.4;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-btn-north-frame"
+           cx="196.60307"
+           cy="93.667351"
+           r="8.5" />
+        <path
+           sodipodi:type="star"
+           style="opacity:1;fill:none;fill-opacity:0.504425;stroke:#00c4d7;stroke-width:4.16045;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="path3"
+           inkscape:flatsided="false"
+           sodipodi:sides="3"
+           sodipodi:cx="146.31351"
+           sodipodi:cy="24.051535"
+           sodipodi:r1="19.763544"
+           sodipodi:r2="9.881772"
+           sodipodi:arg1="0.96233622"
+           sodipodi:arg2="2.0095338"
+           inkscape:rounded="0"
+           inkscape:randomized="0"
+           d="M 157.61044,40.2681 142.11576,32.997391 126.62108,25.726683 140.66504,15.943252 154.709,6.1598212 156.15972,23.213961 Z"
+           inkscape:transform-center-x="-0.94932358"
+           inkscape:transform-center-y="-2.0701863"
+           transform="matrix(0.25159324,-0.11468045,0.11468045,0.25159324,156.97292,104.49311)" />
+      </g>
+      <g
+         id="svg-gamepad-btn-east"
+         transform="translate(26.444847,-8.467351)"
+         style="display:inline;stroke:#808080;stroke-opacity:1">
+        <circle
+           style="display:none;opacity:1;fill:#ff4800;fill-opacity:0.504202;stroke:#808080;stroke-width:1.4;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+           id="svg-gamepad-btn-east-frame"
+           cx="205.47762"
+           cy="102.1347"
+           r="8.5" />
+        <circle
+           style="opacity:1;fill:none;fill-opacity:0.5;stroke:#ff2a00;stroke-width:7.55721;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:0.495798"
+           id="path4"
+           cx="241.93701"
+           cy="102.08472"
+           r="26.003286"
+           inkscape:export-filename="C:\Users\Hotakus\Desktop\circle.png"
+           inkscape:export-xdpi="96"
+           inkscape:export-ydpi="96" />
+      </g>
+    </g>
+  </g>
+</svg>

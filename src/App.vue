@@ -4,6 +4,14 @@
     <div class="window-body">
       <LeftPanel />
       <RightPanel />
+      <!-- <SplitPane>
+        <template #left>
+          <LeftPanel />
+        </template>
+        <template #right>
+          <RightPanel />
+        </template>
+      </SplitPane> -->
     </div>
     <!--    <WindowFooter/>-->
     <MappingModal />
@@ -18,6 +26,7 @@ import UpdateModal from './vue/UpdateModal.vue'
 import WindowHeader from './vue/WindowHeader.vue'
 import LeftPanel from './vue/LeftPanel.vue'
 import RightPanel from './vue/RightPanel.vue'
+import SplitPane from './vue/SplitPane.vue'
 import WindowFooter from './vue/WindowFooter.vue'
 import MappingModal from './vue/MappingModal.vue'
 import JoystickCaliModal from './vue/JoystickCaliModal.vue'
