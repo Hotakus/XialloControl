@@ -10,7 +10,7 @@ pub mod ps4;
 use crate::adaptive_sampler::AdaptiveSampler;
 use crate::controller::datas::{CompactPressureDatas, ControllerButtons, ControllerDatas};
 use crate::{controller, mapping, preset, xeno_utils};
-use gilrs::{Axis, Event, EventType, Gamepad, Gilrs};
+use gilrs::{Axis, Event, EventType, Gamepad, Gilrs, GilrsBuilder};
 use hidapi::HidApi;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -206,7 +206,21 @@ pub fn detect_controller_type(vid: &str) -> ControllerType {
         "045e" => ControllerType::Xbox,        // Microsoft
         "054c" => ControllerType::PlayStation, // Sony
         "057e" => ControllerType::Switch,      // Nintendo
-        "20bc" => ControllerType::Betop,       // BETOP
+        "20bc" | "11c0" | "8380" => ControllerType::Betop, // BETOP（多 VID）
+        // 以下厂商手柄多数遵循 Xbox 布局（XInput 兼容），归入 Xbox 类型复用其 layout
+        // VID 来源：Linux kernel hid-ids.h + mdqinc/SDL_GameControllerDB
+        "1532"   // Razer
+        | "2dc8"  // 8BitDo
+        | "046d"  // Logitech
+        | "0f0d"  // HORI
+        | "044f"  // Thrustmaster
+        | "0738"  // Mad Catz
+        | "28de"  // Valve Steam Controller
+        | "04b4"  // Flydigi（Cypress Semiconductor 子授权芯片）
+        | "2f24"  // GameSir（ShenZhen HuiJiaZhi 代工）
+        | "146b"  // Nacon（Bigben Interactive / NACON SA）
+        | "0079"  // Mayflash（Shenzhen Longshengwei，同 DragonRise）
+        => ControllerType::Xbox,
         _ => ControllerType::Other,
     }
 }
@@ -791,7 +805,10 @@ pub fn listen() {
 /// 初始化 Gilrs 事件监听线程
 pub fn gilrs_listen() {
     thread::spawn(move || {
-        let gilrs = Gilrs::new().expect("Failed to init Gilrs");
+        let gilrs = GilrsBuilder::new()
+        .add_mappings(include_str!("gamecontrollerdb_ext.txt"))
+        .build()
+        .expect("Failed to init Gilrs");
         {
             *GLOBAL_GILRS.lock().unwrap() = Some(gilrs);
         }
