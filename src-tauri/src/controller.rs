@@ -218,6 +218,7 @@ pub fn detect_controller_type(vid: &str) -> ControllerType {
         | "28de"  // Valve Steam Controller
         | "04b4"  // Flydigi（Cypress Semiconductor 子授权芯片）
         | "2f24"  // GameSir（ShenZhen HuiJiaZhi 代工）
+        | "3537"  // GameSir（自主 VID — G7 Pro / T4 Kaleid / Cyclone / Kaleid Flux 等，均 XInput 兼容）
         | "146b"  // Nacon（Bigben Interactive / NACON SA）
         | "0079"  // Mayflash（Shenzhen Longshengwei，同 DragonRise）
         => ControllerType::Xbox,
