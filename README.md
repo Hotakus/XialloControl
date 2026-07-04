@@ -115,12 +115,7 @@ pnpm tauri dev
 
 # 类型检查 + 前端生产构建（产物输出到 dist/）
 pnpm build
-
-# 打包发行版（生成 NSIS / WiX 安装器到 src-tauri/target/release/bundle/）
-pnpm tauri build
 ```
-
-> `tauri.conf.json5` 中 `app.windows` 为空数组，主窗口在 `src-tauri/src/lib.rs` 的 `setup` 钩子里动态创建。Vite 端口固定为 1420，`strictPort: true`，端口被占用会直接报错而非自动切换。
 
 ---
 
