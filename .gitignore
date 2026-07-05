@@ -41,6 +41,9 @@ dist-ssr
 # OpenCode local data
 .omo/
 
+# Playwright MCP snapshots
+.playwright-mcp/
+
 # Local design/plan docs (not for remote)
 *_design.md
 *_plan.md
