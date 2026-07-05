@@ -636,10 +636,13 @@ fn poll_other_controllers(device: &DeviceInfo) {
 fn poll_controller(device: &DeviceInfo) {
     match device.controller_type {
         // Xbox 控制器在 Windows 下优先走 XInput API（性能更好，不依赖 gilrs 事件队列）
+        // 若 XInput 未找到匹配设备（如第三方手柄仅 WGI 可见），回退 gilrs
         ControllerType::Xbox => {
             #[cfg(target_os = "windows")]
             {
-                xbox::poll_xbox_controller(device)
+                if !xbox::poll_xbox_controller(device) {
+                    poll_other_controllers(device);
+                }
             }
             #[cfg(not(target_os = "windows"))]
             {

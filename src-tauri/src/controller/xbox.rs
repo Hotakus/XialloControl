@@ -8,7 +8,6 @@ cfg_if::cfg_if! {
 use crate::controller::datas::ControllerButtons;
 use crate::controller::logic;
 
-use crate::controller::controller::{pack_and_send_data, physical_disconnect_device};
 #[cfg(target_os = "windows")]
 use rusty_xinput::XInputState;
 
@@ -90,8 +89,9 @@ fn _poll_xbox_controller_state(state: XInputState) {
 }
 
 /// Xbox控制器轮询入口 (Windows)
+/// 返回 true 表示匹配到设备并成功轮询，false 表示 XInput 未找到匹配设备
 #[cfg(target_os = "windows")]
-pub fn poll_xbox_controller(_device: &DeviceInfo) {
+pub fn poll_xbox_controller(_device: &DeviceInfo) -> bool {
     let xinput = get_xinput();
     let mut got_device = false;
 
@@ -148,10 +148,9 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
     }
 
     if !got_device {
-        // 控制器断开处理
         log::warn!("Xbox 控制器断开连接");
-        physical_disconnect_device();
     }
+    got_device
 }
 
 /// Xbox控制器轮询入口 (Linux)
