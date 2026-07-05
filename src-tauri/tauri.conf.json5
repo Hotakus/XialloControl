@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "xiallocontrol",
-  "version": "0.22.3",
+  "version": "0.22.4",
   "identifier": "com.hotakus.xiallocontrol",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -41,10 +41,9 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgzNENDRUFFRjFFRTQ2QjcKUldTM1J1N3hyczVNZytjZ0gzZTI0bHFBdEYwREZRRW9WMFNWVVEzYmNyOXhSdEZDdzRFQTVKbHgK",
       "endpoints": [
-        "https://gh.b52m.cn/https://github.com/Hotakus/XialloControl/releases/latest/download/latest.json",
+        "https://gh-proxy.com/https://github.com/Hotakus/XialloControl/releases/latest/download/latest.json",
         "https://gh.jasonzeng.dev/https://github.com/Hotakus/XialloControl/releases/latest/download/latest.json",
         "https://g.blfrp.cn/https://github.com/Hotakus/XialloControl/releases/latest/download/latest.json",
-        "https://github.tbedu.top/https://github.com/Hotakus/XialloControl/releases/latest/download/latest.json",
         "https://ghfast.top/https://github.com/Hotakus/XialloControl/releases/latest/download/latest.json",
         "https://github.com/Hotakus/XialloControl/releases/latest/download/latest.json"
       ]

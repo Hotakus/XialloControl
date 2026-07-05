@@ -1,7 +1,7 @@
 {
   "name": "xiallocontrol",
   "private": true,
-  "version": "0.22.3",
+  "version": "0.22.4",
   "type": "module",
   "packageManager": "pnpm@10.34.4+sha512.8768be55200ae3f2226b6527fcca2687e14bc4e5f12d7721a0f25da3df47915177058648db4177baf348120fa0ba2752d8d8d93f6beaf1fe64ae18da8de961af",
   "scripts": {

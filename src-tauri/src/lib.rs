@@ -36,11 +36,10 @@ mod tray;
 mod xeno_utils;
 
 static GITHUB_PROXIES: &[&str] = &[
-    "https://gh.b52m.cn/",        //  221ms
+    "https://gh.b52m.cn/",        //  221ms (直连下载可用，releases/latest 重定向缓存滞后)
     "https://gh.jasonzeng.dev/",  //  492ms
     "https://gh-proxy.com/",      //  494ms
     "https://g.blfrp.cn/",        //  500ms
-    "https://github.tbedu.top/",  //  511ms
     "https://ghfast.top/",        //  872ms (原有)
     "",                            // 直连 fallback
 ];
