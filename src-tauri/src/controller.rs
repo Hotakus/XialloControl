@@ -440,8 +440,18 @@ pub fn use_device(device_name: String) -> bool {
     log::debug!("尝试使用设备: {device_name}");
     let device = _find_device_by_name(&device_name);
     match device {
-        Some(device_info) => {
-            let mut current_device = CURRENT_DEVICE.write().unwrap();
+        Some(mut device_info) => {
+                // 如果 hidapi 未检测到此设备（device_path 为 None），使用 WGI 标识符作为 fallback。
+                // 某些 XInput 兼容手柄（如 GameSir G7 Pro）对 hidapi 不可见，但 WGI/gilrs 能检测到。
+                // 没有 device_path 会导致 listen() 轮询线程无法启动（issue #15）。
+                if device_info.device_path.is_none() {
+                    device_info.device_path = Some(format!("wgi:{}", device_info.vendor_id));
+                    log::warn!(
+                        "hidapi 未检测到此设备 (vid:{})，使用 WGI 标识符作为设备路径",
+                        device_info.vendor_id
+                    );
+                }
+                let mut current_device = CURRENT_DEVICE.write().unwrap();
             *current_device = device_info.clone();
             log::info!("✅ 使用设备: {}", current_device.name);
 
