@@ -101,20 +101,29 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
             .or_else(|_| xinput.get_state(i as u32))
         {
             Ok(state) => {
-                let xinput_caps_ex = xinput.get_capabilities_ex(i as u32).unwrap();
+                let xinput_caps_ex = match xinput.get_capabilities_ex(i as u32) {
+                    Ok(caps) => caps,
+                    Err(e) => {
+                        log::warn!("Xbox 控制器无法获取 capabilities (索引 {i}): {e:?}");
+                        continue;
+                    }
+                };
                 let vid = format!("{:04x}", xinput_caps_ex.vendor_id);
                 let pid = format!("{:04x}", xinput_caps_ex.product_id);
-                let spid = format!("{:04x}", xinput_caps_ex.revision_id);
+                let rev = format!("{:04x}", xinput_caps_ex.revision_id);
 
-                // log::warn!("{vid:#?}/{pid:#?}/{spid:#?} - {:#?}/{:#?}/{:#?} - {:#?}",
+                // 开发调试用，正式环境勿取消注释（125Hz 高频路径会刷爆日志）
+                // log::debug!(
+                //     "XInput[{}]: vid={vid}, pid={pid}, rev={rev} — 目标: vid={}, pid={}, sub_pid={}",
+                //     i,
                 //     _device.vendor_id,
-                //     _device.product_id.as_deref().unwrap(),
-                //     _device.sub_product_id.as_deref().unwrap(),
-                //     xinput_caps_ex.capabilities.SubType);
+                //     _device.product_id.as_deref().unwrap_or("None"),
+                //     _device.sub_product_id.as_deref().unwrap_or("None")
+                // );
 
                 let d_vid = &_device.vendor_id;
-                let d_pid = &_device.product_id.as_deref().unwrap();
-                let d_sub_pid = &_device.sub_product_id.as_deref().unwrap();
+                let d_pid = _device.product_id.as_deref().unwrap_or("0000");
+                let d_sub_pid = _device.sub_product_id.as_deref().unwrap_or("0000");
 
                 if vid.eq_ignore_ascii_case(d_vid)
                     && (pid.eq_ignore_ascii_case(d_pid) || pid.eq_ignore_ascii_case(d_sub_pid))
@@ -123,10 +132,11 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) {
                     _poll_xbox_controller_state(state);
                     break;
                 } else {
-                    // 错误
-                    log::error!("Xbox 控制器连接错误，数据不匹配 ({vid:#?}/{pid:#?}) - ({:#?}/{:#?})",
+                    log::error!(
+                        "Xbox 控制器数据不匹配 (XInput[{}]: vid={vid}, pid={pid}, rev={rev}) — DeviceInfo(vid={}, sub_pid={})",
+                        i,
                         _device.vendor_id,
-                        _device.sub_product_id.as_deref().unwrap()
+                        _device.sub_product_id.as_deref().unwrap_or("unknown")
                     );
                 }
             }
