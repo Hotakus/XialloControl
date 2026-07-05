@@ -62,6 +62,7 @@ XialloControl 使用 gilrs 库（v0.11.0，git submodule）作为手柄输入抽
 ### 负面
 - `src-tauri/third-party/gilrs` submodule 与上游 gilrs 脱节，需长期维护 `Hotakus/gilrs` fork
 - gilrs 升级时需 rebase 两个 commit（`9571795` UUID 修复 + `968f153` deadzone 修复）
+- **WGI/hidapi 可见性不一致**（v0.22.2 发现）：XInput 兼容手柄（如 GameSir G7 Pro vid:0x3537）在 WGI/gilrs 层可被检测，但对 hidapi 不可见，导致 `DeviceInfo.device_path` 为 `None`，`listen()` 轮询线程静默失效（issue #15）。v0.22.2 在 `use_device` 中以 `wgi:{vid}` sentinel 兜底。**后续功能若依赖 hidapi 设备路径需注意此约束。**
 
 ### 风险与缓解
 - **风险**：gilrs 上游修复 UUID 后，fork 的 patch 产生冲突
@@ -99,8 +100,11 @@ XialloControl 使用 gilrs 库（v0.11.0，git submodule）作为手柄输入抽
 - SDL_GameControllerDB 上游: https://github.com/mdqinc/SDL_GameControllerDB
 - gilrs fork: https://github.com/Hotakus/gilrs
 - PR #16: https://github.com/Hotakus/XialloControl/pull/16
+- issue #15 (G7 Pro 无效果): https://github.com/Hotakus/XialloControl/issues/15
+- v0.22.2 (device_path sentinel): commit `6a6ba18`
 
 ### 其他决策（本会话内，未单独建 ADR）
 - **BETOP 不归 Xbox 类型**：用户明确要求，因杂牌北通可能无 UUID，归 Xbox 会走 rusty-xinput 但杂牌不一定真支持 XInput API。BETOP 保留 `ControllerType::Betop`，走 gilrs SDL 映射路径。
 - **poll_controller 改用 controller_type 而非 uuid_is_invalid**：魔改后 WgiGamepad UUID 不再是 nil，`uuid_is_invalid` 判断失效。Xbox 分支改为始终走 `xbox::poll_xbox_controller`（rusty-xinput），`_` 兜底分支始终走 `poll_other_controllers`（gilrs）。
 - **add_mappings 注入完整 DB 而非只国产条目**：gilrs 的 `MappingDb::insert` 会自动按平台过滤，完整 DB（585KB）嵌入可接受，且覆盖 gilrs 内置旧版。
+- **v0.22.2 device_path sentinel fallback**：XInput 兼容手柄对 hidapi 不可见时，`use_device` 以 `wgi:{vid}` 作为 `device_path` 兜底值，避免 `listen()` 轮询线程静默失效。详见 ADR-001 负面后果第 3 条。
