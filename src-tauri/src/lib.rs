@@ -35,8 +35,69 @@ mod setup;
 mod tray;
 mod xeno_utils;
 
-static GITHUB_MIRROR_PREFIX: &str = "https://ghfast.top/";
+static GITHUB_PROXIES: &[&str] = &[
+    "https://gh.b52m.cn/",        //  221ms
+    "https://gh.jasonzeng.dev/",  //  492ms
+    "https://gh-proxy.com/",      //  494ms
+    "https://g.blfrp.cn/",        //  500ms
+    "https://github.tbedu.top/",  //  511ms
+    "https://ghfast.top/",        //  872ms (原有)
+    "",                            // 直连 fallback
+];
+
+static SELECTED_PROXY: Lazy<Mutex<Option<String>>> = Lazy::new(|| Mutex::new(None));
 static UPDATE_CACHE: Lazy<Mutex<Option<Update>>> = Lazy::new(|| Mutex::new(None));
+
+/// 并行探测所有代理，返回第一个可达的（首次调用时测速，后续缓存）。
+async fn select_proxy() -> String {
+    // 已缓存则直接返回
+    if let Some(ref proxy) = *SELECTED_PROXY.lock().unwrap() {
+        return proxy.clone();
+    }
+
+    let mut tasks = Vec::new();
+    for &proxy in GITHUB_PROXIES.iter() {
+        let proxy = proxy.to_string();
+        tasks.push(tokio::spawn(async move {
+            if proxy.is_empty() {
+                return Some(String::new());
+            }
+            if let Ok(url) = Url::parse(&proxy) {
+                let host = url.host_str().unwrap_or("");
+                let port = url.port().unwrap_or(443);
+                let addr = format!("{host}:{port}");
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(2),
+                    tokio::net::TcpStream::connect(&addr),
+                )
+                .await
+                {
+                    Ok(Ok(_)) => {
+                        log::debug!("代理可达: {proxy}");
+                        return Some(proxy);
+                    }
+                    _ => {
+                        log::trace!("代理不可达: {proxy}");
+                    }
+                }
+            }
+            None
+        }));
+    }
+
+    for task in tasks {
+        if let Ok(Some(proxy)) = task.await {
+            let label = if proxy.is_empty() { "直连" } else { &proxy };
+            log::info!("已选择更新代理: {label}");
+            *SELECTED_PROXY.lock().unwrap() = Some(proxy.clone());
+            return proxy;
+        }
+    }
+
+    log::warn!("所有代理不可达，使用 GitHub 直连");
+    *SELECTED_PROXY.lock().unwrap() = Some(String::new());
+    String::new()
+}
 
 #[tauri::command]
 fn hide_current_window(window: Window) -> Result<(), String> {
@@ -168,9 +229,12 @@ async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
 
             let locale = get_locale();
             if locale.starts_with("zh") {
-                let new_url = format!("{}{}", GITHUB_MIRROR_PREFIX, update.download_url);
-                log::info!("Using mirror URL for CN user: {new_url}");
-                update.download_url = Url::parse(&new_url).map_err(|e| e.to_string())?;
+                let proxy = select_proxy().await;
+                if !proxy.is_empty() {
+                    let new_url = format!("{}{}", proxy, update.download_url);
+                    log::info!("使用更新代理: {new_url}");
+                    update.download_url = Url::parse(&new_url).map_err(|e| e.to_string())?;
+                }
             }
 
             let info = UpdateInfo {
