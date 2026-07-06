@@ -577,6 +577,21 @@ fn _poll_other_controllers(gamepad: Gamepad) {
         (gamepad.is_pressed(gilrs::Button::Mode), ControllerButtons::Guide),
     ];
 
+    let pressed_count: usize = buttons.iter().filter(|(p, _)| *p).count();
+
+    // 125Hz 高频路径，节流输出：首条打印，后续每 125 次（≈1s）汇总一次
+    static POLL_CNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let cnt = POLL_CNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    if cnt == 0 || cnt % 125 == 0 {
+        log::debug!(
+            "gilrs 轮询 #{cnt}: 按键按下 {pressed_count}/15, 左摇杆=({:.3},{:.3}) 右摇杆=({:.3},{:.3})",
+            gamepad.axis_data(Axis::LeftStickX).map_or(0.0, |d| d.value()),
+            gamepad.axis_data(Axis::LeftStickY).map_or(0.0, |d| d.value()),
+            gamepad.axis_data(Axis::RightStickX).map_or(0.0, |d| d.value()),
+            gamepad.axis_data(Axis::RightStickY).map_or(0.0, |d| d.value()),
+        );
+    }
+
     for (pressed, button) in buttons {
         controller_data.set_button(button, pressed);
     }
@@ -618,17 +633,41 @@ fn poll_other_controllers(device: &DeviceInfo) {
     let gilrs_guard = GLOBAL_GILRS.lock().unwrap();
     let gilrs = gilrs_guard.as_ref().unwrap();
 
+    let mut found = false;
+
+    static POLL_OTHER_CNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+    let cnt = POLL_OTHER_CNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
     // 遍历所有已连接的游戏手柄
     for (_id, gamepad) in gilrs.gamepads() {
         let vid = format!("{:04x}", gamepad.vendor_id().unwrap());
         let pid = format!("{:04x}", gamepad.product_id().unwrap());
 
+        // 首条打印 gamepad 列表，后续每 125 次（≈1s）汇总
+        if cnt == 0 || cnt % 125 == 0 {
+            log::debug!(
+                "gilrs gamepad[{}]: vid={vid}, pid={pid}, target_vid={}, target_pid={}",
+                _id,
+                device.vendor_id,
+                device.product_id.as_deref().unwrap_or("?")
+            );
+        }
+
         // 匹配当前设备
         if vid.eq_ignore_ascii_case(&device.vendor_id)
             && device.product_id.as_deref().is_some_and(|d_pid| pid.eq_ignore_ascii_case(d_pid))
         {
+            found = true;
             _poll_other_controllers(gamepad);
         }
+    }
+
+    if !found && (cnt == 0 || cnt % 125 == 0) {
+        log::warn!(
+            "gilrs gamepads 中未找到匹配设备 (target: vid={}, pid={})",
+            device.vendor_id,
+            device.product_id.as_deref().unwrap_or("?")
+        );
     }
 }
 
@@ -641,6 +680,11 @@ fn poll_controller(device: &DeviceInfo) {
             #[cfg(target_os = "windows")]
             {
                 if !xbox::poll_xbox_controller(device) {
+                    static FALLBACK_CNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+                    let fc = FALLBACK_CNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if fc % 125 == 0 {
+                        log::debug!("XInput 未匹配，回退 gilrs 轮询");
+                    }
                     poll_other_controllers(device);
                 }
             }

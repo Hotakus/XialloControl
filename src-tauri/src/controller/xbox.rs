@@ -132,23 +132,35 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) -> bool {
                     _poll_xbox_controller_state(state);
                     break;
                 } else {
-                    log::error!(
-                        "Xbox 控制器数据不匹配 (XInput[{}]: vid={vid}, pid={pid}, rev={rev}) — DeviceInfo(vid={}, sub_pid={})",
-                        i,
-                        _device.vendor_id,
-                        _device.sub_product_id.as_deref().unwrap_or("unknown")
-                    );
+                    // GIP 控制器在 XInput 层呈现为 045e:02ff，与 WGI 层 VID 不同是预期行为。
+                    // 首条 ERROR 保留便于诊断，后续降级为每 125 次（≈1s）输出一次 DEBUG。
+                    static MISMATCH_CNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+                    let cnt = MISMATCH_CNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if cnt == 0 {
+                        log::error!(
+                            "Xbox 控制器数据不匹配 (XInput[{}]: vid={vid}, pid={pid}, rev={rev}) — DeviceInfo(vid={}, sub_pid={})",
+                            i,
+                            _device.vendor_id,
+                            _device.sub_product_id.as_deref().unwrap_or("unknown")
+                        );
+                    } else if cnt % 125 == 0 {
+                        log::debug!("XInput 数据不匹配已重复 {cnt} 次 (vid={vid}, pid={pid})");
+                    }
                 }
             }
             Err(_) => {
-                log::warn!("Xbox 控制器连接错误，设备索引 {i} 不存在");
+                log::debug!("Xbox 控制器连接错误，设备索引 {i} 不存在");
                 got_device = false;
             }
         }
     }
 
     if !got_device {
-        log::warn!("Xbox 控制器断开连接");
+        static NO_MATCH_CNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let nc = NO_MATCH_CNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if nc % 125 == 0 {
+            log::debug!("Xbox 轮询未匹配到设备，将回退 gilrs");
+        }
     }
     got_device
 }
