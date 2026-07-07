@@ -13,6 +13,18 @@ use rusty_xinput::XInputState;
 
 const MAX_XINPUT_DEVICES: usize = 4;
 
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
+
+/// 物理设备 (vid, pid) → XInput 层 (vid, pid) 映射表。
+/// GIP 协议手柄在 XInput 层呈现为微软 VID(045e)+虚拟 PID，与物理 VID/PID 不同。
+static XINPUT_ID_MAP: Lazy<HashMap<(&str, &str), (&str, &str)>> = Lazy::new(|| {
+    let mut map = HashMap::new();
+    // GameSir G7 Pro
+    map.insert(("3537", "1003"), ("045e", "02ff"));
+    map
+});
+
 /// Xbox控制器状态轮询处理 (Windows)
 #[cfg(target_os = "windows")]
 fn _poll_xbox_controller_state(state: XInputState) {
@@ -125,8 +137,14 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) -> bool {
                 let d_pid = _device.product_id.as_deref().unwrap_or("0000");
                 let d_sub_pid = _device.sub_product_id.as_deref().unwrap_or("0000");
 
-                if vid.eq_ignore_ascii_case(d_vid)
-                    && (pid.eq_ignore_ascii_case(d_pid) || pid.eq_ignore_ascii_case(d_sub_pid))
+                // 查映射表，将物理 VID/PID 转换为 XInput 层 VID/PID
+                let (expected_vid, expected_pid) = XINPUT_ID_MAP
+                    .get(&(d_vid, d_pid))
+                    .copied()
+                    .unwrap_or((d_vid, d_pid));
+
+                if vid.eq_ignore_ascii_case(expected_vid)
+                    && (pid.eq_ignore_ascii_case(expected_pid) || pid.eq_ignore_ascii_case(d_sub_pid))
                 {
                     got_device = true;
                     _poll_xbox_controller_state(state);
@@ -138,7 +156,7 @@ pub fn poll_xbox_controller(_device: &DeviceInfo) -> bool {
                     let cnt = MISMATCH_CNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     if cnt == 0 {
                         log::error!(
-                            "Xbox 控制器数据不匹配 (XInput[{}]: vid={vid}, pid={pid}, rev={rev}) — DeviceInfo(vid={}, sub_pid={})",
+                            "Xbox 控制器数据不匹配 (XInput[{}]: vid={vid}, pid={pid}, rev={rev}) — DeviceInfo(vid={}, sub_pid={}, mapped→vid={expected_vid}, pid={expected_pid})",
                             i,
                             _device.vendor_id,
                             _device.sub_product_id.as_deref().unwrap_or("unknown")

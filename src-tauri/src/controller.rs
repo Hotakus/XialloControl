@@ -591,6 +591,26 @@ fn _poll_other_controllers(gamepad: Gamepad) {
             gamepad.axis_data(Axis::RightStickY).map_or(0.0, |d| d.value()),
         );
     }
+    // 诊断：WGI nil UUID 回退后，检查 gilrs 层逻辑按钮状态
+    if cnt == 1 || cnt % 250 == 0 {
+        log::debug!(
+            "diag: South={} East={} West={} North={} LB={} RB={} LT2={:.3} RT2={:.3} DPadU={} DPadD={} LStk={} RStk={} Sel={} Start={}",
+            gamepad.is_pressed(gilrs::Button::South),
+            gamepad.is_pressed(gilrs::Button::East),
+            gamepad.is_pressed(gilrs::Button::West),
+            gamepad.is_pressed(gilrs::Button::North),
+            gamepad.is_pressed(gilrs::Button::LeftTrigger),
+            gamepad.is_pressed(gilrs::Button::RightTrigger),
+            gamepad.button_data(gilrs::Button::LeftTrigger2).map_or(0.0, |d| d.value()),
+            gamepad.button_data(gilrs::Button::RightTrigger2).map_or(0.0, |d| d.value()),
+            gamepad.is_pressed(gilrs::Button::DPadUp),
+            gamepad.is_pressed(gilrs::Button::DPadDown),
+            gamepad.is_pressed(gilrs::Button::LeftThumb),
+            gamepad.is_pressed(gilrs::Button::RightThumb),
+            gamepad.is_pressed(gilrs::Button::Select),
+            gamepad.is_pressed(gilrs::Button::Start),
+        );
+    }
 
     for (pressed, button) in buttons {
         controller_data.set_button(button, pressed);
@@ -859,7 +879,12 @@ pub fn gilrs_listen() {
                 poisoned.into_inner()
             }).as_mut() {
                 // 清空事件队列但不处理
+                static EVT_CNT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
                 while let Some(Event { event, id, .. }) = gilrs.next_event_blocking(Some(Duration::from_millis(1))) {
+                    let n = EVT_CNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if n == 0 || n % 125 == 0 {
+                        log::debug!("gilrs_listen 事件 #{n}: id={id} event={event:?}");
+                    }
                     let _ = id;
                     if event == EventType::Disconnected {
                         let device = CURRENT_DEVICE.read().unwrap().clone();
